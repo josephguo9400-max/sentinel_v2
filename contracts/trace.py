@@ -1,0 +1,33 @@
+"""Trace event v1.1 — every observable step of a sandbox run. proposed / blocked / executed are never conflated."""
+from typing import Any, Literal
+
+from pydantic import BaseModel
+
+EventType = Literal[
+    "tool_proposed",
+    "tool_blocked",
+    "tool_executed",
+    "tool_failed",
+    "model_response",
+    "detector_prediction",
+    "detector_timeout",
+    "shadow_failed",
+    "content_quarantined",
+    "attempt_completed",
+]
+
+
+class TraceEvent(BaseModel):
+    schema_version: Literal["1.1"] = "1.1"
+    event_id: str
+    run_id: str
+    attempt_id: str
+    timestamp: str  # ISO-8601 UTC
+    event_type: EventType
+    mode: Literal["A", "B", "C"]  # A: no defenses, B: classifier only, C: classifier + authorization firewall
+    source: Literal["live", "recorded", "scripted"]
+    tool_name: str | None = None
+    tool_arguments: dict[str, Any] | None = None
+    policy_reason: str | None = None
+    detector_version: str | None = None
+    detail: dict[str, Any] | None = None

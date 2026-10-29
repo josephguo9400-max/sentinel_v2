@@ -1,0 +1,6 @@
+pydantic>=2.7
+pytest>=8
+numpy>=1.26
+onnxruntime>=1.18
+tokenizers>=0.19
+huggingface_hub>=0.23

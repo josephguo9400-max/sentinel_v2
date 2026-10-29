@@ -1,0 +1,56 @@
+{
+  "hardware": "x86_64",
+  "cores": 2,
+  "results": [
+    {
+      "batch": 1,
+      "tokens": 64,
+      "iters": 60,
+      "p50_ms": 78.1,
+      "p95_ms": 95.2,
+      "p99_ms": 101.2,
+      "per_item_p50_ms": 78.1
+    },
+    {
+      "batch": 1,
+      "tokens": 256,
+      "iters": 40,
+      "p50_ms": 296.5,
+      "p95_ms": 325.8,
+      "p99_ms": 345.1,
+      "per_item_p50_ms": 296.5
+    },
+    {
+      "batch": 1,
+      "tokens": 512,
+      "iters": 30,
+      "p50_ms": 723.2,
+      "p95_ms": 768.9,
+      "p99_ms": 770.8,
+      "per_item_p50_ms": 723.2
+    },
+    {
+      "batch": 8,
+      "tokens": 256,
+      "iters": 15,
+      "p50_ms": 2491.8,
+      "p95_ms": 2571.7,
+      "p99_ms": 2607.8,
+      "per_item_p50_ms": 311.5
+    },
+    {
+      "batch": 32,
+      "tokens": 128,
+      "iters": 8,
+      "p50_ms": 4623.4,
+      "p95_ms": 4940.8,
+      "p99_ms": 4940.8,
+      "per_item_p50_ms": 144.5
+    }
+  ],
+  "truncation_test": {
+    "tokens": 719,
+    "truncated_score": 0.9398177266120911,
+    "chunked_score": 0.9999504089355469
+  }
+}
