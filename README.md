@@ -27,8 +27,8 @@ python -m benchmarks.day0.bench_deberta  # latency + truncation test on this mac
 
 ## Day 0 findings (2-core Xeon 2.1 GHz, no GPU, fp32 ONNX)
 
-- **Silent truncation misses injections:** an injection appended to a 705-token email scores 0.0185 when truncated to 512 tokens (same as the benign email) and 0.9966 with chunking.
-- **Chunking has a cost:** max aggregation raises the benign email from 0.0185 to 0.3718, so long benign emails need their own false-positive slice.
+- **Silent truncation misses injections:** an injection appended to a 705-token synthetic email scores 0.0185 when truncated to 512 tokens (same as the benign email) and 0.9966 with chunking.
+- **Long benign text drifts upward:** benign scores rise with length and repetition (0.0096 at 120 tokens, 0.3163 at 510), so long benign emails need their own false-positive slice.
 - **CPU latency:** p95 118 ms at 64 tokens, 335 ms at 256, 774 ms at 510; batching does not help on 2 cores → int8 quantization and the cascade are next.
 
 Details: [`benchmarks/day0/README.md`](benchmarks/day0/README.md).

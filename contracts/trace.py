@@ -3,7 +3,7 @@ from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, field_validator, model_validator
 
-from ._validators import iso8601_utc
+from ._validators import utc_timestamp
 
 EventType = Literal[
     "tool_proposed",
@@ -40,7 +40,7 @@ class TraceEvent(BaseModel):
     @field_validator("timestamp")
     @classmethod
     def _timestamp(cls, v: str) -> str:
-        return iso8601_utc(v)
+        return utc_timestamp(v)
 
     @model_validator(mode="after")
     def _required_by_type(self) -> "TraceEvent":

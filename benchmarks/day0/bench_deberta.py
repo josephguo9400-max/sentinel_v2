@@ -6,7 +6,7 @@
 3. Length sweep: how the score of a benign repeated sentence moves with input length.
 4. Latency: sequential CPU requests at several lengths and batch sizes. Timing includes tokenization.
 
-Run: python scripts/fetch_models.py && python benchmarks/day0/bench_deberta.py
+Run from the repo root: python scripts/fetch_models.py && python -m benchmarks.day0.bench_deberta
 """
 import hashlib
 import json

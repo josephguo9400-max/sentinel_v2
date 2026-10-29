@@ -190,7 +190,7 @@ The critical path is the Day 1 gateway and evaluation harness; a full gate dry r
 
 ### Day 0 results (2026-10-29)
 
-See [`benchmarks/day0/README.md`](../benchmarks/day0/README.md). Summary: silent truncation misses an injection at the end of a 705-token email (0.0185 truncated vs 0.9966 chunked); max-aggregated chunking raises the benign email's score to 0.3718, so long benign emails get their own FPR slice; CPU p95 is 162 ms at 128 tokens and 774 ms at 510 tokens on 2 cores, so the int8 kill criterion is triggered.
+See [`benchmarks/day0/README.md`](../benchmarks/day0/README.md). Summary: silent truncation misses an injection at the end of a 705-token synthetic email (0.0185 truncated vs 0.9966 chunked); benign scores drift upward with length and repetition (0.3163 at 510 tokens), so long benign emails get their own FPR slice; CPU p95 is 162 ms at 128 tokens and 774 ms at 510 tokens on 2 cores, so the int8 kill criterion is triggered.
 
 ## Agent team and prompts
 

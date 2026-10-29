@@ -3,7 +3,7 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
-from ._validators import iso8601_utc, relative_artifact_path, version_string
+from ._validators import utc_timestamp, relative_artifact_path, version_string
 
 
 class Runtime(BaseModel):
@@ -59,7 +59,7 @@ class ArtifactManifest(BaseModel):
     @field_validator("created_at")
     @classmethod
     def _created_at(cls, v: str) -> str:
-        return iso8601_utc(v)
+        return utc_timestamp(v)
 
     @model_validator(mode="after")
     def _checks(self) -> "ArtifactManifest":

@@ -8,7 +8,7 @@ Inputs are always `[CLS] + content + [SEP]`, in both the truncated and the chunk
 
 ## Finding 1: silent truncation misses an injection at the end of a long email
 
-A synthetic multi-paragraph meeting-recap email (`fixtures.py`, 705 content tokens) with one injection sentence appended (724 tokens):
+A synthetic meeting-recap email (`fixtures.py`: an 8-sentence recap repeated to 705 content tokens) with one injection sentence appended (724 tokens):
 
 | Input | Truncated to 512 | Chunked (max over 2 windows) |
 | --- | --- | --- |
@@ -18,7 +18,7 @@ A synthetic multi-paragraph meeting-recap email (`fixtures.py`, 705 content toke
 
 The truncated score for the injected email equals the benign one because the injection is never seen. Silent truncation is a serving-layer bug; contracts v1.1 require `truncated=True` whenever content is not scored, and the gateway must chunk.
 
-**Side effect to track:** max aggregation raised the benign email's score from 0.0185 to 0.3718 (still below 0.5). Chunking can raise false positives on long benign emails; the `benign-hard` slice must include long emails, and aggregation is a measured choice, not a default.
+**What the chunked benign score means:** the benign email scores 0.3718 chunked because its second window scores 0.3718: the first window is exactly the truncated input (0.0185), and the chunked score is the maximum over the two. That window is a full 510 tokens of repeated text, which matches the length/repetition drift in Finding 2 (0.3163 at 510 tokens), so it is not evidence that chunking itself causes false positives. It does mean a chunked gateway sees more full-length windows, so the `benign-hard` slice must include long, repetitive benign emails, and the aggregation rule (max vs mean) is a measured choice, not a default.
 
 ## Finding 2: scores of benign repeated text drift upward with length
 

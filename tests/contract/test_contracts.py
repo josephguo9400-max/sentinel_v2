@@ -157,3 +157,53 @@ def test_schema_snapshot_unchanged():
     current = {m.__name__: m.model_json_schema() for m in (DetectorResult, ArtifactManifest, TraceEvent)}
     snap = Path(__file__).with_name("schema_snapshot.json")
     assert json.loads(snap.read_text()) == json.loads(json.dumps(current))
+
+
+# ---------- re-review additions ----------
+
+def test_numpy_bool_accepted_but_strings_and_ints_rejected():
+    s = np.float32(0.9)
+    assert result(score=float(s), predicted_injection=s >= np.float32(0.5)).predicted_injection is True
+    assert result(truncated=np.bool_(True), n_chunks=1).truncated is True  # truncated single-window input is legal
+    for bad in ("true", 1, 0):
+        with pytest.raises(ValidationError):
+            result(predicted_injection=bad)
+
+
+@pytest.mark.parametrize("ts,normalized", [("2026-10-29T00:00:00Z", "2026-10-29T00:00:00Z"),
+                                           ("2026-10-29T00:00:00+00:00", "2026-10-29T00:00:00Z"),
+                                           ("2026-10-29T00:00:00.5Z", "2026-10-29T00:00:00.500000Z")])
+def test_timestamps_normalized(ts, normalized):
+    assert stage1(created_at=ts).created_at == normalized
+    assert event(timestamp=ts).timestamp == normalized
+
+
+@pytest.mark.parametrize("ts", ["2026-10-29 00:00:00Z", "20261029T000000Z", "2026-W44-4T00:00:00Z",
+                                "2026-10-29T00:00Z", "2026-10-29T00:00:00-00:00", "2026-10-29T00:00:00+0000",
+                                "2026-10-29T00:00:00+01:00", "2026-10-29T00:00:00", "2026-10-29",
+                                "2026-10-29T00:00:00z", "2026-10-29T24:00:00Z", "2026-13-01T00:00:00Z"])
+def test_timestamps_rejected(ts):
+    with pytest.raises(ValidationError):
+        stage1(created_at=ts)
+
+
+@pytest.mark.parametrize("v", ["1.29.0", "3.11.0rc1", "1.17.0.post1", "2.1.0+cpu", "1.0.dev3", "3"])
+def test_versions_accepted(v):
+    assert stage1(runtime={"python": "3.13", "onnxruntime": v}).runtime.onnxruntime == v
+
+
+@pytest.mark.parametrize("path", ["m\x00.onnx", ".onnx", "...onnx", "a/.onnx", "m​.onnx", "c:m.onnx",
+                                  "m:alt.onnx"])
+def test_artifact_path_rejects_edge_cases(path):
+    with pytest.raises(ValidationError):
+        stage1(artifact_path=path)
+
+
+@pytest.mark.parametrize("etype", ["model_response", "attempt_completed", "shadow_failed"])
+def test_non_tool_events_need_no_tool_fields(etype):
+    assert event(event_type=etype, tool_name=None, policy_reason=None).event_type == etype
+
+
+def test_content_quarantined_requires_policy_reason():
+    with pytest.raises(ValidationError):
+        event(event_type="content_quarantined", tool_name=None, policy_reason=None)
