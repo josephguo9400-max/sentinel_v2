@@ -14,18 +14,13 @@ The original RFC's strengths are kept as-is: decoupled tracks, separate `propose
 
 1. TF-IDF no longer competes to replace DeBERTa; it becomes Stage 1 of a cascade. The question becomes "how much compute and p99 latency can we save without losing recall."
 2. The attacker goes from 5 rounds to ~100 queries, receives the detector score as feedback, attacks a dev split, and never sees the frozen test set.
-3. The Cathedral incident is removed from the pitch.
+3. No external security incident is referenced in the pitch.
 
 ## Verified context (checked 2026-10-29)
 
-### Cathedral incident: real, but technically unrelated to this project
+### External incidents
 
-- Anthropic confirmed that Cathedral researchers accessed some of its sales, HR and IT systems, with limited scope, via third-party commercial tools, after several days of failing to get into Anthropic's own systems. ([Sina Finance, relaying the Washington Post](https://finance.sina.cn/usstock/mggd/2026-10-26/detail-iniwqpfp1980215.d.html))
-- The researchers did not reach customer messages to models, model outputs, underlying code or model weights. Anthropic said its monitoring flagged some activity before Cathedral reported it, and that Cathedral overstated the national-security implications.
-- Not verified: the original RFC said Cathedral was "using AI agents"; the reporting reviewed does not confirm that.
-- The story ran the same week Anthropic's IPO filing was expected to become public. ([FourWeekMBA](https://fourweekmba.com/ai-ex-doge-start-up-says-it-got-inside-anthropic-in-12-hours/))
-
-**Decision:** do not reference it in the pitch, README or demo. It has no technical link to prompt-injection classifiers, and opening with it is low-upside, high-risk.
+Decision: the pitch, README and demo reference no external security incident. They have no technical link to prompt-injection classifiers, and the project stands on its own measurements.
 
 ### Target role: closer to the serving path than the original RFC assumed
 
@@ -195,7 +190,7 @@ The critical path is the Day 1 gateway and evaluation harness; a full gate dry r
 
 ### Day 0 results (2026-10-29)
 
-See [`benchmarks/day0/README.md`](../benchmarks/day0/README.md). Summary: truncation bypass reproduced (0.002 truncated vs 0.999 chunked); long repetitive benign text false-positives (0.94 at 512 tokens); CPU p95 at realistic email lengths is 326–769 ms on 2 cores, so the int8 kill criterion is triggered.
+See [`benchmarks/day0/README.md`](../benchmarks/day0/README.md). Summary: silent truncation misses an injection at the end of a 705-token email (0.0185 truncated vs 0.9966 chunked); max-aggregated chunking raises the benign email's score to 0.3718, so long benign emails get their own FPR slice; CPU p95 is 162 ms at 128 tokens and 774 ms at 510 tokens on 2 cores, so the int8 kill criterion is triggered.
 
 ## Agent team and prompts
 
@@ -291,7 +286,7 @@ Step 3 depends on real results. If the attacker finds no bypass within budget, s
 ### Positioning
 
 - **Say:** a decoupled classifier inference gateway prototype with cascade routing, async shadow, manifest-driven deployment, a release gate with confidence intervals, and adaptive red-team acceptance.
-- **Don't say:** production-grade, a replica of Anthropic's architecture, a reproduction of the Cathedral incident, or proof of Staff+ scale experience.
+- **Don't say:** production-grade, a replica of Anthropic's architecture, a reproduction of any real-world incident, or proof of Staff+ scale experience.
 - **Best interview topics:** why the classifier is not the security boundary; why five static attack rounds don't count; how to choose fail-open vs fail-closed per classifier; why truncation is a serving-layer bug, not a model bug.
 
 ## Risks and open questions
@@ -316,8 +311,6 @@ Step 3 depends on real results. If the attacker finds no bypass within budget, s
 
 ## Sources
 
-- [Sina Finance: how a startup founded by ex-DOGE staff got into Anthropic's internal systems (relaying the Washington Post, 2026-10-26)](https://finance.sina.cn/usstock/mggd/2026-10-26/detail-iniwqpfp1980215.d.html)
-- [FourWeekMBA: Ex-DOGE Start-Up Says It Got Inside Anthropic in 12 Hours](https://fourweekmba.com/ai-ex-doge-start-up-says-it-got-inside-anthropic-in-12-hours/)
 - [Anthropic: Staff+ Software Engineer, ML Inference Path](https://jobs.generalcatalyst.com/companies/anthropic-2-329084eb-3341-4fee-bf5f-ca45f33adaab/jobs/92761996-staff-software-engineer-ml-inference-path)
 - [Constitutional Classifiers++ (arXiv 2601.04603)](https://arxiv.org/pdf/2601.04603)
 - [The Attacker Moves Second (MATS)](https://www.matsprogram.org/research/the-attacker-moves-second-stronger-adaptive-attacks-bypass-defenses-against-llm-jailbreaks-and-prompt-injections)

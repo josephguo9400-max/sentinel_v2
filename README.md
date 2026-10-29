@@ -22,14 +22,14 @@ A safety-classifier inference gateway prototype: a two-stage cascade (cheap Stag
 pip install -r requirements.txt
 python scripts/fetch_models.py           # downloads the ONNX detector into models/ (not committed)
 pytest tests/contract
-python benchmarks/day0/bench_deberta.py  # latency + truncation test on this machine
+python -m benchmarks.day0.bench_deberta  # latency + truncation test on this machine
 ```
 
 ## Day 0 findings (2-core Xeon 2.1 GHz, no GPU, fp32 ONNX)
 
-- **Truncation bypass reproduced:** an injection at the end of a 709-token email scores 0.002 when truncated to 512 tokens and 0.999 with chunking.
-- **Long repetitive text false-positives:** repeated benign text scores 0.94 at 512 tokens (0.009 at 120 tokens).
-- **CPU latency:** p95 95 ms at 64 tokens, 326 ms at 256, 769 ms at 512 → int8 quantization and the cascade are next.
+- **Silent truncation misses injections:** an injection appended to a 705-token email scores 0.0185 when truncated to 512 tokens (same as the benign email) and 0.9966 with chunking.
+- **Chunking has a cost:** max aggregation raises the benign email from 0.0185 to 0.3718, so long benign emails need their own false-positive slice.
+- **CPU latency:** p95 118 ms at 64 tokens, 335 ms at 256, 774 ms at 510; batching does not help on 2 cores → int8 quantization and the cascade are next.
 
 Details: [`benchmarks/day0/README.md`](benchmarks/day0/README.md).
 
