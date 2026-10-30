@@ -86,9 +86,16 @@ class AuthorizationLedger:
             return FirewallDecision(False, f"recipient_not_authorized: {', '.join(extra_r)}", canon)
         return FirewallDecision(False, "recipient_set_mismatch: recipients do not equal any authorized set", canon)
 
-    def consume(self, decision: FirewallDecision) -> None:
-        if decision.allowed and decision.grant_index is not None:
-            self.uses[decision.grant_index] += 1
+    def consume(self, decision: FirewallDecision) -> bool:
+        """Record one use of the decision's grant. Returns False, recording nothing, when the decision
+        is not an authorization or the grant has no uses left (a stale decision cannot be replayed)."""
+        if not decision.allowed or decision.grant_index is None:
+            return False
+        i = decision.grant_index
+        if not 0 <= i < len(self.grants) or self.uses[i] >= self.grants[i].max_uses:
+            return False
+        self.uses[i] += 1
+        return True
 
     def _parse_reason(self, key: str, exc: RecipientError) -> str:
         reason = f"unparseable_recipient: {key}: {exc.code}"

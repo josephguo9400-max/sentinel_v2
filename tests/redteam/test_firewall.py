@@ -254,3 +254,20 @@ def test_mode_c_with_allow_all_classifier_and_no_grants_blocks_everything(digest
 def test_grant_rejects_non_reserved_domains():
     with pytest.raises(ValueError):
         SendGrant(to=("someone@gmail.com",))
+
+
+# ---------------------------------------------------------------- review additions
+
+def test_consume_refuses_exhausted_grant():
+    ledger = AuthorizationLedger((SendGrant(to=(AUTH,), max_uses=1),))
+    d = ledger.check({"to": AUTH, "subject": "s", "body": "b"})
+    assert d.allowed
+    assert ledger.consume(d) is True and ledger.uses == [1]
+    assert ledger.consume(d) is False and ledger.uses == [1]  # the stale decision cannot be replayed
+    assert ledger.check({"to": AUTH, "subject": "s", "body": "b"}).policy_reason.startswith("grant_exhausted")
+
+
+def test_consume_ignores_denials():
+    ledger = AuthorizationLedger((SendGrant(to=(AUTH,)),))
+    d = ledger.check({"to": ATTACKER, "subject": "s", "body": "b"})
+    assert not d.allowed and ledger.consume(d) is False and ledger.uses == [0]
