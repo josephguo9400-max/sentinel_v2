@@ -1,6 +1,6 @@
 """Train Stage 1 (TF-IDF + logistic regression), export to ONNX, check parity, time it, publish a candidate.
 
-    python -m training.train_stage1 [--version stage1-tfidf-v1]
+    python -m training.train_stage1 [--version stage1-tfidf-v2]
 
 Reads ONLY data/splits/train.jsonl and data/splits/val.jsonl. The frozen test is never opened here.
 Selection, threshold and gray zone are chosen on val. Publishes to a NEW directory
@@ -51,7 +51,8 @@ GRID = {
     "class_weight": [None, "balanced"],
 }
 # sublinear_tf=False on purpose: skl2onnx 1.20.0 exports sublinear_tf as log(1 + tf) while sklearn computes
-# 1 + log(tf); with True, ONNX and sklearn scores differ by up to 0.031 on val (measured, see DATA.md).
+# 1 + log(tf). The size of that mismatch on val is measured on every run (parity_ablations ->
+# evaluation.json "onnx_parity_ablations").
 FIXED = {"min_df": 2, "max_features": 50000, "sublinear_tf": False}
 
 
@@ -70,18 +71,41 @@ def onnx_safe_vocabulary(texts: list[str], ngram_range) -> list[str]:
     """Vocabulary from min_df/max_features, minus n-grams whose unigrams are not in it.
 
     onnxruntime's TfIdfVectorizer matches n-grams over unigram ids, so it can never count a bigram whose
-    words were pruned by min_df; sklearn does count it. Dropping such n-grams (24 of ~50k on this data)
-    makes both sides compute the same features.
+    words were pruned by min_df; sklearn does count it. Dropping such n-grams makes both sides compute the
+    same features; how many are dropped is recorded in evaluation.json (onnx_parity_ablations).
     """
     v = TfidfVectorizer(lowercase=False, token_pattern=TOKEN_PATTERN_PY, ngram_range=ngram_range, **FIXED).fit(texts)
     vocab = set(v.vocabulary_)
     return sorted(w for w in vocab if " " not in w or all(p in vocab for p in w.split(" ")))
 
 
-def fit_pipeline(texts: list[str], y, ngram_range, C, class_weight) -> Pipeline:
-    """texts must already be ascii_lower()ed."""
-    vocab = onnx_safe_vocabulary(texts, ngram_range)
-    return make_pipeline(ngram_range, C, class_weight, vocabulary=vocab).fit(texts, y)
+def fit_pipeline(texts: list[str], y, ngram_range, C, class_weight, sublinear_tf: bool = False,
+                 onnx_safe: bool = True) -> Pipeline:
+    """texts must already be ascii_lower()ed. The non-default flags exist only for parity_ablations."""
+    if onnx_safe:
+        vocab = onnx_safe_vocabulary(texts, ngram_range)
+    else:
+        vocab = sorted(TfidfVectorizer(lowercase=False, token_pattern=TOKEN_PATTERN_PY, ngram_range=ngram_range,
+                                       **FIXED).fit(texts).vocabulary_)
+    pipe = make_pipeline(ngram_range, C, class_weight, vocabulary=vocab)
+    pipe.named_steps["tfidf"].sublinear_tf = sublinear_tf
+    return pipe.fit(texts, y)
+
+
+def parity_ablations(Xtr_l: list[str], ytr, Xva: list[str], best: dict) -> dict:
+    """Why the two parity fixes exist, measured on val with the selected hyperparameters: max |sklearn - ONNX|
+    on whole-text scores when each fix is undone (one at a time)."""
+    ng = tuple(best["ngram_range"])
+    full = TfidfVectorizer(lowercase=False, token_pattern=TOKEN_PATTERN_PY, ngram_range=ng, **FIXED).fit(Xtr_l)
+    safe = onnx_safe_vocabulary(Xtr_l, ng)
+    out = {"n_val": len(Xva), "vocabulary_before_onnx_safe_filter": len(full.vocabulary_),
+           "ngrams_dropped_by_onnx_safe_filter": len(full.vocabulary_) - len(safe), "variants": {}}
+    for name, kw in [("sublinear_tf=True", {"sublinear_tf": True}),
+                     ("without_onnx_safe_vocabulary", {"onnx_safe": False})]:
+        pipe = fit_pipeline(Xtr_l, ytr, ng, best["C"], best["class_weight"], **kw)
+        d = np.abs(sk_proba(pipe, Xva) - Stage1Onnx.from_bytes(export_onnx(pipe)).proba_raw(Xva))
+        out["variants"][name] = {"max_abs_diff_whole_text": float(d.max()), "n_diff_over_1e-4": int((d > 1e-4).sum())}
+    return out
 
 
 def sk_proba(pipe: Pipeline, texts: list[str]) -> np.ndarray:
@@ -198,7 +222,9 @@ def cpu_model() -> str:
 
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--version", default="stage1-tfidf-v1")
+    ap.add_argument("--version", default="stage1-tfidf-v2")
+    ap.add_argument("--latency-conditions", default="shared host; other CPU-heavy jobs (load tests) may have "
+                    "been running at the same time; not a benchmark")
     ap.add_argument("--splits-dir", type=Path, default=SPLITS_DIR)
     ap.add_argument("--out-root", type=Path, default=CANDIDATES)
     a = ap.parse_args(argv)
@@ -241,15 +267,21 @@ def main(argv=None) -> int:
     raw_ox = scorer.proba_raw(Xva)
     s_ox = np.array([scorer.score(t)["score"] for t in Xva])
     d_raw, d_chunk = np.abs(raw_sk - raw_ox), np.abs(s_sk - s_ox)
-    flips = int(((s_sk >= thr["threshold"]) != (s_ox >= thr["threshold"])).sum())
+    flip_mask = (s_sk >= thr["threshold"]) != (s_ox >= thr["threshold"])
+    flips = int(flip_mask.sum())
     parity = {"n": len(Xva), "max_abs_diff_whole_text": float(d_raw.max()), "max_abs_diff_chunked": float(d_chunk.max()),
               "mean_abs_diff_chunked": float(d_chunk.mean()), "decision_flips_at_threshold": flips,
+              "flipped_items_abs_distance_to_threshold_sklearn": sorted(
+                  float(abs(x - thr["threshold"])) for x in s_sk[flip_mask]),
+              "min_abs_distance_to_threshold_sklearn": float(np.abs(s_sk - thr["threshold"]).min()),
               "note": "sklearn in float64 on ascii_lower(text) vs onnxruntime float32 graph with "
                       "StringNormalizer(LOWER, locale=C) + RE2 Tokenizer"}
     print("parity", parity)
     if parity["max_abs_diff_chunked"] > 1e-4:
         print("ONNX parity failed", file=sys.stderr)
         return 3
+    ablations = parity_ablations(Xtr_l, ytr, Xva, best)
+    print("parity ablations", ablations)
 
     # 4. publish to a temp dir, then atomically rename to the immutable version directory
     a.out_root.mkdir(parents=True, exist_ok=True)
@@ -282,6 +314,7 @@ def main(argv=None) -> int:
     # latency is measured on the published files (sha256-verified load path)
     lat = measure_latency(Stage1Onnx(tmp), Xva)
     lat["conditions"]["cpu"] = cpu_model()
+    lat["conditions"]["host_load"] = a.latency_conditions
     evaluation = {
         "detector_version": a.version,
         "data": {"train": {"n": len(train), "sha256": splits_manifest["splits"]["train"]["sha256"]},
@@ -303,6 +336,7 @@ def main(argv=None) -> int:
                                     "boundary; provisional, owner may override in the routing config",
         "timeout_ms_rationale": "p99 single-item latency on val is far below 50 ms on this CPU (see latency)",
         "onnx_parity_val": parity,
+        "onnx_parity_ablations": ablations,
         "latency": lat,
         "val_metrics_note": "precision/recall/FPR with CIs are produced by training.eval_harness from this artifact",
     }

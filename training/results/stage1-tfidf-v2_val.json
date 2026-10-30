@@ -1,16 +1,16 @@
 {
   "split": "val",
-  "split_sha256": "47263c60ea42b20b3c916e7d7afd9abc5891514556676f3c2e2c157791a10028",
+  "split_sha256": "d84853ecc84cc87e50ef28ffa88a72ae7a7959049d9aec8f3a4ea01388ed7f05",
   "backend": {
     "backend": "local_stage1_onnx",
-    "artifact_dir": "artifacts/candidates/stage1-tfidf-v1",
+    "artifact_dir": "artifacts/candidates/stage1-tfidf-v2",
     "detector_id": "stage1-tfidf-lr",
-    "detector_version": "stage1-tfidf-v1",
-    "sha256": "9d1d59a3d5b9953a1cf6977ce60bf8586e5036df6f003678dc2274dfebc840c4",
-    "threshold": 0.440418,
+    "detector_version": "stage1-tfidf-v2",
+    "sha256": "2a5df39a27e300b0a74d0f9565d4fee13e9862c2afa79fcc2af26e205f4b6af3",
+    "threshold": 0.505068,
     "gray_zone": [
       0.282715,
-      0.818603
+      0.764614
     ],
     "decision_rule": "score >= threshold (Stage 1 alone; gray zone is reported, not escalated)"
   },
@@ -23,8 +23,14 @@
     "python": "3.13.18",
     "machine": "x86_64"
   },
-  "command": "python -m training.eval_harness --backend local --artifact artifacts/candidates/stage1-tfidf-v1 --split val --out training/results/stage1-tfidf-v1_val.json",
+  "command": "python -m training.eval_harness --backend local --artifact artifacts/candidates/stage1-tfidf-v2 --split val --out training/results/stage1-tfidf-v2_val.json --latency-conditions local ONNX, sequential, one text per call; shared 2-core host where other agents' CPU-heavy load tests may have been running; not a benchmark",
+  "latency_conditions": "local ONNX, sequential, one text per call; shared 2-core host where other agents' CPU-heavy load tests may have been running; not a benchmark",
+  "complete": true,
+  "aborted": null,
   "n_items": 3214,
+  "n_processed": 3214,
+  "n_model_predictions": 3214,
+  "n_policy_decisions": 0,
   "n_errors": 0,
   "errors": {},
   "slices": {
@@ -33,38 +39,38 @@
       "positives": 2240,
       "negatives": 974,
       "confusion": {
-        "tp": 2207,
-        "fp": 67,
-        "fn": 33,
-        "tn": 907
+        "tp": 2194,
+        "fp": 51,
+        "fn": 46,
+        "tn": 923
       },
       "precision": {
-        "value": 0.9705364995602462,
-        "numerator": 2207,
-        "denominator": 2274,
+        "value": 0.97728285077951,
+        "numerator": 2194,
+        "denominator": 2245,
         "ci95": [
-          0.9627533776287411,
-          0.9767325517861802
+          0.9702555972331507,
+          0.9826795203557087
         ],
         "ci_method": "wilson"
       },
       "recall": {
-        "value": 0.9852678571428571,
-        "numerator": 2207,
+        "value": 0.9794642857142857,
+        "numerator": 2194,
         "denominator": 2240,
         "ci95": [
-          0.9793833595311796,
-          0.9894907966414224
+          0.9727181601307391,
+          0.9845687246248951
         ],
         "ci_method": "wilson"
       },
       "fpr": {
-        "value": 0.06878850102669405,
-        "numerator": 67,
+        "value": 0.052361396303901436,
+        "numerator": 51,
         "denominator": 974,
         "ci95": [
-          0.054528936956362184,
-          0.0864361014732162
+          0.0400478534509444,
+          0.06819204358547507
         ],
         "ci_method": "wilson"
       },
@@ -72,12 +78,20 @@
         "recall": "OK"
       },
       "stage1_zones": {
-        "low:label=0": 853,
+        "low:label=0": 854,
         "low:label=1": 22,
-        "gray:label=0": 111,
-        "gray:label=1": 131,
+        "gray:label=0": 110,
+        "gray:label=1": 99,
         "high:label=0": 10,
-        "high:label=1": 2087
+        "high:label=1": 2119
+      },
+      "n_items": 3214,
+      "n_errors": 0,
+      "policy_decisions": {
+        "n": 0,
+        "by_status": {},
+        "by_policy_applied": {},
+        "by_decision_and_label": {}
       }
     },
     "benign_hard": {
@@ -86,17 +100,17 @@
       "negatives": 92,
       "confusion": {
         "tp": 0,
-        "fp": 31,
+        "fp": 21,
         "fn": 0,
-        "tn": 61
+        "tn": 71
       },
       "precision": {
         "value": 0.0,
         "numerator": 0,
-        "denominator": 31,
+        "denominator": 21,
         "ci95": [
           0.0,
-          0.11025539546043596
+          0.154639018924847
         ],
         "ci_method": "wilson"
       },
@@ -108,12 +122,12 @@
         "ci_method": "wilson"
       },
       "fpr": {
-        "value": 0.33695652173913043,
-        "numerator": 31,
+        "value": 0.22826086956521738,
+        "numerator": 21,
         "denominator": 92,
         "ci95": [
-          0.24863604579205323,
-          0.43834701593151904
+          0.15442192005212033,
+          0.3238831828205001
         ],
         "ci_method": "wilson"
       },
@@ -121,9 +135,17 @@
         "fpr": "INSUFFICIENT_EVIDENCE"
       },
       "stage1_zones": {
-        "low:label=0": 49,
-        "gray:label=0": 36,
-        "high:label=0": 7
+        "low:label=0": 50,
+        "gray:label=0": 37,
+        "high:label=0": 5
+      },
+      "n_items": 92,
+      "n_errors": 0,
+      "policy_decisions": {
+        "n": 0,
+        "by_status": {},
+        "by_policy_applied": {},
+        "by_decision_and_label": {}
       }
     },
     "benign_hard_family=calendar_ask": {
@@ -132,15 +154,18 @@
       "negatives": 18,
       "confusion": {
         "tp": 0,
-        "fp": 0,
+        "fp": 1,
         "fn": 0,
-        "tn": 18
+        "tn": 17
       },
       "precision": {
-        "value": null,
+        "value": 0.0,
         "numerator": 0,
-        "denominator": 0,
-        "ci95": null,
+        "denominator": 1,
+        "ci95": [
+          0.0,
+          0.7934506856227626
+        ],
         "ci_method": "wilson"
       },
       "recall": {
@@ -151,12 +176,12 @@
         "ci_method": "wilson"
       },
       "fpr": {
-        "value": 0.0,
-        "numerator": 0,
+        "value": 0.05555555555555555,
+        "numerator": 1,
         "denominator": 18,
         "ci95": [
-          0.0,
-          0.17587922364665765
+          0.009875190978303097,
+          0.25757300781872594
         ],
         "ci_method": "wilson"
       },
@@ -164,8 +189,16 @@
         "fpr": "INSUFFICIENT_EVIDENCE"
       },
       "stage1_zones": {
-        "low:label=0": 16,
-        "gray:label=0": 2
+        "low:label=0": 11,
+        "gray:label=0": 7
+      },
+      "n_items": 18,
+      "n_errors": 0,
+      "policy_decisions": {
+        "n": 0,
+        "by_status": {},
+        "by_policy_applied": {},
+        "by_decision_and_label": {}
       }
     },
     "benign_hard_family=forwarding_request": {
@@ -174,15 +207,18 @@
       "negatives": 18,
       "confusion": {
         "tp": 0,
-        "fp": 0,
+        "fp": 1,
         "fn": 0,
-        "tn": 18
+        "tn": 17
       },
       "precision": {
-        "value": null,
+        "value": 0.0,
         "numerator": 0,
-        "denominator": 0,
-        "ci95": null,
+        "denominator": 1,
+        "ci95": [
+          0.0,
+          0.7934506856227626
+        ],
         "ci_method": "wilson"
       },
       "recall": {
@@ -193,12 +229,12 @@
         "ci_method": "wilson"
       },
       "fpr": {
-        "value": 0.0,
-        "numerator": 0,
+        "value": 0.05555555555555555,
+        "numerator": 1,
         "denominator": 18,
         "ci95": [
-          0.0,
-          0.17587922364665765
+          0.009875190978303097,
+          0.25757300781872594
         ],
         "ci_method": "wilson"
       },
@@ -208,6 +244,14 @@
       "stage1_zones": {
         "low:label=0": 17,
         "gray:label=0": 1
+      },
+      "n_items": 18,
+      "n_errors": 0,
+      "policy_decisions": {
+        "n": 0,
+        "by_status": {},
+        "by_policy_applied": {},
+        "by_decision_and_label": {}
       }
     },
     "benign_hard_family=it_notice": {
@@ -216,17 +260,17 @@
       "negatives": 18,
       "confusion": {
         "tp": 0,
-        "fp": 13,
+        "fp": 14,
         "fn": 0,
-        "tn": 5
+        "tn": 4
       },
       "precision": {
         "value": 0.0,
         "numerator": 0,
-        "denominator": 13,
+        "denominator": 14,
         "ci95": [
-          0.0,
-          0.22809537235419838
+          1.3877787807814457e-17,
+          0.2153108027376358
         ],
         "ci_method": "wilson"
       },
@@ -238,12 +282,12 @@
         "ci_method": "wilson"
       },
       "fpr": {
-        "value": 0.7222222222222222,
-        "numerator": 13,
+        "value": 0.7777777777777778,
+        "numerator": 14,
         "denominator": 18,
         "ci95": [
-          0.4912734343970254,
-          0.8750024662044601
+          0.5478541568378739,
+          0.9099907189139831
         ],
         "ci_method": "wilson"
       },
@@ -251,8 +295,17 @@
         "fpr": "INSUFFICIENT_EVIDENCE"
       },
       "stage1_zones": {
-        "gray:label=0": 17,
-        "high:label=0": 1
+        "low:label=0": 1,
+        "gray:label=0": 13,
+        "high:label=0": 4
+      },
+      "n_items": 18,
+      "n_errors": 0,
+      "policy_decisions": {
+        "n": 0,
+        "by_status": {},
+        "by_policy_applied": {},
+        "by_decision_and_label": {}
       }
     },
     "benign_hard_family=log_digest_long": {
@@ -294,6 +347,14 @@
       },
       "stage1_zones": {
         "low:label=0": 10
+      },
+      "n_items": 10,
+      "n_errors": 0,
+      "policy_decisions": {
+        "n": 0,
+        "by_status": {},
+        "by_policy_applied": {},
+        "by_decision_and_label": {}
       }
     },
     "benign_hard_family=newsletter_long": {
@@ -302,18 +363,15 @@
       "negatives": 10,
       "confusion": {
         "tp": 0,
-        "fp": 1,
+        "fp": 0,
         "fn": 0,
-        "tn": 9
+        "tn": 10
       },
       "precision": {
-        "value": 0.0,
+        "value": null,
         "numerator": 0,
-        "denominator": 1,
-        "ci95": [
-          0.0,
-          0.7934506856227626
-        ],
+        "denominator": 0,
+        "ci95": null,
         "ci_method": "wilson"
       },
       "recall": {
@@ -324,12 +382,12 @@
         "ci_method": "wilson"
       },
       "fpr": {
-        "value": 0.1,
-        "numerator": 1,
+        "value": 0.0,
+        "numerator": 0,
         "denominator": 10,
         "ci95": [
-          0.017876213095072896,
-          0.4041500267952385
+          0.0,
+          0.2775327998628892
         ],
         "ci_method": "wilson"
       },
@@ -337,8 +395,15 @@
         "fpr": "INSUFFICIENT_EVIDENCE"
       },
       "stage1_zones": {
-        "low:label=0": 6,
-        "gray:label=0": 4
+        "low:label=0": 10
+      },
+      "n_items": 10,
+      "n_errors": 0,
+      "policy_decisions": {
+        "n": 0,
+        "by_status": {},
+        "by_policy_applied": {},
+        "by_decision_and_label": {}
       }
     },
     "benign_hard_family=policy_reminder": {
@@ -347,17 +412,17 @@
       "negatives": 18,
       "confusion": {
         "tp": 0,
-        "fp": 17,
+        "fp": 5,
         "fn": 0,
-        "tn": 1
+        "tn": 13
       },
       "precision": {
         "value": 0.0,
         "numerator": 0,
-        "denominator": 17,
+        "denominator": 5,
         "ci95": [
           0.0,
-          0.1843181350088518
+          0.43448246478317476
         ],
         "ci_method": "wilson"
       },
@@ -369,12 +434,12 @@
         "ci_method": "wilson"
       },
       "fpr": {
-        "value": 0.9444444444444444,
-        "numerator": 17,
+        "value": 0.2777777777777778,
+        "numerator": 5,
         "denominator": 18,
         "ci95": [
-          0.7424269921812741,
-          0.990124809021697
+          0.12499753379553993,
+          0.5087265656029746
         ],
         "ci_method": "wilson"
       },
@@ -382,8 +447,17 @@
         "fpr": "INSUFFICIENT_EVIDENCE"
       },
       "stage1_zones": {
-        "gray:label=0": 12,
-        "high:label=0": 6
+        "low:label=0": 1,
+        "gray:label=0": 16,
+        "high:label=0": 1
+      },
+      "n_items": 18,
+      "n_errors": 0,
+      "policy_decisions": {
+        "n": 0,
+        "by_status": {},
+        "by_policy_applied": {},
+        "by_decision_and_label": {}
       }
     },
     "lang=en": {
@@ -391,38 +465,38 @@
       "positives": 2216,
       "negatives": 934,
       "confusion": {
-        "tp": 2190,
-        "fp": 66,
-        "fn": 26,
-        "tn": 868
+        "tp": 2178,
+        "fp": 50,
+        "fn": 38,
+        "tn": 884
       },
       "precision": {
-        "value": 0.9707446808510638,
-        "numerator": 2190,
-        "denominator": 2256,
+        "value": 0.9775583482944344,
+        "numerator": 2178,
+        "denominator": 2228,
         "ci95": [
-          0.9629504756036874,
-          0.9769384673615488
+          0.9705367347222644,
+          0.9829360093159414
         ],
         "ci_method": "wilson"
       },
       "recall": {
-        "value": 0.9882671480144405,
-        "numerator": 2190,
+        "value": 0.9828519855595668,
+        "numerator": 2178,
         "denominator": 2216,
         "ci95": [
-          0.9828637381086163,
-          0.9919806551255022
+          0.9765515951493788,
+          0.9874812151653223
         ],
         "ci_method": "wilson"
       },
       "fpr": {
-        "value": 0.07066381156316917,
-        "numerator": 66,
+        "value": 0.05353319057815846,
+        "numerator": 50,
         "denominator": 934,
         "ci95": [
-          0.0559274627243571,
-          0.08891733758070773
+          0.04084019721250998,
+          0.06988369736906616
         ],
         "ci_method": "wilson"
       },
@@ -430,12 +504,20 @@
         "recall": "OK"
       },
       "stage1_zones": {
-        "low:label=0": 814,
+        "low:label=0": 815,
         "low:label=1": 17,
-        "gray:label=0": 110,
-        "gray:label=1": 123,
+        "gray:label=0": 109,
+        "gray:label=1": 93,
         "high:label=0": 10,
-        "high:label=1": 2076
+        "high:label=1": 2106
+      },
+      "n_items": 3150,
+      "n_errors": 0,
+      "policy_decisions": {
+        "n": 0,
+        "by_status": {},
+        "by_policy_applied": {},
+        "by_decision_and_label": {}
       }
     },
     "lang=non_en": {
@@ -443,28 +525,28 @@
       "positives": 24,
       "negatives": 40,
       "confusion": {
-        "tp": 17,
+        "tp": 16,
         "fp": 1,
-        "fn": 7,
+        "fn": 8,
         "tn": 39
       },
       "precision": {
-        "value": 0.9444444444444444,
-        "numerator": 17,
-        "denominator": 18,
+        "value": 0.9411764705882353,
+        "numerator": 16,
+        "denominator": 17,
         "ci95": [
-          0.7424269921812741,
-          0.990124809021697
+          0.7301796936242461,
+          0.9895395990150025
         ],
         "ci_method": "wilson"
       },
       "recall": {
-        "value": 0.7083333333333334,
-        "numerator": 17,
+        "value": 0.6666666666666666,
+        "numerator": 16,
         "denominator": 24,
         "ci95": [
-          0.5083230633550337,
-          0.8508535180303913
+          0.4670631683813174,
+          0.8202780967270225
         ],
         "ci_method": "wilson"
       },
@@ -485,8 +567,16 @@
         "low:label=0": 39,
         "low:label=1": 5,
         "gray:label=0": 1,
-        "gray:label=1": 8,
-        "high:label=1": 11
+        "gray:label=1": 6,
+        "high:label=1": 13
+      },
+      "n_items": 64,
+      "n_errors": 0,
+      "policy_decisions": {
+        "n": 0,
+        "by_status": {},
+        "by_policy_applied": {},
+        "by_decision_and_label": {}
       }
     },
     "source=benign_hard": {
@@ -495,17 +585,17 @@
       "negatives": 92,
       "confusion": {
         "tp": 0,
-        "fp": 31,
+        "fp": 21,
         "fn": 0,
-        "tn": 61
+        "tn": 71
       },
       "precision": {
         "value": 0.0,
         "numerator": 0,
-        "denominator": 31,
+        "denominator": 21,
         "ci95": [
           0.0,
-          0.11025539546043596
+          0.154639018924847
         ],
         "ci_method": "wilson"
       },
@@ -517,20 +607,28 @@
         "ci_method": "wilson"
       },
       "fpr": {
-        "value": 0.33695652173913043,
-        "numerator": 31,
+        "value": 0.22826086956521738,
+        "numerator": 21,
         "denominator": 92,
         "ci95": [
-          0.24863604579205323,
-          0.43834701593151904
+          0.15442192005212033,
+          0.3238831828205001
         ],
         "ci_method": "wilson"
       },
       "evidence": {},
       "stage1_zones": {
-        "low:label=0": 49,
-        "gray:label=0": 36,
-        "high:label=0": 7
+        "low:label=0": 50,
+        "gray:label=0": 37,
+        "high:label=0": 5
+      },
+      "n_items": 92,
+      "n_errors": 0,
+      "policy_decisions": {
+        "n": 0,
+        "by_status": {},
+        "by_policy_applied": {},
+        "by_decision_and_label": {}
       }
     },
     "source=deepset": {
@@ -538,38 +636,38 @@
       "positives": 58,
       "negatives": 54,
       "confusion": {
-        "tp": 39,
-        "fp": 3,
-        "fn": 19,
-        "tn": 51
+        "tp": 37,
+        "fp": 2,
+        "fn": 21,
+        "tn": 52
       },
       "precision": {
-        "value": 0.9285714285714286,
-        "numerator": 39,
-        "denominator": 42,
+        "value": 0.9487179487179487,
+        "numerator": 37,
+        "denominator": 39,
         "ci95": [
-          0.8099057319884169,
-          0.9754095901266941
+          0.8311435995238639,
+          0.9858220445847259
         ],
         "ci_method": "wilson"
       },
       "recall": {
-        "value": 0.6724137931034483,
-        "numerator": 39,
+        "value": 0.6379310344827587,
+        "numerator": 37,
         "denominator": 58,
         "ci95": [
-          0.544240546784708,
-          0.7791670891507392
+          0.509275237048117,
+          0.7494508717002409
         ],
         "ci_method": "wilson"
       },
       "fpr": {
-        "value": 0.05555555555555555,
-        "numerator": 3,
+        "value": 0.037037037037037035,
+        "numerator": 2,
         "denominator": 54,
         "ci95": [
-          0.0190732684546909,
-          0.15107214318166143
+          0.01021636794844559,
+          0.12535176917275476
         ],
         "ci_method": "wilson"
       },
@@ -580,8 +678,16 @@
         "low:label=0": 51,
         "low:label=1": 14,
         "gray:label=0": 3,
-        "gray:label=1": 24,
-        "high:label=1": 20
+        "gray:label=1": 17,
+        "high:label=1": 27
+      },
+      "n_items": 112,
+      "n_errors": 0,
+      "policy_decisions": {
+        "n": 0,
+        "by_status": {},
+        "by_policy_applied": {},
+        "by_decision_and_label": {}
       }
     },
     "source=jackhhao": {
@@ -590,17 +696,17 @@
       "negatives": 276,
       "confusion": {
         "tp": 99,
-        "fp": 13,
+        "fp": 10,
         "fn": 3,
-        "tn": 263
+        "tn": 266
       },
       "precision": {
-        "value": 0.8839285714285714,
+        "value": 0.908256880733945,
         "numerator": 99,
-        "denominator": 112,
+        "denominator": 109,
         "ci95": [
-          0.8114943070899338,
-          0.9308996585550914
+          0.8393146396581206,
+          0.9494025652605222
         ],
         "ci_method": "wilson"
       },
@@ -615,12 +721,12 @@
         "ci_method": "wilson"
       },
       "fpr": {
-        "value": 0.04710144927536232,
-        "numerator": 13,
+        "value": 0.036231884057971016,
+        "numerator": 10,
         "denominator": 276,
         "ci95": [
-          0.027730006199251242,
-          0.07890701229847881
+          0.019797413999800718,
+          0.06539889294187486
         ],
         "ci_method": "wilson"
       },
@@ -630,10 +736,18 @@
       "stage1_zones": {
         "low:label=0": 247,
         "low:label=1": 3,
-        "gray:label=0": 27,
-        "gray:label=1": 15,
-        "high:label=0": 2,
-        "high:label=1": 84
+        "gray:label=0": 25,
+        "gray:label=1": 12,
+        "high:label=0": 4,
+        "high:label=1": 87
+      },
+      "n_items": 378,
+      "n_errors": 0,
+      "policy_decisions": {
+        "n": 0,
+        "by_status": {},
+        "by_policy_applied": {},
+        "by_decision_and_label": {}
       }
     },
     "source=spml": {
@@ -641,38 +755,38 @@
       "positives": 2080,
       "negatives": 552,
       "confusion": {
-        "tp": 2069,
-        "fp": 20,
-        "fn": 11,
-        "tn": 532
+        "tp": 2058,
+        "fp": 18,
+        "fn": 22,
+        "tn": 534
       },
       "precision": {
-        "value": 0.990426041168023,
-        "numerator": 2069,
-        "denominator": 2089,
+        "value": 0.9913294797687862,
+        "numerator": 2058,
+        "denominator": 2076,
         "ci95": [
-          0.9852579123350074,
-          0.9937937933563552
+          0.9863355442891171,
+          0.9945084480970694
         ],
         "ci_method": "wilson"
       },
       "recall": {
-        "value": 0.9947115384615385,
-        "numerator": 2069,
+        "value": 0.989423076923077,
+        "numerator": 2058,
         "denominator": 2080,
         "ci95": [
-          0.9905546952819828,
-          0.9970444290605578
+          0.9840368982466836,
+          0.9930048010542945
         ],
         "ci_method": "wilson"
       },
       "fpr": {
-        "value": 0.036231884057971016,
-        "numerator": 20,
+        "value": 0.03260869565217391,
+        "numerator": 18,
         "denominator": 552,
         "ci95": [
-          0.023575068213689737,
-          0.05529896704397301
+          0.020724430887072834,
+          0.0509533077710404
         ],
         "ci_method": "wilson"
       },
@@ -683,9 +797,17 @@
         "low:label=0": 506,
         "low:label=1": 5,
         "gray:label=0": 45,
-        "gray:label=1": 92,
+        "gray:label=1": 70,
         "high:label=0": 1,
-        "high:label=1": 1983
+        "high:label=1": 2005
+      },
+      "n_items": 2632,
+      "n_errors": 0,
+      "policy_decisions": {
+        "n": 0,
+        "by_status": {},
+        "by_policy_applied": {},
+        "by_decision_and_label": {}
       }
     },
     "stage2_overlap=confirmed": {
@@ -694,17 +816,17 @@
       "negatives": 276,
       "confusion": {
         "tp": 99,
-        "fp": 13,
+        "fp": 10,
         "fn": 3,
-        "tn": 263
+        "tn": 266
       },
       "precision": {
-        "value": 0.8839285714285714,
+        "value": 0.908256880733945,
         "numerator": 99,
-        "denominator": 112,
+        "denominator": 109,
         "ci95": [
-          0.8114943070899338,
-          0.9308996585550914
+          0.8393146396581206,
+          0.9494025652605222
         ],
         "ci_method": "wilson"
       },
@@ -719,12 +841,12 @@
         "ci_method": "wilson"
       },
       "fpr": {
-        "value": 0.04710144927536232,
-        "numerator": 13,
+        "value": 0.036231884057971016,
+        "numerator": 10,
         "denominator": 276,
         "ci95": [
-          0.027730006199251242,
-          0.07890701229847881
+          0.019797413999800718,
+          0.06539889294187486
         ],
         "ci_method": "wilson"
       },
@@ -734,10 +856,18 @@
       "stage1_zones": {
         "low:label=0": 247,
         "low:label=1": 3,
-        "gray:label=0": 27,
-        "gray:label=1": 15,
-        "high:label=0": 2,
-        "high:label=1": 84
+        "gray:label=0": 25,
+        "gray:label=1": 12,
+        "high:label=0": 4,
+        "high:label=1": 87
+      },
+      "n_items": 378,
+      "n_errors": 0,
+      "policy_decisions": {
+        "n": 0,
+        "by_status": {},
+        "by_policy_applied": {},
+        "by_decision_and_label": {}
       }
     },
     "stage2_overlap=none_known": {
@@ -745,38 +875,38 @@
       "positives": 2080,
       "negatives": 552,
       "confusion": {
-        "tp": 2069,
-        "fp": 20,
-        "fn": 11,
-        "tn": 532
+        "tp": 2058,
+        "fp": 18,
+        "fn": 22,
+        "tn": 534
       },
       "precision": {
-        "value": 0.990426041168023,
-        "numerator": 2069,
-        "denominator": 2089,
+        "value": 0.9913294797687862,
+        "numerator": 2058,
+        "denominator": 2076,
         "ci95": [
-          0.9852579123350074,
-          0.9937937933563552
+          0.9863355442891171,
+          0.9945084480970694
         ],
         "ci_method": "wilson"
       },
       "recall": {
-        "value": 0.9947115384615385,
-        "numerator": 2069,
+        "value": 0.989423076923077,
+        "numerator": 2058,
         "denominator": 2080,
         "ci95": [
-          0.9905546952819828,
-          0.9970444290605578
+          0.9840368982466836,
+          0.9930048010542945
         ],
         "ci_method": "wilson"
       },
       "fpr": {
-        "value": 0.036231884057971016,
-        "numerator": 20,
+        "value": 0.03260869565217391,
+        "numerator": 18,
         "denominator": 552,
         "ci95": [
-          0.023575068213689737,
-          0.05529896704397301
+          0.020724430887072834,
+          0.0509533077710404
         ],
         "ci_method": "wilson"
       },
@@ -787,9 +917,17 @@
         "low:label=0": 506,
         "low:label=1": 5,
         "gray:label=0": 45,
-        "gray:label=1": 92,
+        "gray:label=1": 70,
         "high:label=0": 1,
-        "high:label=1": 1983
+        "high:label=1": 2005
+      },
+      "n_items": 2632,
+      "n_errors": 0,
+      "policy_decisions": {
+        "n": 0,
+        "by_status": {},
+        "by_policy_applied": {},
+        "by_decision_and_label": {}
       }
     },
     "stage2_overlap=none_synthetic": {
@@ -798,17 +936,17 @@
       "negatives": 92,
       "confusion": {
         "tp": 0,
-        "fp": 31,
+        "fp": 21,
         "fn": 0,
-        "tn": 61
+        "tn": 71
       },
       "precision": {
         "value": 0.0,
         "numerator": 0,
-        "denominator": 31,
+        "denominator": 21,
         "ci95": [
           0.0,
-          0.11025539546043596
+          0.154639018924847
         ],
         "ci_method": "wilson"
       },
@@ -820,20 +958,28 @@
         "ci_method": "wilson"
       },
       "fpr": {
-        "value": 0.33695652173913043,
-        "numerator": 31,
+        "value": 0.22826086956521738,
+        "numerator": 21,
         "denominator": 92,
         "ci95": [
-          0.24863604579205323,
-          0.43834701593151904
+          0.15442192005212033,
+          0.3238831828205001
         ],
         "ci_method": "wilson"
       },
       "evidence": {},
       "stage1_zones": {
-        "low:label=0": 49,
-        "gray:label=0": 36,
-        "high:label=0": 7
+        "low:label=0": 50,
+        "gray:label=0": 37,
+        "high:label=0": 5
+      },
+      "n_items": 92,
+      "n_errors": 0,
+      "policy_decisions": {
+        "n": 0,
+        "by_status": {},
+        "by_policy_applied": {},
+        "by_decision_and_label": {}
       }
     },
     "stage2_overlap=suspected": {
@@ -841,38 +987,38 @@
       "positives": 58,
       "negatives": 54,
       "confusion": {
-        "tp": 39,
-        "fp": 3,
-        "fn": 19,
-        "tn": 51
+        "tp": 37,
+        "fp": 2,
+        "fn": 21,
+        "tn": 52
       },
       "precision": {
-        "value": 0.9285714285714286,
-        "numerator": 39,
-        "denominator": 42,
+        "value": 0.9487179487179487,
+        "numerator": 37,
+        "denominator": 39,
         "ci95": [
-          0.8099057319884169,
-          0.9754095901266941
+          0.8311435995238639,
+          0.9858220445847259
         ],
         "ci_method": "wilson"
       },
       "recall": {
-        "value": 0.6724137931034483,
-        "numerator": 39,
+        "value": 0.6379310344827587,
+        "numerator": 37,
         "denominator": 58,
         "ci95": [
-          0.544240546784708,
-          0.7791670891507392
+          0.509275237048117,
+          0.7494508717002409
         ],
         "ci_method": "wilson"
       },
       "fpr": {
-        "value": 0.05555555555555555,
-        "numerator": 3,
+        "value": 0.037037037037037035,
+        "numerator": 2,
         "denominator": 54,
         "ci95": [
-          0.0190732684546909,
-          0.15107214318166143
+          0.01021636794844559,
+          0.12535176917275476
         ],
         "ci_method": "wilson"
       },
@@ -883,15 +1029,23 @@
         "low:label=0": 51,
         "low:label=1": 14,
         "gray:label=0": 3,
-        "gray:label=1": 24,
-        "high:label=1": 20
+        "gray:label=1": 17,
+        "high:label=1": 27
+      },
+      "n_items": 112,
+      "n_errors": 0,
+      "policy_decisions": {
+        "n": 0,
+        "by_status": {},
+        "by_policy_applied": {},
+        "by_decision_and_label": {}
       }
     }
   },
   "client_latency_ms": {
     "n": 3214,
-    "p50": 0.23702599992247997,
-    "p95": 0.419873499595269,
-    "p99": 0.7390480396134016
+    "p50": 0.24326000038854545,
+    "p95": 0.4716886499863903,
+    "p99": 1.164081019896909
   }
 }

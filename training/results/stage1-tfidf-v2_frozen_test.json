@@ -1,16 +1,16 @@
 {
   "split": "frozen_test",
-  "split_sha256": "6e98eff17f7482c5a67ff42da3e5e08debc2e9c9a1c76215a7c970f3d2f4a388",
+  "split_sha256": "2a4e011f13250ca65d335bb12939a63f682254a2c6d1566ee78fc7686bb845ba",
   "backend": {
     "backend": "local_stage1_onnx",
-    "artifact_dir": "artifacts/candidates/stage1-tfidf-v1",
+    "artifact_dir": "artifacts/candidates/stage1-tfidf-v2",
     "detector_id": "stage1-tfidf-lr",
-    "detector_version": "stage1-tfidf-v1",
-    "sha256": "9d1d59a3d5b9953a1cf6977ce60bf8586e5036df6f003678dc2274dfebc840c4",
-    "threshold": 0.440418,
+    "detector_version": "stage1-tfidf-v2",
+    "sha256": "2a5df39a27e300b0a74d0f9565d4fee13e9862c2afa79fcc2af26e205f4b6af3",
+    "threshold": 0.505068,
     "gray_zone": [
       0.282715,
-      0.818603
+      0.764614
     ],
     "decision_rule": "score >= threshold (Stage 1 alone; gray zone is reported, not escalated)"
   },
@@ -23,48 +23,54 @@
     "python": "3.13.18",
     "machine": "x86_64"
   },
-  "command": "python -m training.eval_harness --backend local --artifact artifacts/candidates/stage1-tfidf-v1 --split frozen_test --out training/results/stage1-tfidf-v1_frozen_test.json",
-  "n_items": 6274,
+  "command": "python -m training.eval_harness --backend local --artifact artifacts/candidates/stage1-tfidf-v2 --split frozen_test --out training/results/stage1-tfidf-v2_frozen_test.json --latency-conditions local ONNX, sequential, one text per call; shared 2-core host where other agents' CPU-heavy load tests may have been running; not a benchmark",
+  "latency_conditions": "local ONNX, sequential, one text per call; shared 2-core host where other agents' CPU-heavy load tests may have been running; not a benchmark",
+  "complete": true,
+  "aborted": null,
+  "n_items": 6276,
+  "n_processed": 6276,
+  "n_model_predictions": 6276,
+  "n_policy_decisions": 0,
   "n_errors": 0,
   "errors": {},
   "slices": {
     "overall": {
-      "n": 6274,
+      "n": 6276,
       "positives": 5137,
-      "negatives": 1137,
+      "negatives": 1139,
       "confusion": {
-        "tp": 4353,
-        "fp": 123,
-        "fn": 784,
-        "tn": 1014
+        "tp": 4289,
+        "fp": 103,
+        "fn": 848,
+        "tn": 1036
       },
       "precision": {
-        "value": 0.9725201072386059,
-        "numerator": 4353,
-        "denominator": 4476,
+        "value": 0.9765482695810564,
+        "numerator": 4289,
+        "denominator": 4392,
         "ci95": [
-          0.9673106928624182,
-          0.9769191507342201
+          0.9716388360675657,
+          0.980624806562305
         ],
         "ci_method": "wilson"
       },
       "recall": {
-        "value": 0.8473817403153592,
-        "numerator": 4353,
+        "value": 0.834923106871715,
+        "numerator": 4289,
         "denominator": 5137,
         "ci95": [
-          0.8372882763674694,
-          0.8569560469769675
+          0.8245213572382424,
+          0.844824318477142
         ],
         "ci_method": "wilson"
       },
       "fpr": {
-        "value": 0.10817941952506596,
-        "numerator": 123,
-        "denominator": 1137,
+        "value": 0.09043020193151888,
+        "numerator": 103,
+        "denominator": 1139,
         "ci95": [
-          0.09142673391329546,
-          0.1275707936475973
+          0.0751223918622121,
+          0.10849140443568468
         ],
         "ci_method": "wilson"
       },
@@ -72,31 +78,39 @@
         "recall": "OK"
       },
       "stage1_zones": {
-        "low:label=0": 912,
+        "low:label=0": 894,
         "low:label=1": 605,
-        "gray:label=0": 217,
-        "gray:label=1": 644,
-        "high:label=0": 8,
-        "high:label=1": 3888
+        "gray:label=0": 221,
+        "gray:label=1": 552,
+        "high:label=0": 24,
+        "high:label=1": 3980
+      },
+      "n_items": 6276,
+      "n_errors": 0,
+      "policy_decisions": {
+        "n": 0,
+        "by_status": {},
+        "by_policy_applied": {},
+        "by_decision_and_label": {}
       }
     },
     "benign_hard": {
-      "n": 274,
+      "n": 276,
       "positives": 0,
-      "negatives": 274,
+      "negatives": 276,
       "confusion": {
         "tp": 0,
-        "fp": 88,
+        "fp": 78,
         "fn": 0,
-        "tn": 186
+        "tn": 198
       },
       "precision": {
         "value": 0.0,
         "numerator": 0,
-        "denominator": 88,
+        "denominator": 78,
         "ci95": [
           0.0,
-          0.0418270666648922
+          0.04693780971219429
         ],
         "ci_method": "wilson"
       },
@@ -108,23 +122,31 @@
         "ci_method": "wilson"
       },
       "fpr": {
-        "value": 0.32116788321167883,
-        "numerator": 88,
-        "denominator": 274,
+        "value": 0.2826086956521739,
+        "numerator": 78,
+        "denominator": 276,
         "ci95": [
-          0.2686816906892258,
-          0.37859917079212496
+          0.23275363959999526,
+          0.33843212927891514
         ],
         "ci_method": "wilson"
       },
       "evidence": {
         "fpr": "FAIL",
-        "fpr_rule": "Wilson 95% upper bound 0.3786 <= 0.05"
+        "fpr_rule": "Wilson 95% upper bound 0.3384 <= 0.05"
       },
       "stage1_zones": {
-        "low:label=0": 122,
-        "gray:label=0": 145,
-        "high:label=0": 7
+        "low:label=0": 104,
+        "gray:label=0": 154,
+        "high:label=0": 18
+      },
+      "n_items": 276,
+      "n_errors": 0,
+      "policy_decisions": {
+        "n": 0,
+        "by_status": {},
+        "by_policy_applied": {},
+        "by_decision_and_label": {}
       }
     },
     "benign_hard_family=calendar_ask": {
@@ -133,17 +155,17 @@
       "negatives": 54,
       "confusion": {
         "tp": 0,
-        "fp": 13,
+        "fp": 11,
         "fn": 0,
-        "tn": 41
+        "tn": 43
       },
       "precision": {
         "value": 0.0,
         "numerator": 0,
-        "denominator": 13,
+        "denominator": 11,
         "ci95": [
           0.0,
-          0.22809537235419838
+          0.2588329669680317
         ],
         "ci_method": "wilson"
       },
@@ -155,12 +177,12 @@
         "ci_method": "wilson"
       },
       "fpr": {
-        "value": 0.24074074074074073,
-        "numerator": 13,
+        "value": 0.2037037037037037,
+        "numerator": 11,
         "denominator": 54,
         "ci95": [
-          0.14644291495284428,
-          0.36947524183502795
+          0.11774054087421391,
+          0.3290230668833543
         ],
         "ci_method": "wilson"
       },
@@ -168,8 +190,17 @@
         "fpr": "INSUFFICIENT_EVIDENCE"
       },
       "stage1_zones": {
-        "low:label=0": 29,
-        "gray:label=0": 25
+        "low:label=0": 27,
+        "gray:label=0": 24,
+        "high:label=0": 3
+      },
+      "n_items": 54,
+      "n_errors": 0,
+      "policy_decisions": {
+        "n": 0,
+        "by_status": {},
+        "by_policy_applied": {},
+        "by_decision_and_label": {}
       }
     },
     "benign_hard_family=forwarding_request": {
@@ -178,17 +209,17 @@
       "negatives": 54,
       "confusion": {
         "tp": 0,
-        "fp": 22,
+        "fp": 17,
         "fn": 0,
-        "tn": 32
+        "tn": 37
       },
       "precision": {
         "value": 0.0,
         "numerator": 0,
-        "denominator": 22,
+        "denominator": 17,
         "ci95": [
           0.0,
-          0.14865487460862087
+          0.1843181350088518
         ],
         "ci_method": "wilson"
       },
@@ -200,12 +231,12 @@
         "ci_method": "wilson"
       },
       "fpr": {
-        "value": 0.4074074074074074,
-        "numerator": 22,
+        "value": 0.3148148148148148,
+        "numerator": 17,
         "denominator": 54,
         "ci95": [
-          0.2867821208591458,
-          0.5403315065650943
+          0.20679280660052918,
+          0.44743444824795103
         ],
         "ci_method": "wilson"
       },
@@ -213,8 +244,17 @@
         "fpr": "INSUFFICIENT_EVIDENCE"
       },
       "stage1_zones": {
-        "low:label=0": 12,
-        "gray:label=0": 42
+        "low:label=0": 11,
+        "gray:label=0": 40,
+        "high:label=0": 3
+      },
+      "n_items": 54,
+      "n_errors": 0,
+      "policy_decisions": {
+        "n": 0,
+        "by_status": {},
+        "by_policy_applied": {},
+        "by_decision_and_label": {}
       }
     },
     "benign_hard_family=it_notice": {
@@ -258,8 +298,17 @@
         "fpr": "INSUFFICIENT_EVIDENCE"
       },
       "stage1_zones": {
-        "low:label=0": 25,
-        "gray:label=0": 29
+        "low:label=0": 17,
+        "gray:label=0": 36,
+        "high:label=0": 1
+      },
+      "n_items": 54,
+      "n_errors": 0,
+      "policy_decisions": {
+        "n": 0,
+        "by_status": {},
+        "by_policy_applied": {},
+        "by_decision_and_label": {}
       }
     },
     "benign_hard_family=log_digest_long": {
@@ -301,6 +350,14 @@
       },
       "stage1_zones": {
         "low:label=0": 30
+      },
+      "n_items": 30,
+      "n_errors": 0,
+      "policy_decisions": {
+        "n": 0,
+        "by_status": {},
+        "by_policy_applied": {},
+        "by_decision_and_label": {}
       }
     },
     "benign_hard_family=newsletter_long": {
@@ -344,27 +401,35 @@
         "fpr": "INSUFFICIENT_EVIDENCE"
       },
       "stage1_zones": {
-        "low:label=0": 16,
-        "gray:label=0": 14
+        "low:label=0": 11,
+        "gray:label=0": 19
+      },
+      "n_items": 30,
+      "n_errors": 0,
+      "policy_decisions": {
+        "n": 0,
+        "by_status": {},
+        "by_policy_applied": {},
+        "by_decision_and_label": {}
       }
     },
     "benign_hard_family=policy_reminder": {
-      "n": 52,
+      "n": 54,
       "positives": 0,
-      "negatives": 52,
+      "negatives": 54,
       "confusion": {
         "tp": 0,
-        "fp": 33,
+        "fp": 30,
         "fn": 0,
-        "tn": 19
+        "tn": 24
       },
       "precision": {
         "value": 0.0,
         "numerator": 0,
-        "denominator": 33,
+        "denominator": 30,
         "ci95": [
           0.0,
-          0.10426999754245206
+          0.11351339317396876
         ],
         "ci_method": "wilson"
       },
@@ -376,12 +441,12 @@
         "ci_method": "wilson"
       },
       "fpr": {
-        "value": 0.6346153846153846,
-        "numerator": 33,
-        "denominator": 52,
+        "value": 0.5555555555555556,
+        "numerator": 30,
+        "denominator": 54,
         "ci95": [
-          0.49871678132017094,
-          0.7519930012618661
+          0.42375646526775257,
+          0.6799753582777035
         ],
         "ci_method": "wilson"
       },
@@ -389,48 +454,56 @@
         "fpr": "INSUFFICIENT_EVIDENCE"
       },
       "stage1_zones": {
-        "low:label=0": 10,
+        "low:label=0": 8,
         "gray:label=0": 35,
-        "high:label=0": 7
+        "high:label=0": 11
+      },
+      "n_items": 54,
+      "n_errors": 0,
+      "policy_decisions": {
+        "n": 0,
+        "by_status": {},
+        "by_policy_applied": {},
+        "by_decision_and_label": {}
       }
     },
     "lang=en": {
-      "n": 5591,
+      "n": 5593,
       "positives": 4455,
-      "negatives": 1136,
+      "negatives": 1138,
       "confusion": {
-        "tp": 4213,
-        "fp": 123,
-        "fn": 242,
-        "tn": 1013
+        "tp": 4169,
+        "fp": 103,
+        "fn": 286,
+        "tn": 1035
       },
       "precision": {
-        "value": 0.9716328413284133,
-        "numerator": 4213,
-        "denominator": 4336,
+        "value": 0.9758895131086143,
+        "numerator": 4169,
+        "denominator": 4272,
         "ci95": [
-          0.9662584052867247,
-          0.9761723352849399
+          0.9708444333728705,
+          0.9800795050281175
         ],
         "ci_method": "wilson"
       },
       "recall": {
-        "value": 0.945679012345679,
-        "numerator": 4213,
+        "value": 0.9358024691358025,
+        "numerator": 4169,
         "denominator": 4455,
         "ci95": [
-          0.9386313506758658,
-          0.9519587357117937
+          0.928222921808568,
+          0.9426310961826889
         ],
         "ci_method": "wilson"
       },
       "fpr": {
-        "value": 0.10827464788732394,
-        "numerator": 123,
-        "denominator": 1136,
+        "value": 0.09050966608084358,
+        "numerator": 103,
+        "denominator": 1138,
         "ci95": [
-          0.09150790131131462,
-          0.1276817560636556
+          0.07518890449401947,
+          0.10858569678681035
         ],
         "ci_method": "wilson"
       },
@@ -438,12 +511,20 @@
         "recall": "OK"
       },
       "stage1_zones": {
-        "low:label=0": 911,
+        "low:label=0": 893,
         "low:label=1": 137,
-        "gray:label=0": 217,
-        "gray:label=1": 488,
-        "high:label=0": 8,
-        "high:label=1": 3830
+        "gray:label=0": 221,
+        "gray:label=1": 408,
+        "high:label=0": 24,
+        "high:label=1": 3910
+      },
+      "n_items": 5593,
+      "n_errors": 0,
+      "policy_decisions": {
+        "n": 0,
+        "by_status": {},
+        "by_policy_applied": {},
+        "by_decision_and_label": {}
       }
     },
     "lang=non_en": {
@@ -451,28 +532,28 @@
       "positives": 682,
       "negatives": 1,
       "confusion": {
-        "tp": 140,
+        "tp": 120,
         "fp": 0,
-        "fn": 542,
+        "fn": 562,
         "tn": 1
       },
       "precision": {
         "value": 1.0,
-        "numerator": 140,
-        "denominator": 140,
+        "numerator": 120,
+        "denominator": 120,
         "ci95": [
-          0.9732937996305869,
-          0.9999999999999999
+          0.9689808335812966,
+          1.0
         ],
         "ci_method": "wilson"
       },
       "recall": {
-        "value": 0.20527859237536658,
-        "numerator": 140,
+        "value": 0.17595307917888564,
+        "numerator": 120,
         "denominator": 682,
         "ci95": [
-          0.17665588866512855,
-          0.23720281755651068
+          0.14921260045838677,
+          0.2063235889693857
         ],
         "ci_method": "wilson"
       },
@@ -492,27 +573,35 @@
       "stage1_zones": {
         "low:label=0": 1,
         "low:label=1": 468,
-        "gray:label=1": 156,
-        "high:label=1": 58
+        "gray:label=1": 144,
+        "high:label=1": 70
+      },
+      "n_items": 683,
+      "n_errors": 0,
+      "policy_decisions": {
+        "n": 0,
+        "by_status": {},
+        "by_policy_applied": {},
+        "by_decision_and_label": {}
       }
     },
     "source=benign_hard": {
-      "n": 274,
+      "n": 276,
       "positives": 0,
-      "negatives": 274,
+      "negatives": 276,
       "confusion": {
         "tp": 0,
-        "fp": 88,
+        "fp": 78,
         "fn": 0,
-        "tn": 186
+        "tn": 198
       },
       "precision": {
         "value": 0.0,
         "numerator": 0,
-        "denominator": 88,
+        "denominator": 78,
         "ci95": [
           0.0,
-          0.0418270666648922
+          0.04693780971219429
         ],
         "ci_method": "wilson"
       },
@@ -524,20 +613,28 @@
         "ci_method": "wilson"
       },
       "fpr": {
-        "value": 0.32116788321167883,
-        "numerator": 88,
-        "denominator": 274,
+        "value": 0.2826086956521739,
+        "numerator": 78,
+        "denominator": 276,
         "ci95": [
-          0.2686816906892258,
-          0.37859917079212496
+          0.23275363959999526,
+          0.33843212927891514
         ],
         "ci_method": "wilson"
       },
       "evidence": {},
       "stage1_zones": {
-        "low:label=0": 122,
-        "gray:label=0": 145,
-        "high:label=0": 7
+        "low:label=0": 104,
+        "gray:label=0": 154,
+        "high:label=0": 18
+      },
+      "n_items": 276,
+      "n_errors": 0,
+      "policy_decisions": {
+        "n": 0,
+        "by_status": {},
+        "by_policy_applied": {},
+        "by_decision_and_label": {}
       }
     },
     "source=gandalf": {
@@ -545,28 +642,28 @@
       "positives": 996,
       "negatives": 0,
       "confusion": {
-        "tp": 925,
+        "tp": 911,
         "fp": 0,
-        "fn": 71,
+        "fn": 85,
         "tn": 0
       },
       "precision": {
         "value": 1.0,
-        "numerator": 925,
-        "denominator": 925,
+        "numerator": 911,
+        "denominator": 911,
         "ci95": [
-          0.995864247031381,
+          0.9958009567847461,
           1.0
         ],
         "ci_method": "wilson"
       },
       "recall": {
-        "value": 0.928714859437751,
-        "numerator": 925,
+        "value": 0.9146586345381527,
+        "numerator": 911,
         "denominator": 996,
         "ci95": [
-          0.9110342515465134,
-          0.9431011640895685
+          0.8956745969119084,
+          0.9304563788672529
         ],
         "ci_method": "wilson"
       },
@@ -582,8 +679,16 @@
       },
       "stage1_zones": {
         "low:label=1": 33,
-        "gray:label=1": 207,
-        "high:label=1": 756
+        "gray:label=1": 167,
+        "high:label=1": 796
+      },
+      "n_items": 996,
+      "n_errors": 0,
+      "policy_decisions": {
+        "n": 0,
+        "by_status": {},
+        "by_policy_applied": {},
+        "by_decision_and_label": {}
       }
     },
     "source=spml": {
@@ -591,38 +696,38 @@
       "positives": 3190,
       "negatives": 863,
       "confusion": {
-        "tp": 3171,
-        "fp": 35,
-        "fn": 19,
-        "tn": 828
+        "tp": 3164,
+        "fp": 25,
+        "fn": 26,
+        "tn": 838
       },
       "precision": {
-        "value": 0.9890829694323144,
-        "numerator": 3171,
-        "denominator": 3206,
+        "value": 0.9921605518971465,
+        "numerator": 3164,
+        "denominator": 3189,
         "ci95": [
-          0.9848555047050087,
-          0.9921397893716577
+          0.9884525313065851,
+          0.9946842891352978
         ],
         "ci_method": "wilson"
       },
       "recall": {
-        "value": 0.9940438871473354,
-        "numerator": 3171,
+        "value": 0.9918495297805643,
+        "numerator": 3164,
         "denominator": 3190,
         "ci95": [
-          0.9907157548292471,
-          0.9961835764743974
+          0.9880841146224154,
+          0.9944317805650328
         ],
         "ci_method": "wilson"
       },
       "fpr": {
-        "value": 0.04055619930475087,
-        "numerator": 35,
+        "value": 0.028968713789107765,
+        "numerator": 25,
         "denominator": 863,
         "ci95": [
-          0.029303773931427374,
-          0.05588072903541587
+          0.019697643859350918,
+          0.04241458932103187
         ],
         "ci_method": "wilson"
       },
@@ -632,10 +737,18 @@
       "stage1_zones": {
         "low:label=0": 790,
         "low:label=1": 9,
-        "gray:label=0": 72,
-        "gray:label=1": 119,
-        "high:label=0": 1,
-        "high:label=1": 3062
+        "gray:label=0": 67,
+        "gray:label=1": 86,
+        "high:label=0": 6,
+        "high:label=1": 3095
+      },
+      "n_items": 4053,
+      "n_errors": 0,
+      "policy_decisions": {
+        "n": 0,
+        "by_status": {},
+        "by_policy_applied": {},
+        "by_decision_and_label": {}
       }
     },
     "source=yanis": {
@@ -643,28 +756,28 @@
       "positives": 951,
       "negatives": 0,
       "confusion": {
-        "tp": 257,
+        "tp": 214,
         "fp": 0,
-        "fn": 694,
+        "fn": 737,
         "tn": 0
       },
       "precision": {
         "value": 1.0,
-        "numerator": 257,
-        "denominator": 257,
+        "numerator": 214,
+        "denominator": 214,
         "ci95": [
-          0.9852728211302685,
+          0.9823658047394183,
           1.0
         ],
         "ci_method": "wilson"
       },
       "recall": {
-        "value": 0.27024185068349105,
-        "numerator": 257,
+        "value": 0.22502628811777076,
+        "numerator": 214,
         "denominator": 951,
         "ci95": [
-          0.24298354096061572,
-          0.29934885782343973
+          0.1996218562091595,
+          0.25264323432644936
         ],
         "ci_method": "wilson"
       },
@@ -680,8 +793,16 @@
       },
       "stage1_zones": {
         "low:label=1": 563,
-        "gray:label=1": 318,
-        "high:label=1": 70
+        "gray:label=1": 299,
+        "high:label=1": 89
+      },
+      "n_items": 951,
+      "n_errors": 0,
+      "policy_decisions": {
+        "n": 0,
+        "by_status": {},
+        "by_policy_applied": {},
+        "by_decision_and_label": {}
       }
     },
     "stage2_overlap=none_known": {
@@ -689,38 +810,38 @@
       "positives": 4141,
       "negatives": 863,
       "confusion": {
-        "tp": 3428,
-        "fp": 35,
-        "fn": 713,
-        "tn": 828
+        "tp": 3378,
+        "fp": 25,
+        "fn": 763,
+        "tn": 838
       },
       "precision": {
-        "value": 0.9898931562229281,
-        "numerator": 3428,
-        "denominator": 3463,
+        "value": 0.9926535409932412,
+        "numerator": 3378,
+        "denominator": 3403,
         "ci95": [
-          0.9859768358685898,
-          0.9927238172481488
+          0.9891771846593824,
+          0.9950188927127264
         ],
         "ci_method": "wilson"
       },
       "recall": {
-        "value": 0.8278193673025839,
-        "numerator": 3428,
+        "value": 0.8157449891330596,
+        "numerator": 3378,
         "denominator": 4141,
         "ci95": [
-          0.8160179808988337,
-          0.8390131046019569
+          0.8036460382418786,
+          0.8272586721023449
         ],
         "ci_method": "wilson"
       },
       "fpr": {
-        "value": 0.04055619930475087,
-        "numerator": 35,
+        "value": 0.028968713789107765,
+        "numerator": 25,
         "denominator": 863,
         "ci95": [
-          0.029303773931427374,
-          0.05588072903541587
+          0.019697643859350918,
+          0.04241458932103187
         ],
         "ci_method": "wilson"
       },
@@ -730,29 +851,37 @@
       "stage1_zones": {
         "low:label=0": 790,
         "low:label=1": 572,
-        "gray:label=0": 72,
-        "gray:label=1": 437,
-        "high:label=0": 1,
-        "high:label=1": 3132
+        "gray:label=0": 67,
+        "gray:label=1": 385,
+        "high:label=0": 6,
+        "high:label=1": 3184
+      },
+      "n_items": 5004,
+      "n_errors": 0,
+      "policy_decisions": {
+        "n": 0,
+        "by_status": {},
+        "by_policy_applied": {},
+        "by_decision_and_label": {}
       }
     },
     "stage2_overlap=none_synthetic": {
-      "n": 274,
+      "n": 276,
       "positives": 0,
-      "negatives": 274,
+      "negatives": 276,
       "confusion": {
         "tp": 0,
-        "fp": 88,
+        "fp": 78,
         "fn": 0,
-        "tn": 186
+        "tn": 198
       },
       "precision": {
         "value": 0.0,
         "numerator": 0,
-        "denominator": 88,
+        "denominator": 78,
         "ci95": [
           0.0,
-          0.0418270666648922
+          0.04693780971219429
         ],
         "ci_method": "wilson"
       },
@@ -764,20 +893,28 @@
         "ci_method": "wilson"
       },
       "fpr": {
-        "value": 0.32116788321167883,
-        "numerator": 88,
-        "denominator": 274,
+        "value": 0.2826086956521739,
+        "numerator": 78,
+        "denominator": 276,
         "ci95": [
-          0.2686816906892258,
-          0.37859917079212496
+          0.23275363959999526,
+          0.33843212927891514
         ],
         "ci_method": "wilson"
       },
       "evidence": {},
       "stage1_zones": {
-        "low:label=0": 122,
-        "gray:label=0": 145,
-        "high:label=0": 7
+        "low:label=0": 104,
+        "gray:label=0": 154,
+        "high:label=0": 18
+      },
+      "n_items": 276,
+      "n_errors": 0,
+      "policy_decisions": {
+        "n": 0,
+        "by_status": {},
+        "by_policy_applied": {},
+        "by_decision_and_label": {}
       }
     },
     "stage2_overlap=suspected": {
@@ -785,28 +922,28 @@
       "positives": 996,
       "negatives": 0,
       "confusion": {
-        "tp": 925,
+        "tp": 911,
         "fp": 0,
-        "fn": 71,
+        "fn": 85,
         "tn": 0
       },
       "precision": {
         "value": 1.0,
-        "numerator": 925,
-        "denominator": 925,
+        "numerator": 911,
+        "denominator": 911,
         "ci95": [
-          0.995864247031381,
+          0.9958009567847461,
           1.0
         ],
         "ci_method": "wilson"
       },
       "recall": {
-        "value": 0.928714859437751,
-        "numerator": 925,
+        "value": 0.9146586345381527,
+        "numerator": 911,
         "denominator": 996,
         "ci95": [
-          0.9110342515465134,
-          0.9431011640895685
+          0.8956745969119084,
+          0.9304563788672529
         ],
         "ci_method": "wilson"
       },
@@ -822,15 +959,23 @@
       },
       "stage1_zones": {
         "low:label=1": 33,
-        "gray:label=1": 207,
-        "high:label=1": 756
+        "gray:label=1": 167,
+        "high:label=1": 796
+      },
+      "n_items": 996,
+      "n_errors": 0,
+      "policy_decisions": {
+        "n": 0,
+        "by_status": {},
+        "by_policy_applied": {},
+        "by_decision_and_label": {}
       }
     }
   },
   "client_latency_ms": {
-    "n": 6274,
-    "p50": 0.22770649957237765,
-    "p95": 0.4118104997814952,
-    "p99": 0.5892495893658621
+    "n": 6276,
+    "p50": 0.22541049975188798,
+    "p95": 0.4118822498639929,
+    "p99": 0.6568472501840006
   }
 }

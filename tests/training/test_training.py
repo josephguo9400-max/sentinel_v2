@@ -20,7 +20,7 @@ from training.eval_harness import (GatewayResponseError, HttpGatewayBackend, eva
 from training.metrics import summarize, wilson
 from training.stage1_text import chunk_text
 
-ARTIFACT = ROOT / "artifacts" / "candidates" / "stage1-tfidf-v1"
+ARTIFACT = ROOT / "artifacts" / "candidates" / "stage1-tfidf-v2"
 RAW_OK = all((ROOT / "data" / "raw" / d).exists() for d in (
     "deepset__prompt-injections", "reshabhs__SPML_Chatbot_Prompt_Injection", "yanismiraoui__prompt_injections",
     "Lakera__gandalf_ignore_instructions", "jackhhao__jailbreak-classification"))
@@ -488,3 +488,23 @@ def test_http_backend_against_real_gateway_app_contract():
     assert res["n_errors"] == 0, res["errors"]
     assert o["n"] == 0 and o["policy_decisions"]["by_status"] == {"timeout": 2}
     assert o["policy_decisions"]["by_policy_applied"] == {"fail_closed": 2}
+
+
+# ------------------------------------------------------------------ review B4: language mix from committed code
+
+def test_language_mix_counts_from_split_records(tmp_path, monkeypatch):
+    from training import language_mix
+
+    rows = [dict(_rec(i, f"text {i}", 1), source="yanis", lang=l) for i, l in enumerate(["en", "fr", "fr", "de"])]
+    _write_splits(tmp_path, rows[:1], rows[1:2], rows[2:])
+    m = language_mix.from_splits(tmp_path)["by_source"]["yanis"]
+    assert m["n"] == 4 and m["en"] == 1 and m["pct_en"] == 25.0 and m["pct"]["fr"] == 50.0
+
+
+@pytest.mark.skipif(not (ROOT / "data" / "language_mix.json").exists(), reason="language_mix.json not generated")
+def test_committed_language_mix_matches_committed_splits():
+    """data/language_mix.json (cited by DATA.md) must be regenerated whenever the splits change."""
+    from training import language_mix
+
+    saved = json.loads((ROOT / "data" / "language_mix.json").read_text())
+    assert saved["splits"] == language_mix.from_splits()
