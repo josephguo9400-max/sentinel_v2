@@ -45,7 +45,12 @@ class GatewayConfig:
     stage1_subwindow_stride: int = 32
     # Languages assumed for a Stage 1 manifest that declares no input_languages (v1.1). Comma list; "" = no limit.
     stage1_undeclared_languages: str = "en"
-    stage1_timeout_ms: int = 0  # 0 = Stage 1 manifest timeout_ms
+    stage1_timeout_ms: int = 0  # 0 = Stage 1 manifest timeout_ms (the hard wait; see stage1_deadline_margin_ms)
+    # Stage 1 is "anytime": it scores chunks in order and stops starting new chunks once (budget - margin) has
+    # passed, returning the chunks it scored (status ok, truncated). The margin is the time one more chunk may take;
+    # the hard wait at the full budget stays as a backstop for a hung model. Measured per-chunk cost:
+    # serving/bench_results/stage1_latency.json. Capped at half the Stage 1 budget.
+    stage1_deadline_margin_ms: int = 15
     stage2_timeout_ms: int = 0  # 0 = Stage 2 manifest timeout_ms
 
     # --- language detection (langdetect, seeded; see serving/language.py)
@@ -89,6 +94,7 @@ class GatewayConfig:
             if getattr(self, name) < 1:
                 raise ValueError(f"{name} must be >= 1")
         for name in ("stage1_timeout_ms", "stage2_timeout_ms", "shadow_timeout_ms", "pack_overlap_tokens",
+                     "stage1_deadline_margin_ms",
                      "lang_min_letters", "registry_poll_s", "stage1_subwindow_tokens", "shadow_intra_op_threads", "intra_op_threads"):
             if getattr(self, name) < 0:
                 raise ValueError(f"{name} must be >= 0")

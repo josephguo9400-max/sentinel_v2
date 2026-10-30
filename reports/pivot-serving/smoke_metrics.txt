@@ -1,0 +1,6 @@
+sentinel_cascade_path_total{path="stage2_allow"} 1.0
+sentinel_cascade_path_total{path="stage2_flag"} 1.0
+sentinel_cascade_path_total{path="coverage_flag"} 2.0
+sentinel_stage1_observed_total{outcome="would_finalize_allow"} 1.0
+sentinel_stage1_observed_total{outcome="would_escalate"} 3.0
+sentinel_stage1_deadline_hits_total{detector_id="stage1-tfidf-lr",stage1_mode="observe"} 2.0
