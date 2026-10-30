@@ -325,3 +325,73 @@ def test_t3_and_t4_reports_record_a_pass():
     assert t4["recall"]["as_fraction"] == "201/306" and t4["fpr"]["as_fraction"] == "191/1185"
     t5 = json.loads((ROOT / "reports/policy-runtime/t5_live_comparison.json").read_text())
     assert t5["identical_on_every_comparable_item"] and t5["n_different"] == 0
+
+
+# ---------------------------------------------------------------- band language scope (review r1 m1, n9)
+
+def _gate_doc_without_scope():
+    from tests.policy_factory import default_caps, policy
+    caps = default_caps()
+    doc = policy(caps, gate=True)
+    doc["gate"]["band"]["scope_languages"] = None
+    doc["language_detector"] = None
+    return caps, doc
+
+
+def test_band_without_scope_over_a_declared_capability_is_refused():
+    """The gate capability declares validated_languages ["en"]; a band that clears chunks without a scope would
+    clear chunks in any language (review r1 m1, probe test_r2_...). Refused with its own code."""
+    from contracts.policy import validate_policy
+    from tests.policy_factory import caps_by_key
+    caps, doc = _gate_doc_without_scope()
+    with pytest.raises(PolicyError) as exc:
+        validate_policy(ExecutionPolicy.model_validate(doc), caps_by_key(caps))
+    assert exc.value.code == "scope_languages_required"
+    assert "validated_languages ['en']" in str(exc.value)
+
+
+def test_observe_band_without_scope_over_a_declared_capability_is_refused():
+    from contracts.policy import validate_policy
+    from tests.policy_factory import caps_by_key, default_caps, policy
+    caps = default_caps()
+    doc = policy(caps, observe=True)
+    doc["observe"][0]["band"] = {"clear_below": 0.3, "flag_at_or_above": None, "finalize": ["allow"],
+                                 "scope_languages": None}
+    doc["language_detector"] = None
+    with pytest.raises(PolicyError) as exc:
+        validate_policy(ExecutionPolicy.model_validate(doc), caps_by_key(caps))
+    assert exc.value.code == "scope_languages_required"
+
+
+def test_band_that_clears_nothing_needs_no_scope():
+    """A flag-only band (clear_below 0) clears no chunk, so the language of a chunk cannot let it through."""
+    from contracts.policy import validate_policy
+    from tests.policy_factory import caps_by_key
+    caps, doc = _gate_doc_without_scope()
+    doc["gate"]["band"].update(clear_below=0.0, finalize=["flag"], flag_at_or_above=0.9)
+    validate_policy(ExecutionPolicy.model_validate(doc), caps_by_key(caps))
+
+
+def test_every_committed_policy_passes_the_scope_rule():
+    from contracts.policy import validate_policy
+    from serving.registry import load_capability, load_policy_file
+    from contracts.policy import iter_refs
+    for path in sorted((ROOT / "artifacts").glob("policies/*/*/policy.json")):
+        policy = load_policy_file(ROOT / "artifacts", str(path.relative_to(ROOT / "artifacts")))
+        caps = {r.key: load_capability(ROOT / "artifacts", "capabilities", r) for r in iter_refs(policy)}
+        validate_policy(policy, caps)
+
+
+def test_scope_languages_order_does_not_change_the_hash():
+    """review r1 n9: scope_languages is a set in meaning; it is stored sorted."""
+    from contracts.policy import policy_sha256
+    from tests.policy_factory import default_caps, policy
+    caps = default_caps()
+    docs = []
+    for scope in (["en", "de"], ["de", "en"]):
+        doc = policy(caps, gate=True)
+        doc["gate"]["band"]["scope_languages"] = scope
+        docs.append(ExecutionPolicy.model_validate(doc))
+    assert docs[0].gate.band.scope_languages == ["de", "en"]
+    assert policy_sha256(docs[0]) == policy_sha256(docs[1])
+    assert bundle_sha256(docs[0]) == bundle_sha256(docs[1])

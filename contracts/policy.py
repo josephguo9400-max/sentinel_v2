@@ -10,7 +10,7 @@ Two layers of validation:
   tokenizers, sha256 pins). Raises PolicyError(code, detail).
 `lint_policy` returns warnings that are allowed but suspicious (a FAIL_OPEN gate).
 
-Differences from the design text (all recorded in the design doc §12):
+Differences from the design text (all recorded in the design doc §11a):
 - ObserveStep also carries `max_chunks`, `deadline_margin_ms` and an optional what-if `band`: the observe-only Stage 1
   of D23 scores at most STAGE1_MAX_CHUNKS chunks under an anytime soft deadline and reports would-allow /
   would-escalate outcomes from the gray-zone low; without these fields the conversion would not be faithful. The
@@ -20,6 +20,10 @@ Differences from the design text (all recorded in the design doc §12):
 - Coverage deep_scan requires a single decide stage (engine 1.0.0).
 - A decide member's FALLBACK must not target a decide member.
 - Parallel members have equal max_chunks (they score the same chunk selection).
+- A band that clears chunks over a capability that declares validated_languages must state scope_languages
+  (`scope_languages_required`): leaving it out would clear chunks in any language, which the legacy gateway never
+  did (it always gated on the manifest's input_languages). Review r1 m1.
+- Band.scope_languages is stored sorted, so its order does not change a policy's hash (review r1 n9).
 
 Owned by the project owner. Agents must not edit this file; file a request in docs/contract_requests.md.
 """
@@ -103,12 +107,14 @@ class Band(BaseModel):
     flag_at_or_above: float | None = Field(default=None, ge=0.0, le=1.0)  # finalize flag iff any chunk score >= it
     finalize: set[Literal["allow", "flag"]]
     # Chunks whose language is outside it are never cleared; a subset of the capability's validated_languages.
+    # A set in meaning (duplicates are refused): stored sorted, so ["en", "de"] and ["de", "en"] hash alike.
     scope_languages: list[str] | None = None
 
     @field_validator("scope_languages")
     @classmethod
     def _langs(cls, v):
-        return iso639_list(v, "scope_languages")
+        v = iso639_list(v, "scope_languages")
+        return None if v is None else sorted(v)
 
     @field_serializer("finalize")
     def _sorted(self, v: set[str]) -> list[str]:
@@ -401,6 +407,12 @@ def _check_band(band: Band, cap: "CapabilityManifest", where: str) -> None:
     if band.scope_languages is not None and langs is not None and not set(band.scope_languages) <= set(langs):
         raise PolicyError("scope_languages", f"{where} band scope {band.scope_languages} is not within the "
                                              f"capability's validated_languages {langs}")
+    if langs is not None and band.scope_languages is None and band.clear_below > 0.0:
+        raise PolicyError("scope_languages_required", f"{where} band clears chunks (clear_below "
+                                                      f"{band.clear_below}) but states no scope_languages, while "
+                                                      f"{cap.detector_id}@{cap.detector_version} declares "
+                                                      f"validated_languages {langs}: state scope_languages (a subset "
+                                                      f"of them), or the band would clear chunks in any language")
     if langs is None and band.scope_languages is None and band.clear_below > 0.0:
         raise PolicyError("undeclared_languages", f"{where} detector {cap.detector_id}@{cap.detector_version} "
                                                   f"declares no validated languages; a band that clears chunks must "
