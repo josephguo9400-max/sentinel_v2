@@ -134,43 +134,104 @@ with the fake detector, and scores within 1e-4 with the real model on padded bat
 
 ## Load test results
 
-All runs below used the same setup:
+### Setup
 
-- **Hardware:** Claude cloud workspace, Intel Xeon @ 2.10 GHz, 2 logical cores, no GPU. The client and server
-  ran on the same machine.
-- **Software:** Python 3.13.18, onnxruntime 1.29.0, httpx 0.28.1. One uvicorn worker, `WORKERS=1`, default
-  onnxruntime threads, `TIMEOUT_MS=5000`, `MAX_CHUNKS=4`.
-- **Load:** closed loop, with 4 warmup requests excluded from the numbers. The lengths are approximate request
-  sizes; the actual median token counts were 56 for "64" and 223 for "256".
+- **Hardware:** Claude cloud workspace, Intel Xeon @ 2.10 GHz, 2 logical cores, no GPU. **The load generator and
+  the server shared these 2 cores**, so client CPU time is not separated from server CPU time. Other agents also
+  used this host at times (see "Host load" below).
+- **Software:** Python 3.13.18, onnxruntime 1.29.0, httpx 0.28.1 (all pins in `serving/requirements.txt`). One
+  uvicorn worker, `WORKERS=1`, default onnxruntime threads, `TIMEOUT_MS=5000`, `MAX_CHUNKS=4`.
+- **Load:** closed loop, `--n 600 --concurrency 4 --lengths 64,256`, alternating short and long requests. Four
+  warmup requests are excluded. Median actual token counts are 56 for "64" and 223 for "256". On average a
+  request has 140.6 token positions including `[CLS]`/`[SEP]` (84,375 over 600 requests). Every request needs
+  one chunk.
+- **Repeats:** each configuration ran **3 times**. The order was interleaved (off, on/2 ms, on/10 ms, then
+  again), with a fresh server for every run.
+- **Host load:** before each run the script waited until the host was idle (at most 15% CPU busy over 5 s), then
+  recorded `uptime`. Before the first run, another agent's jobs kept the CPU at 42-100% busy for about 4 minutes,
+  and the script waited. Every run started at 0-1% CPU busy. The 1-minute load average at the start was 0.81-1.32.
+  It never fell to 0, because the previous run had ended 45-60 s earlier. Each JSON file stores the load
+  averages before and after its run (`hardware.load_average_1_5_15`).
+- **Padding metric:** `real_tokens` is the number of token positions that hold input. `computed_tokens` is rows x
+  longest row, summed over ONNX calls, which is what `OnnxDebertaDetector.infer` actually feeds the model. Both
+  are deltas of the server counters over the measured requests only.
 
-Latency is measured at the client, from HTTP request to response, and includes queueing. Every run had 0 errors.
-Raw JSON is in `serving/loadtest_results/`. The server's batch-size counter is cumulative over the server's
-lifetime, so the batch sizes below come from the difference between runs.
+Raw JSON: `serving/loadtest_results/mix_{b1,b8w2,b8w10}_r{1,2,3}.json`. Script used: a loop over
+`python -m serving.loadtest` with `SENTINEL_MAX_BATCH` and `SENTINEL_MAX_WAIT_MS` set per server.
 
-| Run | max_batch / wait | Concurrency | n | Lengths | p50 | p95 | p99 | max | Throughput | Mean chunks per ONNX call |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| `lt_b1_c1` | 1 / – | 1 | 300 | 64, 256 | 110 ms | 283 ms | 303 ms | 324 ms | 6.02 req/s | 1.0 |
-| `lt_b1_c4` | 1 / – | 4 | 1000 | 64, 256 | 676 ms | 762 ms | 840 ms | 1,005 ms | **5.84 req/s** | 1.0 |
-| `lt_b8_c4` | 8 / 10 ms | 4 | 1000 | 64, 256 | 1,067 ms | 1,186 ms | 1,373 ms | 1,532 ms | **3.71 req/s** | 3.95 |
-| `lt_b1_c4_256` | 1 / – | 4 | 300 | 256 | 1,048 ms | 1,173 ms | 1,898 ms | 2,300 ms | 3.72 req/s | 1.0 |
-| `lt_b8_c4_256` | 8 / 10 ms | 4 | 300 | 256 | 1,069 ms | 1,204 ms | 1,660 ms | 1,662 ms | 3.68 req/s | 3.85 (304 chunks / 79 calls) |
+### Per run
 
-At concurrency 1, latency by length was p50 75 ms and p95 93 ms for "64", and p50 248 ms and p95 293 ms for
-"256" (150 requests each).
+| Config | Run | 1-min load avg at start | Throughput | p50 | p95 | p99 | Chunks per ONNX call | computed / real tokens |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| off (`MAX_BATCH=1`) | r1 | 1.32 | 4.85 req/s | 679 ms | 1,936 ms | 2,008 ms | 1.00 | 1.000 |
+| off | r2 | 0.87 | 5.78 req/s | 687 ms | 760 ms | 783 ms | 1.00 | 1.000 |
+| off | r3 | 0.86 | 5.91 req/s | 672 ms | 730 ms | 748 ms | 1.00 | 1.000 |
+| on, 8 / 2 ms (default wait) | r1 | 1.25 | 4.59 req/s | 863 ms | 938 ms | 1,042 ms | 2.00 | 1.297 |
+| on, 8 / 2 ms | r2 | 0.86 | 4.63 req/s | 861 ms | 929 ms | 992 ms | 2.01 | 1.299 |
+| on, 8 / 2 ms | r3 | 0.81 | 3.86 req/s | 1,032 ms | 1,106 ms | 1,147 ms | 2.03 | 1.591 |
+| on, 8 / 10 ms | r1 | 0.84 | 3.69 req/s | 1,074 ms | 1,203 ms | 1,243 ms | 4.00 | 1.593 |
+| on, 8 / 10 ms | r2 | 0.90 | 3.79 req/s | 1,048 ms | 1,134 ms | 1,182 ms | 4.00 | 1.593 |
+| on, 8 / 10 ms | r3 | 0.87 | 3.79 req/s | 1,053 ms | 1,127 ms | 1,185 ms | 4.00 | 1.593 |
 
-**Decision: `MAX_BATCH=1` (batching off) by default.**
+Every run had 0 errors and 0 non-ok detector results.
 
-- With inputs of a single length, batching does not change throughput: 3.68 vs 3.72 req/s. This matches the
-  detector-baseline benchmark, where per-item cost was flat across batch sizes on 2 cores.
-- With mixed lengths, which is more realistic, batching cut throughput by 36% (3.71 vs 5.84 req/s) and raised p50
-  from 676 ms to 1,067 ms. Short inputs are padded to the longest row in their batch, and the batch finishes only
-  when its slowest row does.
+### Summary over 3 runs
 
-Batching is still built and tested, so it can be re-measured where it should help: on a GPU or with int8.
+| Config | Throughput mean (min-max) | p50 range | computed / real tokens (min-max) | Computed tokens/s (min-max) |
+| --- | --- | --- | --- | --- |
+| off | **5.51** (4.85-5.91) req/s | 672-687 ms | 1.000 | 682-831 |
+| on, 8 / 2 ms | **4.36** (3.86-4.63) req/s | 861-1,032 ms | 1.297-1.591 | 837-864 |
+| on, 8 / 10 ms | **3.76** (3.69-3.79) req/s | 1,048-1,074 ms | 1.593 | 827-849 |
 
-At concurrency 4, latency is mostly queueing. One worker serves one request at a time, so p50 is about 4 times
-the service time. The throughput ceiling on this machine is about 6 req/s for this mix. This is why int8 and the
-cascade come next.
+Batching-off run r1 is an outlier: p95 1,936 ms against 730-760 ms in r2 and r3. It was the first run after
+the CPU contention described above, and it started at the highest load average. An extra off run afterwards
+(`mix_b1_r4.json`, load average 0.53 at start) gave 6.15 req/s, p50 642 ms, p95 704 ms. The 3-run summary
+above does not include r4. Without r1, the off mean is 5.95 req/s (r2-r4). Either way, the off and on ranges
+do not overlap.
+
+### What the padding metric shows
+
+- **With batching off, padding is zero by construction**, because each ONNX call has one row
+  (computed/real = 1.000).
+- **With batching on, the model computes 30-59% more token positions than the input holds.** A batch that pairs
+  a 56-token and a 223-token request computes 2 x 225 positions for about 283 real ones. With a 10 ms wait every
+  batch held 4 chunks, and the ratio was 1.593 in all three runs. With the 2 ms default, batches held about 2
+  chunks. The ratio was 1.30 when most pairs were the same length (r1, r2) and 1.59 when most were mixed (r3).
+- **Computed positions per second stay roughly constant.** Across the 9 undisturbed runs (off r2-r4 and all six
+  batched runs) it was 813-865 positions/s, batched or not. The disturbed off r1 gave 682. So on this CPU, batching did not make a position
+  cheaper, and throughput in requests per second fell by about the padding ratio. Off r2/r3 averaged 5.85 req/s.
+  Dividing by 1.593 gives 3.67, against 3.69-3.79 measured with 8 / 10 ms. Dividing by 1.30 gives 4.50, against
+  4.59-4.63 measured in 8 / 2 ms r1/r2. Dividing by 1.59 gives 3.67, against 3.86 measured in r3.
+
+So the measured padding overhead predicts the batched throughput within 6% in every batched run (worst case:
+r3 with 2 ms). This is a correlation over these runs on one shared 2-core host, not a controlled ablation. Removing the padding
+(length bucketing) was not tested, and attention cost is not exactly linear in sequence length. The claim
+this supports: on this host, batching gave no per-position speedup, so padding waste turned directly into lost
+throughput. It does not show that batching would help once padding is removed.
+
+**Decision: `MAX_BATCH=1` (batching off) stays the default.** On this host batching was slower in every run,
+at both waits, and the loss tracked the padded-token ratio. Batching is still built and tested, so it can be
+measured again where it should help: on a GPU, with int8, or with length bucketing.
+
+At concurrency 4 with batching off, latency is mostly queueing. One worker serves one request at a time, so p50
+(about 680 ms) is about 4 times the service time. The ceiling for this mix on this host is about 6 req/s.
+
+### Earlier single runs (superseded for the mixed-length comparison)
+
+These runs predate the padding metric. Each configuration ran once, and the batching runs used
+`MAX_WAIT_MS=10`. They are kept for the concurrency-1 and single-length numbers, which were not re-run.
+
+| Run | max_batch / wait | Concurrency | n | Lengths | p50 | p95 | p99 | Throughput | Mean chunks per ONNX call |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| `lt_b1_c1` | 1 / – | 1 | 300 | 64, 256 | 110 ms | 283 ms | 303 ms | 6.02 req/s | 1.0 |
+| `lt_b1_c4` | 1 / – | 4 | 1000 | 64, 256 | 676 ms | 762 ms | 840 ms | 5.84 req/s | 1.0 |
+| `lt_b8_c4` | 8 / 10 ms | 4 | 1000 | 64, 256 | 1,067 ms | 1,186 ms | 1,373 ms | 3.71 req/s | 3.95 |
+| `lt_b1_c4_256` | 1 / – | 4 | 300 | 256 | 1,048 ms | 1,173 ms | 1,898 ms | 3.72 req/s | 1.0 |
+| `lt_b8_c4_256` | 8 / 10 ms | 4 | 300 | 256 | 1,069 ms | 1,204 ms | 1,660 ms | 3.68 req/s | 3.85 |
+
+With a single input length (little padding), batching left throughput unchanged in that one pair of runs
+(3.68 vs 3.72 req/s). At concurrency 1, latency by length was p50 75 ms and p95 93 ms for "64", and p50 248 ms
+and p95 293 ms for "256" (150 requests each).
 
 ## Not done in this milestone
 

@@ -1,0 +1,112 @@
+{
+  "measured_at": "2026-10-30T02:26:59Z",
+  "hardware": {
+    "cpu": "Intel(R) Xeon(R) Processor @ 2.10GHz",
+    "logical_cores": 2,
+    "gpu": null,
+    "note": "client and server on the same machine",
+    "load_average_1_5_15": {
+      "before": [
+        0.86,
+        1.41,
+        1.4
+      ],
+      "after": [
+        1.84,
+        1.62,
+        1.48
+      ]
+    }
+  },
+  "versions": {
+    "python": "3.13.18",
+    "httpx": "0.28.1",
+    "onnxruntime": "1.29.0"
+  },
+  "server": {
+    "detector": {
+      "detector_id": "deberta-pi-v2",
+      "detector_version": "2.0.0+90c9989b.onnx.fp32",
+      "threshold": 0.5,
+      "max_len": 512,
+      "model_sha256": "f0ea7f239f765aedbde7c9e163a7cb38a79c5b8853d3f76db5152172047b228c"
+    },
+    "config": {
+      "stride": 384,
+      "max_chunks": 4,
+      "timeout_ms": 5000,
+      "failure_policy": "fail_closed",
+      "max_batch": 1,
+      "max_wait_ms": 2.0,
+      "workers": 1,
+      "max_queue": 64,
+      "max_inflight": 64,
+      "max_inflight_chars": 1000000,
+      "tokenize_workers": 1
+    }
+  },
+  "load": {
+    "mode": "closed-loop",
+    "concurrency": 4,
+    "n": 600,
+    "warmup": 4,
+    "lengths_approx_tokens": [
+      64,
+      256
+    ],
+    "client_timeout_s": 60.0
+  },
+  "errors": {
+    "transport": 0,
+    "http_non_200": 0,
+    "detector_status_not_ok": {},
+    "total": 0
+  },
+  "latency_ok_requests": {
+    "count": 600,
+    "p50_ms": 672.2,
+    "p95_ms": 730.4,
+    "p99_ms": 748.0,
+    "max_ms": 783.5,
+    "mean_ms": 675.2,
+    "p99_is_max": false
+  },
+  "latency_by_length": {
+    "64": {
+      "count": 300,
+      "p50_ms": 672.7,
+      "p95_ms": 730.1,
+      "p99_ms": 746.1,
+      "max_ms": 783.5,
+      "mean_ms": 674.4,
+      "p99_is_max": false,
+      "input_tokens_median": 56
+    },
+    "256": {
+      "count": 300,
+      "p50_ms": 672.0,
+      "p95_ms": 732.2,
+      "p99_ms": 750.8,
+      "max_ms": 776.4,
+      "mean_ms": 676.0,
+      "p99_is_max": false,
+      "input_tokens_median": 223
+    }
+  },
+  "throughput_rps": 5.91,
+  "throughput_ok_rps": 5.91,
+  "wall_s": 101.57,
+  "server_batch_size_metric": [
+    "sentinel_inference_batch_size_count 604.0",
+    "sentinel_inference_batch_size_sum 604.0"
+  ],
+  "server_this_run": {
+    "onnx_calls": 600.0,
+    "chunks": 600.0,
+    "mean_chunks_per_call": 1.0,
+    "real_tokens": 84375.0,
+    "computed_tokens": 84375.0,
+    "computed_per_real_token": 1.0
+  },
+  "label": "mixed_b1_r3; pre-run cpu_busy_5s=0%; uptime:  19:25:17 up  2:26,  0 user,  load average: 0.84, 1.41, 1.41"
+}
