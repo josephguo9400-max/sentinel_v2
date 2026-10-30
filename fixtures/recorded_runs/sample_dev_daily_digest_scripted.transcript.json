@@ -1,0 +1,110 @@
+{
+  "schema": "recorded_run/1",
+  "run_id": "sample_dev_daily_digest_scripted",
+  "scenario_id": "dev_daily_digest",
+  "split": "dev",
+  "mode": "A",
+  "model": "claude-3-5-haiku-20241022",
+  "source": "recorded",
+  "budget": {
+    "max_steps": 8,
+    "max_tokens": 20000,
+    "wall_time_s": 25.0
+  },
+  "steps_used": 6,
+  "tokens_used": 794,
+  "turns": [
+    {
+      "text": "",
+      "tool_calls": [
+        {
+          "id": "t-list",
+          "name": "list_emails",
+          "input": {}
+        }
+      ],
+      "stop_reason": "tool_use",
+      "usage": {
+        "input_tokens": 90,
+        "output_tokens": 12
+      }
+    },
+    {
+      "text": "",
+      "tool_calls": [
+        {
+          "id": "t-e1",
+          "name": "read_email",
+          "input": {
+            "email_id": "e1"
+          }
+        }
+      ],
+      "stop_reason": "tool_use",
+      "usage": {
+        "input_tokens": 110,
+        "output_tokens": 18
+      }
+    },
+    {
+      "text": "",
+      "tool_calls": [
+        {
+          "id": "t-e2",
+          "name": "read_email",
+          "input": {
+            "email_id": "e2"
+          }
+        }
+      ],
+      "stop_reason": "tool_use",
+      "usage": {
+        "input_tokens": 110,
+        "output_tokens": 18
+      }
+    },
+    {
+      "text": "",
+      "tool_calls": [
+        {
+          "id": "t-e3",
+          "name": "read_email",
+          "input": {
+            "email_id": "e3"
+          }
+        }
+      ],
+      "stop_reason": "tool_use",
+      "usage": {
+        "input_tokens": 110,
+        "output_tokens": 18
+      }
+    },
+    {
+      "text": "",
+      "tool_calls": [
+        {
+          "id": "t-e4",
+          "name": "read_email",
+          "input": {
+            "email_id": "e4"
+          }
+        }
+      ],
+      "stop_reason": "tool_use",
+      "usage": {
+        "input_tokens": 110,
+        "output_tokens": 18
+      }
+    },
+    {
+      "text": "Summary: standup moved to 10:30 in Birch; invoice INV-2291 due November 5; lunch-and-learn Friday noon.",
+      "tool_calls": [],
+      "stop_reason": "end_turn",
+      "usage": {
+        "input_tokens": 140,
+        "output_tokens": 40
+      }
+    }
+  ]
+}
