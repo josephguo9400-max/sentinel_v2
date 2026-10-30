@@ -8,7 +8,7 @@ flock /home/claude/measure.lock -c 'python scripts/quantize_deberta.py'   # veri
 ```
 
 Settings (pinned in the script): `onnxruntime.quantization.quantize_dynamic`, QInt8 weights, MatMul/Gemm only,
-`MatMulConstBOnly`, per-tensor, no reduce_range; onnxruntime 1.29.0, onnx 1.23.2. Two runs produced the same
+`MatMulConstBOnly`, per-channel weight scales (v2; v1 was per-tensor), no reduce_range; onnxruntime 1.29.0, onnx 1.23.2. Two runs produced the same
 sha256 (pinned in `manifest.json`). The output is 539 MB, not ~180 MB: the 128,100 x 768 word embedding
 (98.4 M of the model's parameters) is a Gather, not a MatMul, and stays fp32.
 

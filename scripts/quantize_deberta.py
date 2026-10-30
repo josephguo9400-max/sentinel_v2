@@ -5,7 +5,7 @@
 
 Method: onnxruntime.quantization.quantize_dynamic with pinned settings (QUANT_SETTINGS below): int8 weights,
 activations quantized dynamically at run time, MatMul/Gemm only (embeddings, LayerNorm and softmax stay fp32),
-per-tensor scales, no reduce_range. The fp32 input is verified against the baseline manifest before quantizing.
+per-channel weight scales, no reduce_range. The fp32 input is verified against the baseline manifest before quantizing.
 
 Determinism: the output bytes depend only on the input model, the settings and the onnxruntime / onnx versions. The
 expected output sha256 is the candidate manifest's `sha256`: on a mismatch the script
@@ -31,7 +31,7 @@ BASELINE = ROOT / "artifacts" / "baseline" / "deberta-pi-v2"
 TARGET = ROOT / "artifacts" / "candidates" / "deberta-pi-v2-int8"
 QUANT_SETTINGS = {
     "weight_type": "QInt8",
-    "per_channel": False,
+    "per_channel": True,  # v2; v1 used per-tensor scales (see serving/README.md "int8 Stage 2 candidate")
     "reduce_range": False,
     "op_types_to_quantize": ["MatMul", "Gemm"],
     "extra_options": {"MatMulConstBOnly": True},
