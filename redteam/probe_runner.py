@@ -71,11 +71,11 @@ class ProbeOutcome:
 
     @classmethod
     def from_verdict(cls, probe: Probe, v: ClassifierVerdict) -> "ProbeOutcome":
-        scored_positive = any(r.status == "ok" and r.predicted_injection for r in v.results)
+        scored_positive = any(r.status == "ok" and r.predicted_injection for r in v.active_results)
         return cls(probe.probe_id, probe.placement, probe.kind, probe.offset_label, probe.total_tokens,
                    v.decision, v.gateway_status, v.fallback, v.flag_cause, v.coverage_policy_applied,
                    v.truncated, tuple(v.stages_run), scored_positive,
-                   {(r.stage or r.detector_id): {"score": r.score, "n_chunks": r.n_chunks, "truncated": r.truncated,
+                   {(r.stage if r.role != "shadow" else f"{r.stage}_observe"): {"score": r.score, "n_chunks": r.n_chunks, "truncated": r.truncated,
                                                  "status": r.status} for r in v.results})
 
 

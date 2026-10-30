@@ -199,3 +199,20 @@ def test_runner_against_real_serving_app_default_coverage_flags_unscored_middle(
     assert mid["detection_rate_as_served"]["rate"] == 1.0
     assert mid["coverage_policy_flags"]["k"] == 6
     assert mid["classifier_score_flags"]["k"] == 0
+
+
+def test_observe_only_stage1_never_counts_as_catch():
+    """D23: a Stage 1 result with role="shadow" is reported but never makes a flag a classifier catch."""
+    from redteam.classifier import ClassifierVerdict
+    from contracts import DetectorResult
+
+    def res(stage, role, score, truncated=False):
+        d = _result("r1", "x", score, stage=stage, truncated=truncated)
+        d["role"] = role
+        return DetectorResult(**d)
+
+    v = ClassifierVerdict(decision="flag", policy_applied="fail_closed",
+                          results=(res("stage2", "active", 0.1),
+                                   res("stage1", "shadow", 0.99, truncated=True)))
+    assert v.flag_cause == "gateway_failure_policy"
+    assert v.truncated is False

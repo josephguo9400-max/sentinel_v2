@@ -44,6 +44,12 @@ class ClassifierVerdict:
         return UNAVAILABLE_DETECTOR_VERSION
 
     @property
+    def active_results(self) -> tuple[DetectorResult, ...]:
+        """Results that took part in the decision. An observe-only Stage 1 (D23) is returned with role="shadow"
+        and must never count as a catch, a truncation or a failure of the active path."""
+        return tuple(r for r in self.results if r.role != "shadow")
+
+    @property
     def failure_reasons(self) -> tuple[str | None, ...]:
         """DetectorResult.failure_reason of every result, in result order (v1.2)."""
         return tuple(r.failure_reason for r in self.results)
@@ -67,15 +73,15 @@ class ClassifierVerdict:
             return "fallback"
         if self.coverage_policy_applied is not None:
             return "coverage_policy"
-        positive = any(r.status == "ok" and r.predicted_injection for r in self.results)
+        positive = any(r.status == "ok" and r.predicted_injection for r in self.active_results)
         if self.policy_applied == "fail_closed" and not positive:
             return "gateway_failure_policy"
         return "classifier_flag"
 
     @property
     def truncated(self) -> bool:
-        """True when any detector result says part of the input was not scored."""
-        return any(r.truncated for r in self.results)
+        """True when any active detector result says part of the input was not scored."""
+        return any(r.truncated for r in self.active_results)
 
     def as_detail(self) -> dict:
         return {
