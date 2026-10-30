@@ -244,6 +244,27 @@ def test_t7_all_members_fail_open_on_a_multi_chunk_text_is_a_fail_open_allow():
     assert o.unscored_by_any_step is True
 
 
+def test_t7_after_a_gate_failure_members_run_under_the_gate_fallback_budget():
+    """Review r1 m10: after a gate failure the decide stage is the gate's FALLBACK and runs within the fallback's
+    timeout_ms from request start, as the single-member path does; each member's own timeout_ms (here 2 s) does
+    not extend it. A slow member (0.5 s) therefore times out under a 150 ms fallback budget and the fallback's
+    terminal decides."""
+    svc, _, _ = build("any_flag", 0.1, 0.1, gate=True, a_kwargs={"delay_s": 0.5})
+    doc = svc.policy.model_dump(mode="json")
+    doc["gate"]["on_failure"] = {"mode": "FALLBACK", "fallback": {"detector": ref(CAPS["decide"]),
+                                                                  "timeout_ms": 150, "terminal": "FAIL_CLOSED"}}
+    for m in doc["decide"]["members"]:
+        m["timeout_ms"] = 2000
+    specs = dict(svc._specs)
+    specs[GATE_KEY] = spec(FakeStage1(fail=RuntimeError("gate boom")), kind="text", timeout_ms=2000)
+    svc = service(doc, specs, config=cfg())
+    (o,) = run(svc, ["w1 GRAY w3"])
+    assert o.escalation_reason == "gate_failed"
+    a = next(m for m in o.info["members"] if m["detector"] == "fake")
+    assert a["status"] == "timeout"
+    assert (o.decision, o.policy_applied) == ("flag", "fail_closed")
+
+
 # ---------------------------------------------------------------- coverage and the gate
 
 @pytest.mark.parametrize("coverage,expect", [("flag", "flag"), ("quarantine", "flag"), ("allow", "allow")])

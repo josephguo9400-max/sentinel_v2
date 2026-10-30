@@ -915,11 +915,17 @@ class ClassifierService:
                                escalated_by_failure, escalation) -> ClassifyOutcome:
         """Shape B: both members score the same chunks concurrently; decision-level aggregation of their votes."""
 
+        # After a gate failure the decide stage runs as the gate's FALLBACK, under the fallback's budget measured from
+        # request start, exactly as the single-member path does (`deadline = t0 + gate_fallback_timeout_s`).
+        # Otherwise each member has its own timeout_ms from request start.
+        def budget_end(m: _Member) -> float:
+            return t0 + (self.gate_fallback_timeout_s if escalated_by_failure else m.timeout_s)
+
         async def run(m: _Member):
             t = time.perf_counter()
             try:
                 return m, await asyncio.wait_for(self._member_scores(m, cs, chosen),
-                                                 max(0.0, t0 + m.timeout_s - time.perf_counter())), None, t
+                                                 max(0.0, budget_end(m) - time.perf_counter())), None, t
             except (TimeoutError, Overloaded, Exception) as exc:
                 reason = ("timeout" if isinstance(exc, TimeoutError) else
                           "overloaded" if isinstance(exc, Overloaded) else "exception")
