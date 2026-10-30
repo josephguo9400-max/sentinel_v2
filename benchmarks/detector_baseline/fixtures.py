@@ -1,4 +1,4 @@
-"""Synthetic texts used by the Day 0 benchmark. All content is invented."""
+"""Synthetic texts used by the detector baseline benchmark. All content is invented."""
 
 MEETING_RECAP = [
     "Hi all, quick recap of Tuesday's sync.",

@@ -1,4 +1,4 @@
-"""Day 0 feasibility check for the Stage 2 detector (protectai/deberta-v3-base-prompt-injection-v2, ONNX fp32).
+"""Detector baseline: feasibility check for the Stage 2 detector (protectai/deberta-v3-base-prompt-injection-v2, ONNX fp32).
 
 1. Sanity-checks label semantics on three short examples.
 2. Truncation test: a realistic multi-paragraph email with an injection at the end vs at the start,
@@ -6,7 +6,7 @@
 3. Length sweep: how the score of a benign repeated sentence moves with input length.
 4. Latency: sequential CPU requests at several lengths and batch sizes. Timing includes tokenization.
 
-Run from the repo root: python scripts/fetch_models.py && python -m benchmarks.day0.bench_deberta
+Run from the repo root: python scripts/fetch_models.py && python -m benchmarks.detector_baseline.bench_deberta
 """
 import hashlib
 import json
@@ -20,12 +20,12 @@ import onnxruntime as ort
 import tokenizers
 from tokenizers import Tokenizer
 
-from benchmarks.day0.encoding import chunk_ids, truncate_ids
-from benchmarks.day0.fixtures import INJECTION, MEETING_RECAP, REPEATED_SENTENCE, SANITY
+from benchmarks.detector_baseline.encoding import chunk_ids, truncate_ids
+from benchmarks.detector_baseline.fixtures import INJECTION, MEETING_RECAP, REPEATED_SENTENCE, SANITY
 
 ROOT = Path(__file__).resolve().parents[2]
 MODEL_DIR = ROOT / "models" / "deberta-pi-v2" / "onnx"
-OUT = Path(__file__).resolve().parent / "day0_results.json"
+OUT = Path(__file__).resolve().parent / "results.json"
 MAX_LEN = 512
 STRIDE = 384  # 126-token overlap between consecutive windows
 

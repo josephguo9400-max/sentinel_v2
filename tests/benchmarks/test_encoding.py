@@ -1,6 +1,6 @@
 import pytest
 
-from benchmarks.day0.encoding import chunk_ids, truncate_ids
+from benchmarks.detector_baseline.encoding import chunk_ids, truncate_ids
 
 CLS, SEP = 1, 2
 

@@ -1,8 +1,8 @@
-# Day 0: Stage 2 detector feasibility
+# Detector baseline: Stage 2 feasibility
 
 **Model:** `protectai/deberta-v3-base-prompt-injection-v2`, official ONNX fp32 export, Apache-2.0, revision `90c9989b`, model sha256 `f0ea7f23…7b228c`. Labels `0=SAFE, 1=INJECTION`.
 **Hardware:** Claude cloud workspace, 2-core Intel Xeon @ 2.10 GHz, no GPU. Python 3.13.18, onnxruntime 1.29.0 (CPUExecutionProvider, default threads), tokenizers 0.23.3.
-**Run:** `python scripts/fetch_models.py && python -m benchmarks.day0.bench_deberta`. Every number below is in `day0_results.json`, produced by that command.
+**Run:** `python scripts/fetch_models.py && python -m benchmarks.detector_baseline.bench_deberta`. Every number below is in `results.json`, produced by that command.
 
 Inputs are always `[CLS] + content + [SEP]`, in both the truncated and the chunked path (`encoding.py`, tested in `tests/benchmarks/test_encoding.py`). Chunks are 510-content-token windows with stride 384, built on token ids, covering the tail.
 

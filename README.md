@@ -2,7 +2,7 @@
 
 A safety-classifier inference gateway prototype: a two-stage cascade (cheap Stage 1 → DeBERTa Stage 2 only for gray-zone scores), manifest-driven self-service deployment into shadow, a release gate with confidence intervals, and an adaptive red-team harness used as acceptance testing.
 
-**Status:** Day 0 — contracts v1.1 and detector feasibility measurements. Plan and rationale: [`docs/RFC.md`](docs/RFC.md).
+**Status:** milestone 1 (detector baseline) done; milestone 2 (gateway MVP) in progress. Plan and rationale: [`docs/RFC.md`](docs/RFC.md).
 
 ## Layout
 
@@ -22,16 +22,16 @@ A safety-classifier inference gateway prototype: a two-stage cascade (cheap Stag
 pip install -r requirements.txt
 python scripts/fetch_models.py           # downloads the ONNX detector into models/ (not committed)
 pytest tests/contract
-python -m benchmarks.day0.bench_deberta  # latency + truncation test on this machine
+python -m benchmarks.detector_baseline.bench_deberta  # latency + truncation test on this machine
 ```
 
-## Day 0 findings (2-core Xeon 2.1 GHz, no GPU, fp32 ONNX)
+## Detector baseline findings (2-core Xeon 2.1 GHz, no GPU, fp32 ONNX)
 
 - **Silent truncation misses injections:** an injection appended to a 705-token synthetic email scores 0.0185 when truncated to 512 tokens (same as the benign email) and 0.9966 with chunking.
 - **Long benign text drifts upward:** benign scores rise with length and repetition (0.0096 at 120 tokens, 0.3163 at 510), so long benign emails need their own false-positive slice.
 - **CPU latency:** p95 118 ms at 64 tokens, 335 ms at 256, 774 ms at 510; batching does not help on 2 cores → int8 quantization and the cascade are next.
 
-Details: [`benchmarks/day0/README.md`](benchmarks/day0/README.md).
+Details: [`benchmarks/detector_baseline/README.md`](benchmarks/detector_baseline/README.md).
 
 ## Non-goals
 
