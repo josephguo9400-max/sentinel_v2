@@ -8,6 +8,7 @@ Owner: evaluation. Every number below is in a committed JSON written by a commit
 | `training/results/window_scores_{val,replay,probes}.jsonl` | `training/window_scores.py` | yes |
 | `training/results/window_timing_{val,replay}.json` | `training/window_timing.py` | yes |
 | `training/results/window_eval.json` | `training/window_eval.py` | no |
+| `training/results/planner_fidelity.json` | `training/planner_fidelity.py` | no |
 
 ```bash
 scripts/run_dilution.sh "510 128 64" 300            # each chunk under flock /home/claude/measure.lock; resumable
@@ -16,14 +17,20 @@ scripts/run_window_scores.sh "probes val replay" "510 256 128 64" 300
 flock /home/claude/measure.lock python -m training.window_timing --set replay --n 60
 flock /home/claude/measure.lock python -m training.window_timing --set val --n 60
 python -m training.window_eval
+python -m training.planner_fidelity
 ```
 
 Model: `protectai/deberta-v3-base-prompt-injection-v2`, ONNX fp32 (sha256 pinned in `training/cascade_scores.py`),
 CPU, 2 threads, batch size 1. A request is tokenized once and split into windows of W content tokens with the
 gateway's rule (starts every `stride` tokens plus one window ending at the tail; stride 384 for W = 510, W/2
 otherwise); each model input is `[CLS] + window + [SEP]`; the request score is the **max over all windows** (no
-chunk cap); flag iff score >= 0.5. W = 510 is DeBERTa as the gateway runs it (`serving/encoding.py`) without the
-`max_chunks` cap. The frozen test was not read. Sets: val (`data/splits/val.jsonl`, 2,240 injections, 974 benign,
+chunk cap); flag iff score >= 0.5. W = 510 is DeBERTa with the original sliding-window planner (`serving/encoding.py`), without
+the `max_chunks` cap and the coverage policy. The gateway now plans Stage 2 chunks with the structure-aware planner
+(`serving/structure.py`: per-segment tokenization, paragraph boundaries, kinds kept apart, a shorter last window).
+On the 1,139 escalated replay items whose every chunk the served planner scored (serving-faithful counterfactual;
+`planner_fidelity.json`), the max served-chunk score equals the W = 510 max on 1,074 (to 5 decimal places; 1,067 at
+the stored 6), the window count equals the chunk count on 1,120, and 5 items flip at 0.5 (2 positive, 2 negative,
+1 unlabeled). W = 510 is therefore a close proxy for the served Stage 2, not an exact one. The frozen test was not read. Sets: val (`data/splits/val.jsonl`, 2,240 injections, 974 benign,
 92 of them benign_hard), the replay set (`data/replay/replay-v1.jsonl`, 306 injections, 1,185 benign, 509 unlabeled
 mosscap items excluded from every rate) and probe set v2 (`fixtures/probes`, 12 attacks, 12 matched benign
 controls). Intervals: Wilson 95% for proportions, Newcombe paired hybrid score 95% for differences on the same items.
@@ -42,7 +49,9 @@ by source with up to 20 per source by a seeded hash order. Only 13 jackhhao item
 With ctx = the first L context tokens, the injection is placed at the start, in the middle (half the context on
 each side) or at the end, for L in {0, 32, 64, 128, 256, 384, 510}. Composition is at the token-id level, so lengths
 are exact (a cut can fall inside a word). The context alone (no injection) is scored for the false-positive side.
-n = 62 per (pool, L, position); "cond." = detection among the 46 injections that are detected when scored alone.
+n = 62 per (pool, L, position); "cond." = detection among the injections that are detected when scored alone at
+that W. That is 46/62 at every W, but not the same 46 (at W = 64, 2/2 probes and 10/13 jackhhao items are detected
+alone, against 1/2 and 11/13 at W = 510), so a comparison of "cond." across W is over slightly different sets.
 
 ### W = 510 (the gateway's window): detection falls with context length
 
@@ -110,6 +119,9 @@ as injections, plus the max over many more windows. The newsletter pool has no s
 | probes | 128 | 6/12 = 50.0% [25.4, 74.6] | +41.7 [+5.1, +67.2] (+5/-0) | 0/12 | +0.0 | 1.37 |
 | probes | 64 | 10/12 = 83.3% [55.2, 95.3] | +75.0 [+36.0, +88.8] (+9/-0) | 0/12 = 0.0% [0.0, 24.2] | +0.0 | 1.41 |
 
+The probe intervals (here and in section 3) treat the 12 attack probes as independent items. They are 2 payloads
+x 6 placements, so the effective sample is smaller and the intervals are too narrow; read the probe rows as counts.
+
 **Benign-hard (val, n = 92, all INSUFFICIENT_EVIDENCE by the gate's n >= 100 rule):** 32/92 = 34.8% [25.8, 44.9]
 at W = 510, 256 and 128; **45/92 = 48.9% [38.9, 59.0] at W = 64**. 13 of W = 64's 16 extra val false positives are
 benign_hard. Long replay emails (`replay_email` families ending in `_long`, n = 64): 32/64 = 50.0% at W = 510, 256 and
@@ -133,7 +145,7 @@ seeded sample per set, under the lock):**
 | replay (mean 209.6 tokens) | 468.0 / 85.5 / 2,500.1 | 506.6 / 82.5 / 2,985.7 | 507.8 / 88.9 / 2,578.3 | 610.3 / 85.8 / 3,240.6 |
 
 Stacking all windows of a request in one call ("batched" in the JSON; padding-free because the windows of a
-request have equal length) helped only at W = 64 (replay mean 610.3 -> 529.7 ms, val 294.0 -> 256.6 ms) and not at
+request have equal length) helped materially only at W = 64 (replay mean 610.3 -> 529.7 ms, val 294.0 -> 256.6 ms) and not at
 W = 510 (replay 468.0 vs 506.1 ms). Mean wall time grows less than model tokens (replay W = 64: 1.30x the W = 510
 mean on the timing sample, against 1.53x the model tokens over the whole replay set), consistent with shorter inputs costing less per token, but these are single
 measurements on 60 requests.
@@ -147,6 +159,14 @@ chosen on val only** by the rule stored as `selection_rule`: over W2 in {256, 12
 prefer the larger t2. 56 of 80 settings are admissible. **Chosen: W2 = 128, N = 128, t2 = 0.9.** The replay set and
 the probes were not used to choose anything.
 
+**Val cannot distinguish t2 = 0.5 from t2 = 0.9.** With W2 = 128 and N = 128, every t2 in {0.5, 0.6, 0.7, 0.8, 0.9}
+gives item-for-item the same val flags (`two_pass.tied_on_val`: same recall, FPR, benign_hard and pass-2 tokens),
+so t2 = 0.9 is the rule's last tie-break, not a val-tuned threshold. The val evidence for the second pass itself is
+4 items (+0.18 [-0.06, +0.44]; the interval includes 0). At t2 = 0.5, the val-equivalent setting
+(`two_pass.descriptive_t2_0.5`), the replay result is recall 257/306 = 84.0% [79.5, 87.7] (+3.27 [+1.14, +5.59],
++10/-0) and FPR 227/1,185 = 19.2% [17.0, 21.5] (**+2.78 [+1.84, +3.78]**, +33/-0), against 254/306 and 219/1,185 at
+t2 = 0.9 below. The choice between them is a tie-break that val cannot inform.
+
 | Set | Recall: 510 -> two-pass | Paired diff | FPR: 510 -> two-pass | Paired diff | Requests with pass 2 | Model tokens vs 510 |
 | --- | --- | --- | --- | --- | --- | --- |
 | val (chose it) | 2,165 -> 2,169 / 2,240 = 96.8% [96.0, 97.5] | +0.18 [-0.06, +0.44] (+4/-0) | 86 -> 86 / 974 | +0.00 [-0.38, +0.38] | 870/3,214 | 2.19 |
@@ -159,7 +179,14 @@ On replay the 7 recovered injections are itw_jailbreak (64 -> 70) and gandalf_su
 positives are itw_regular (24 -> 45 of 295) and aya (118 -> 122 of 492). The replay FPR increase (+2.11 points,
 upper bound +2.99) exceeds the +2-point margin the rule enforced on val: the val constraint did not transfer.
 
-Measured ms per request (derived: sum of each pass's measured time per request on the timing samples): val mean
+Restricted to replay items the served planner splits into at most 4 chunks (`max_chunks`; `planner_fidelity.json`
+`two_pass_gain_by_served_chunk_count`), the two-pass gain is recall 235 -> 240/291 (+5) and FPR 191 -> 215/1,179
+(+24). The other 2 recovered injections (12 -> 14/15) and 1 new false positive (3 -> 4/6) are on items over the
+4-chunk cap, which the D23 configuration already flags by the coverage policy.
+
+Measured ms per request (derived: sum of each pass's measured time per request on the timing samples; each pass
+was timed with its own tokenization, which a real two-pass run would do once, so this slightly overstates the
+cost): val mean
 159.4 -> 326.2 ms, p95 396.1 -> 1,081.4 (18/60 requests run pass 2); replay mean 468.0 -> 925.5 ms, p95 2,500.1 ->
 4,894.2 (16/60 run pass 2). Pass 2 roughly doubles DeBERTa compute because N = 128 sends every request over 128
 tokens to it (27% of val, 20% of replay requests).
@@ -176,7 +203,7 @@ tokens to it (27% of val, 20% of replay requests).
   W = 64). The controlled newsletter contexts and the probe controls show no false positives at any W, so they
   understate this risk; the val_benign contexts and replay show it.
 - **Recommendation: do not turn a small-window pass on as a blocking decision now.** The val-chosen two-pass
-  setting buys +2.3 points of replay recall (7/306) for +2.1 points of replay FPR (25/1,185) at about 2.2x the
+  setting (t2 = 0.9 by tie-break; t2 = 0.5 is equally good on val and costs +2.78 points of replay FPR) buys +2.3 points of replay recall (7/306) for +2.1 points of replay FPR (25/1,185) at about 2.2x the
   DeBERTa model tokens, about 2x the mean and 2-2.7x the p95 latency on this CPU. benign_hard FPR is already the failing gate
   slice (34.8% at W = 510) and a small window cannot lower it. Reasonable next steps, in order: (1) run the W2 = 128
   pass in **shadow** (the gateway's async shadow path exists) to measure the flag-rate change on live traffic
@@ -203,5 +230,6 @@ tokens to it (27% of val, 20% of replay requests).
 - Small-window caches reuse the cascade cache's score for requests with n <= W (the same single model input); a
   test recomputes a sample of both cached paths. Timing numbers are single measurements on a shared 2-core VM
   (`onnxruntime` 1.29.0, 2 threads), n = 60 per set; the replay sample's mean and p95 are driven by a few long
-  requests. The gateway's int8 Stage 2 and its 4-chunk cap were not modelled here.
+  requests. The gateway's int8 Stage 2, its 4-chunk cap, its coverage policy and its structure-aware planner were
+  not modelled here (planner agreement: see the method paragraph at the top and `planner_fidelity.json`).
 - All benign_hard numbers are n = 92 < 100: INSUFFICIENT_EVIDENCE under the RFC gate rule.

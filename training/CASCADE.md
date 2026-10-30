@@ -66,9 +66,15 @@ not something val can show. The owner decided (D22) to judge the criterion on th
 **Outcome on the replay set (D23, 2026-10-30): the cascade is rejected.** Savings did rise with the benign share,
 as projected, but recall did not hold: injections from a source Stage 1 never trained on (`gandalf_summ`, indirect
 injections inside text to summarize) score low under TF-IDF and are allowed before DeBERTa sees them. At this
-gray zone, simulated the way the gateway routes (`reports/cascade-and-shadow/replay_counterfactual_served_faithful.json`, 1,991/1,995 decisions agree with the served run), the cascade loses 48 DeBERTa-caught injections (recall 247/306 -> 201/306) and saves 2.5% at equal recall (40.1% at the chosen setting). The cruder offline approximation, which scores each request once with TF-IDF and trusts the dataset's language tag, gives 56 lost and 1.35% (`replay_counterfactual.json`); the gateway escalates more because it scores sub-windows and returns language "unknown" for short or low-confidence text. The val sweep could not see this,
+gray zone, simulated the way the gateway routes (`reports/cascade-and-shadow/replay_counterfactual_served_faithful.json`, 1,991/1,995 decisions agree with the served run), the cascade loses 48 DeBERTa-caught injections (recall 247/306 -> 201/306, paired -15.0 pt [-19.4, -10.7]: 3 caught only by the cascade, 49 only by DeBERTa) and saves 2.5% at equal recall (40.1% at the chosen setting). It brings no FPR benefit either: 194/1,185 -> 191/1,185, paired -0.25 pt [-0.91, +0.40] (`paired` block). The cruder offline approximation, which scores each request once with TF-IDF and trusts the dataset's language tag, gives 56 lost and 1.35% (`replay_counterfactual.json`); the gateway escalates more because it scores sub-windows and returns language "unknown" for short or low-confidence text. The val sweep could not see this,
 because val shares Stage 1's training sources: a threshold chosen in-distribution says nothing about a new attack
 style. The gateway now runs Stage 1 observe-only (`stage1_mode: observe`); DeBERTa decides every request.
+Replayed through the gateway in that configuration (`reports/cascade-and-shadow/d23/replay_counterfactual.json`,
+`views.served.same_items`, 1,472 labeled items), the D23 deployment measured recall 248/303 = 81.8% [77.1, 85.8]
+and FPR 199/1,169 = 17.0% [15.0, 19.3], against 245/303 and 191/1,169 for offline DeBERTa-only on the same items.
+The 15 flips come from the coverage policy (5, all to flag), the failure policy (3, to flag) and other causes (7).
+Full coverage does not mean detection: a short injection in the middle of long benign text is usually missed even
+when every token is scored (`training/DILUTION.md`).
 
 ### Not chosen: letting Stage 1 finalize flags
 
