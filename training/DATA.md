@@ -375,11 +375,33 @@ Caveats: the in-the-wild repository contains harmful language and may contain pe
 says so); Stage 2 training overlap with these sources is unknown; aya prompts are questions and instructions,
 not emails, so they test language drift, not email-shaped content.
 
+### Replay runner (`training/replay_runner.py`)
+
+```bash
+python -m training.replay_runner --url http://127.0.0.1:8000 --rps 5 --mode open --window-s 20 \
+    --out-dir training/results/replay_runs/<name>          # add --drain-labels to wait for delayed labels
+```
+
+Replays `replay-v1` to a gateway at a fixed rate: **open loop** (scheduled Poisson offsets scaled to `--rps`, or
+uniform; outstanding requests over `--max-inflight` are counted as `client_saturated` instead of slowing the
+run down) or **closed loop** (`--concurrency` workers, rate-capped). One attempt per item, no retries. Every
+response is validated with `contracts.ClassifyResponse`. Per wall-clock window (`windows.jsonl`, appended while
+the run is going) it reports flag rate and escalation rate (from `stages_run`) with Wilson intervals, `stages_run`,
+`decided_by`, `policy_applied` and `coverage_policy_applied` counts, `failure_reason` counts with `overloaded`
+apart from timeouts and exceptions, transport/HTTP/invalid-response error counts, shadow agreement with the served
+decision and shadow failure reasons, client latency percentiles, and the window's non-English share (replay
+metadata the gateway never sees). A label is used only once `send time + label_available_after_s x scale` has
+passed; each window reports the labels revealed in it and cumulatively. Tested only against a fake gateway
+(`tests/training/test_replay_runner.py`); **it has not been run against the real gateway in this milestone**, and
+no number from it is reported here.
+
 ## Changelog
 
 - **2026-10-30, cascade-and-shadow**: cascade sweep on val (`training/CASCADE.md`); `stage1-tfidf-v2.1`
-  (same model bytes, manifest 1.2, swept gray zone); traffic replay set `replay-v1` (section 8); `check_leakage`
-  check 6 (replay set vs all splits).
+  (same model bytes, manifest 1.2, swept gray zone); traffic replay set `replay-v1` and replay runner (section 8);
+  `check_leakage` check 6 (replay set vs all splits); the eval harness validates responses with
+  `contracts.ClassifyResponse` v1.2 and reports `stages_run`, `coverage_policy_applied` and `failure_reason`
+  counts per slice.
 - **2026-10-29, splits-v2 / benign-hard-v2 / stage1-tfidf-v2** (review round 1):
   - Benign-hard sentence pools split by split. Under splits-v1, 56 distinct sentences (828 of 3,495
     sentence occurrences longer than 30 characters in frozen benign-hard records, counted by
