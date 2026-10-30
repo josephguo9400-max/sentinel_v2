@@ -1,16 +1,16 @@
 # Sentinel v2
 
-A safety-classifier inference gateway prototype: a two-stage cascade (cheap Stage 1 → DeBERTa Stage 2 only for gray-zone scores), manifest-driven self-service deployment into shadow, a release gate with confidence intervals, and an adaptive red-team harness used as acceptance testing.
+A safety-classifier inference gateway prototype: DeBERTa prompt-injection detection behind a gateway with chunked scoring and an explicit coverage policy for unscored content, manifest-driven deployment with shadow and observe-only candidates, a release gate with confidence intervals, and an adaptive red-team harness used as acceptance testing.
 
-**Status:** milestones 1 (detector-baseline) and 2 (gateway-mvp) done and independently reviewed; next is cascade-and-shadow. Plan and rationale: [`docs/RFC.md`](docs/RFC.md).
+**Status:** milestones 1 (detector-baseline) and 2 (gateway-mvp) done and independently reviewed. Milestone 3 (cascade-and-shadow) is in review: its cost-saving cascade (cheap TF-IDF Stage 1 finalizing allows) **failed its kill criterion on the traffic replay set** and was turned off (D23); DeBERTa now decides every request and Stage 1 runs observe-only. Plan and rationale: [`docs/RFC.md`](docs/RFC.md).
 
 ## Layout
 
 | Path | Owner | Purpose |
 | --- | --- | --- |
-| `contracts/` | owner | Frozen shared schemas: `DetectorResult`, `ArtifactManifest`, `TraceEvent` (v1.1) |
+| `contracts/` | owner | Frozen shared schemas: `DetectorResult`, `ArtifactManifest`, `TraceEvent`, `ClassifyRequest`/`ClassifyResponse` (v1.2; readers accept 1.1) |
 | `tests/contract/` | owner | Contract tests every agent must keep green |
-| `serving/`, `web/` | Agent A | Gateway, cascade routing, shadow, gate, static UI |
+| `serving/`, `web/` | Agent A | Gateway, registry, Stage 1 routing/observe modes, coverage policy, shadow, static UI |
 | `training/`, `artifacts/candidates/` | Agent B | Data splits, Stage 1, candidate manifests |
 | `redteam/`, `fixtures/` | Agent C | Email sandbox, deterministic judge, adaptive attacker |
 | `reports/verify/` | Verifier | Independent checkpoint reports |
@@ -20,10 +20,15 @@ A safety-classifier inference gateway prototype: a two-stage cascade (cheap Stag
 
 ```bash
 pip install -r requirements.txt
-python scripts/fetch_models.py           # downloads the ONNX detector into models/ (not committed)
+python scripts/fetch_models.py           # downloads the ONNX detector into artifacts/baseline/deberta-pi-v2/ (not committed)
 pytest -q
 python -m benchmarks.detector_baseline.bench_deberta  # latency + truncation test on this machine
 ```
+
+## Cascade-and-shadow findings (replay set, 2,000 requests; Wilson 95% intervals)
+
+- **The cascade does not pay for itself on drifted traffic.** DeBERTa alone recalls 247/306 = 80.7% of replay injections; with TF-IDF Stage 1 allowed to finalize allows the gateway served 202/306 = 66.0% while still sending 59.9% of requests to DeBERTa. At identical recall the cascade saves 1.35% of Stage 2 calls (bar: 30%). The loss is concentrated in `gandalf_summ`, indirect injections inside text to summarize, a source Stage 1 never trained on. Val did not show it because val shares Stage 1's training sources. Details: `training/CASCADE.md`, `reports/cascade-and-shadow/replay_counterfactual.json`.
+- **Probe set v1 measured nothing for long emails:** its filler was largely random words, which DeBERTa flags with or without an injection. Probe set v2 uses distinct sentences.
 
 ## Gateway MVP findings (frozen test sha256 `2a4e011f…`, 6,276 items, Wilson 95% intervals, as served)
 

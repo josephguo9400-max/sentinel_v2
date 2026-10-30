@@ -36,9 +36,11 @@ Stage 1 modes (registry `stage1_mode`, owner decision D23):
 - "route" (above): Stage 1 clears chunks and may finalize.
 - "observe": steps 3-4 are skipped and step 5 sees no cleared chunk and no Stage 1 score, so chunk selection,
   Stage 2 scoring, coverage policy and decision are those of a gateway without Stage 1. After the outcome is fixed,
-  Stage 1 runs on the same chunk plan under its own budget (not the Stage 2 deadline) and its DetectorResult is
-  appended with role="shadow" (stage="stage1"); stages_run does not list it. Nothing Stage 1 does (score, timeout,
-  exception) is read by the decision code. Cost: up to the Stage 1 budget of extra wall time per response.
+  the admission slot is released, and then Stage 1 runs on the same chunk plan under its own budget (not the Stage 2
+  deadline) and at most `stage1_observe_concurrency` at a time (busy -> dropped, never queued); its DetectorResult
+  is appended with role="shadow" (stage="stage1"); stages_run does not list it. Nothing Stage 1 does (score,
+  timeout, exception) is read by the decision code. Not isolated: an observation shares the CPU with other
+  requests' Stage 2. Cost: up to the Stage 1 budget of extra wall time per response.
 
 Result semantics: one active DetectorResult per stage that decided, in order (plus, in observe mode, the Stage 1
 result with role="shadow" after them). Each result's `truncated` is about that detector:
@@ -173,9 +175,15 @@ class ClassifierService:
                                        log_path=config.shadow_log_path or None)
         self.inflight = 0
         self.inflight_chars = 0
+        self._observe_slots = 0  # observe-only Stage 1 runs in progress (not counted in inflight)
         self._tokenizer_pool: ThreadPoolExecutor | None = None
         self._stage1_pool: ThreadPoolExecutor | None = None
         self.started = False
+
+    @property
+    def busy(self) -> bool:
+        """Admitted requests or observe-only work still running (the app waits for this before retiring)."""
+        return bool(self.inflight or self._observe_slots)
 
     @property
     def request_budget_ms(self) -> int:
@@ -253,9 +261,8 @@ class ClassifierService:
                 windows += [w for t in texts for w in
                             tfidf_subwindows(t, c.stage1_subwindow_tokens, c.stage1_subwindow_stride)]
             scores[i] = max(s1.detector.infer(windows))
-            # The language gate only matters for a chunk Stage 1 would clear; langdetect is 37-48% of Stage 1's
-            # cost on benign text (serving/bench_results/stage1_latency_before.json), so chunks at or above low
-            # skip it.
+            # The language gate only matters for a chunk Stage 1 would clear; langdetect was 34-59% of Stage 1's
+            # cost (p50, serving/bench_results/stage1_latency_before.json), so chunks at or above low skip it.
             if self.stage1_languages is not None and scores[i] < lo:
                 langs[i] = self.language.detect(ch.text)[0]
         return _Stage1Out(scores=scores, langs=langs, n_tokens=n_tokens, deadline_hit=deadline_hit)
@@ -339,10 +346,16 @@ class ClassifierService:
         if not self._admit(len(text)):
             out = self._overloaded(text, request_id, t0)
         else:
+            sha = hashlib.sha256(text.encode("utf-8")).hexdigest()
+            observe = self.stage1 is not None and self.stage1_mode == "observe"
             try:
-                out = await self._classify(text, request_id, t0)
+                out, cs = await self._classify_active(text, request_id, t0, sha, route_stage1=not observe)
             finally:
+                # The decision is final: give the admission slot back BEFORE any observe-only work, so observe
+                # Stage 1 never holds max_inflight / max_inflight_chars against other requests.
                 self._release(len(text))
+            if observe:
+                await self._observe_guarded(out, cs, request_id, sha)
         self._observe(out)
         if self.shadow is not None:
             self.shadow.offer(ShadowItem(request_id=request_id, text=text, enqueued_at=time.perf_counter(), active={
@@ -373,17 +386,25 @@ class ClassifierService:
         return ClassifyOutcome(request_id, self._policy_decision(s2.failure_policy), s2.detector_id,
                                s2.failure_policy, results, stages, None, info)
 
-    async def _classify(self, text: str, request_id: str, t0: float) -> ClassifyOutcome:
-        sha = hashlib.sha256(text.encode("utf-8")).hexdigest()
-        observe = self.stage1 is not None and self.stage1_mode == "observe"
-        out, cs = await self._classify_active(text, request_id, t0, sha, route_stage1=not observe)
-        if observe:  # the outcome is final here; Stage 1 only appends a role="shadow" result
-            try:
-                await self._observe_stage1(out, cs, request_id, sha)
-            except Exception:  # defensive: nothing observe-only may fail the request
-                log.exception("observe-only stage1 failed on request %s", request_id)
-                out.info["stage1_observe"] = {"status": "error", "outcome": "not_scored"}
-        return out
+    async def _observe_guarded(self, out: ClassifyOutcome, cs: ChunkSet | None, request_id: str,
+                               sha: str) -> None:
+        """Observe-only Stage 1 after the decision, outside admission control, under its own bounded slot count
+        (`stage1_observe_concurrency`). When every slot is busy the observation is dropped and counted: observe
+        work never queues, so it cannot pile up behind a slow Stage 1 or add up across concurrent requests."""
+        if self._observe_slots >= self.config.stage1_observe_concurrency:
+            out.results.append(self._result(self.stage1, request_id, sha, status="error", reason="overloaded",
+                                            score=None, latency_ms=0.0, n_tokens=0, n_chunks=1, truncated=True,
+                                            stage="stage1", role="shadow"))
+            out.info["stage1_observe"] = {"status": "error", "outcome": "dropped"}
+            return
+        self._observe_slots += 1
+        try:
+            await self._observe_stage1(out, cs, request_id, sha)
+        except Exception:  # defensive: nothing observe-only may fail the request
+            log.exception("observe-only stage1 failed on request %s", request_id)
+            out.info["stage1_observe"] = {"status": "error", "outcome": "not_scored"}
+        finally:
+            self._observe_slots -= 1
 
     async def _observe_stage1(self, out: ClassifyOutcome, cs: ChunkSet | None, request_id: str, sha: str) -> None:
         s1 = self.stage1
@@ -540,10 +561,10 @@ class ClassifierService:
         if out.info.get("stage1_deadline_hit") or (obs or {}).get("deadline_hit"):
             m.stage1_deadline_hits.labels(self.stage1.detector_id, self.stage1_mode).inc()
         for r in out.results:
-            m.detector_latency.labels(r.detector_id, r.status).observe(r.latency_ms / 1000)
+            m.detector_latency.labels(r.detector_id, r.status, r.role).observe(r.latency_ms / 1000)
             if r.status != "ok":
-                m.detector_failures.labels(r.detector_id, r.status, r.failure_reason or "none").inc()
+                m.detector_failures.labels(r.detector_id, r.status, r.failure_reason or "none", r.role).inc()
             else:
-                m.chunks.labels(r.stage).observe(r.n_chunks)
+                m.chunks.labels(r.stage, r.role).observe(r.n_chunks)
             if r.truncated:
-                m.truncated.labels(r.detector_id).inc()
+                m.truncated.labels(r.detector_id, r.role).inc()

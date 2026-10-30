@@ -99,7 +99,7 @@ def create_app(config: GatewayConfig | None = None, detector: Any = None, *, sta
 
     async def _retire(old: ClassifierService) -> None:
         deadline = time.monotonic() + 30
-        while old.inflight and time.monotonic() < deadline:
+        while old.busy and time.monotonic() < deadline:
             await asyncio.sleep(0.05)
         await old.stop()
 
@@ -128,7 +128,7 @@ def create_app(config: GatewayConfig | None = None, detector: Any = None, *, sta
                 f"{r['code']}: {r['detail']}" for r in rejections if r["pointer"] == "stage2")
             metrics.registry_loads.labels("failed").inc()
             return
-        await install(specs, pointers["stage1_mode"])
+        await install(specs, pointers["stage1_mode"] or "observe")
         metrics.registry_loads.labels("degraded" if rejections else "ok").inc()
 
     async def reload() -> dict:
@@ -152,10 +152,10 @@ def create_app(config: GatewayConfig | None = None, detector: Any = None, *, sta
                 log.error("registry reload rejected, keeping last good config: %s", rejections)
                 if state["service"] is None:  # nothing to keep: take what verified, like startup
                     if "stage2" in specs:
-                        await install(specs, pointers["stage1_mode"])
+                        await install(specs, pointers["stage1_mode"] or "observe")
                         state["load_error"] = None
                 return rep
-            await install(specs, pointers["stage1_mode"])
+            await install(specs, pointers["stage1_mode"] or "observe")
             state.update(rejections=[], pointers=pointers, registry_sha256=sha, load_error=None)
             rep = {"at": _now(), "applied": True, "registry_sha256": sha, "pointers": pointers, "rejections": []}
             state["last_reload"] = rep

@@ -61,8 +61,16 @@ Stage 1 finalizes 884/974 = 90.8% [88.8, 92.4] of benign items and 38/2,240 = 1.
 derived, not measured, and assuming val's per-class score distributions hold) gives 89.9% saved at a 1%
 injection rate, 81.9% at 10% and 64.0% at 30%. Real gateway traffic is expected to be mostly benign, so the
 val number understates savings; but that projection is exactly what the replay set and the gate must measure,
-not something val can show. The owner decides whether the RFC's "fall back" applies; this milestone does not
-remove the cascade from the plan.
+not something val can show. The owner decided (D22) to judge the criterion on the replay set.
+
+**Outcome on the replay set (D23, 2026-10-30): the cascade is rejected.** Savings did rise with the benign share,
+as projected, but recall did not hold: injections from a source Stage 1 never trained on (`gandalf_summ`, indirect
+injections inside text to summarize) score low under TF-IDF and are allowed before DeBERTa sees them. At this
+gray zone the offline approximation loses 56 DeBERTa-caught injections (recall 80.7% -> 62.4%) and saves 1.35% at
+equal recall; the gateway itself served 66.0% recall with 59.9% of requests sent to Stage 2
+(`reports/cascade-and-shadow/replay_counterfactual.json`, `views.served`). The val sweep could not see this,
+because val shares Stage 1's training sources: a threshold chosen in-distribution says nothing about a new attack
+style. The gateway now runs Stage 1 observe-only (`stage1_mode: observe`); DeBERTa decides every request.
 
 ### Not chosen: letting Stage 1 finalize flags
 

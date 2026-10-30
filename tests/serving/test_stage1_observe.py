@@ -24,7 +24,8 @@ from fakes import FakeDetector, FakeStage1, RecordingDetector, make_specs
 from serving.app import create_app
 from serving.config import GatewayConfig
 from serving.language import FixedLanguage
-from serving.registry import RegistryError, read_registry
+from artifact_factory import known_tokenizers
+from serving.registry import RegistryError, load_registry, read_registry
 from serving.service import ClassifierService
 
 
@@ -268,15 +269,51 @@ def test_language_is_identified_only_for_chunks_below_gray_low():
 # ----------------------------------------------------------------------------------------- registry
 
 
-def test_registry_stage1_mode_defaults_to_route_and_is_validated(tmp_path):
-    p = write_registry(tmp_path, stage2="baseline/x")
-    assert read_registry(p)["stage1_mode"] == "route"
+def test_registry_stage1_mode_is_validated(tmp_path):
     p = write_registry(tmp_path, stage2="baseline/x", stage1_mode="observe")
     assert read_registry(p)["stage1_mode"] == "observe"
+    p = write_registry(tmp_path, stage2="baseline/x")  # no stage1: the key may be omitted
+    assert read_registry(p)["stage1_mode"] is None
     p = write_registry(tmp_path, stage2="baseline/x", stage1_mode="shadow")
     with pytest.raises(RegistryError) as exc:
         read_registry(p)
     assert exc.value.code == "registry_invalid"
+
+
+def test_stage1_without_stage1_mode_is_rejected_not_routed(tmp_path):
+    """M5: no silent default. Stage 1 is rejected (stage1_mode_missing), Stage 2 serves alone, health is degraded,
+    and a reload to such a registry is refused."""
+    write_token_artifact(tmp_path, "baseline/tiny")
+    write_stage1_artifact(tmp_path, "candidates/s1")
+    reg = write_registry(tmp_path, stage1="candidates/s1", stage2="baseline/tiny")
+    loaded = load_registry(reg, tmp_path, known_tokenizers=known_tokenizers())
+    assert "stage1" not in loaded.specs and "stage2" in loaded.specs
+    assert [(r.pointer, r.code) for r in loaded.rejections] == [("stage1", "stage1_mode_missing")]
+    config = GatewayConfig(registry_path=str(reg), artifacts_root=str(tmp_path),
+                           extra_tokenizers=extra_tokenizers_cfg(), shadow_log_path="")
+    with TestClient(create_app(config, language=FixedLanguage("en"))) as c:
+        h = c.get("/health").json()
+        body = ClassifyResponse.model_validate(c.post("/classify", json={"text": "w1 w2", "request_id": "r"}).json())
+        write_registry(tmp_path, stage1="candidates/s1", stage1_mode="observe", stage2="baseline/tiny")
+        assert c.post("/admin/reload").status_code == 200
+        write_registry(tmp_path, stage1="candidates/s1", stage2="baseline/tiny")
+        r = c.post("/admin/reload")
+        h2 = c.get("/health").json()
+    assert h["status"] == "degraded" and h["stage1"] is None
+    assert h["registry"]["rejections"][0]["code"] == "stage1_mode_missing"
+    assert body.stages_run == ["stage2"] and len(body.results) == 1
+    assert r.status_code == 409 and r.json()["rejections"][0]["code"] == "stage1_mode_missing"
+    assert h2["stage1_mode"] == "observe"  # last good config keeps serving
+
+
+def test_historical_integration_registry_is_rejected_and_its_route_copy_loads():
+    old = ROOT / "reports" / "cascade-and-shadow" / "registry_integration.json"
+    new = ROOT / "reports" / "cascade-and-shadow" / "registry_integration_route.json"
+    assert "stage1_mode" not in json.loads(old.read_text())
+    assert read_registry(old)["stage1_mode"] is None
+    a, b = json.loads(old.read_text()), json.loads(new.read_text())
+    assert b.pop("stage1_mode") == "route" and {k: v for k, v in a.items() if k != "comment"} == {
+        k: v for k, v in b.items() if k != "comment"}
 
 
 def test_committed_registry_is_deberta_decides_with_stage1_observe():
@@ -294,7 +331,7 @@ def test_gateway_from_registry_in_observe_mode(tmp_path):
     with TestClient(create_app(config, language=FixedLanguage("en"))) as c:
         h = c.get("/health").json()
         body = c.post("/classify", json={"text": "w1 w2 w3", "request_id": "r"}).json()
-        write_registry(tmp_path, stage1="candidates/s1", stage2="baseline/tiny")  # back to route
+        write_registry(tmp_path, stage1="candidates/s1", stage1_mode="route", stage2="baseline/tiny")
         assert c.post("/admin/reload").status_code == 200
         routed = c.post("/classify", json={"text": "w1 w2 w3", "request_id": "r2"}).json()
     assert h["stage1_mode"] == "observe" and h["registry"]["pointers"]["stage1_mode"] == "observe"
@@ -302,3 +339,67 @@ def test_gateway_from_registry_in_observe_mode(tmp_path):
     assert resp.stages_run == ["stage2"] and resp.decided_by == "tiny-token"
     assert [(r.stage, r.role) for r in resp.results] == [("stage2", "active"), ("stage1", "shadow")]
     assert ClassifyResponse.model_validate(routed).stages_run[0] == "stage1"
+
+
+# ----------------------------------------------------------------------------------------- concurrency (M1)
+
+
+def run_concurrent(texts_and_delays, *, stage1, mode, config):
+    """Send each text after its delay (seconds from start), concurrently; return outcomes in input order."""
+    s2, s1 = make_specs(FakeDetector(), stage1)
+
+    async def scenario():
+        svc = ClassifierService(s2, config, stage1=s1, language=FixedLanguage("en"), stage1_mode=mode)
+        await svc.start()
+
+        async def one(i, text, delay):
+            await asyncio.sleep(delay)
+            return await svc.classify(text, f"r{i}")
+
+        try:
+            return await asyncio.gather(*(one(i, t, d) for i, (t, d) in enumerate(texts_and_delays)))
+        finally:
+            await svc.stop()
+
+    outs = asyncio.run(scenario())
+    for o in outs:
+        ClassifyResponse.model_validate(o.as_response())
+    return outs
+
+
+def test_observe_stage1_does_not_hold_admission_against_other_requests():
+    """The verifier's M1 case: max_inflight=1, request B arrives 150 ms after A, while A's observe-only Stage 1 (300 ms)
+    is still running after A's decision. Before the fix A still held the admission slot, so B was shed as overloaded
+    and Stage 2's fail_closed flagged it. B must get the decision a gateway without Stage 1 gives it."""
+    reqs = [("w1 w2 w3", 0.0), ("w4 w5 w6", 0.15)]
+    config = cfg(max_inflight=1)
+    ref = run_concurrent(reqs, stage1=False, mode="route", config=config)
+    obs = run_concurrent(reqs, stage1=FakeStage1(delay_s=0.3), mode="observe", config=config)
+    assert [(o.decision, o.policy_applied, o.info["path"]) for o in ref] == [("allow", None, "stage2_allow")] * 2
+    assert [active_view(o) for o in obs] == [active_view(o) for o in ref]
+    assert obs[0].results[-1].status == "ok" and obs[0].info["stage1_observe"]["outcome"] == "would_finalize_allow"
+    # A's observation still holds the single observe slot when B is decided: B's is dropped, not queued.
+    assert obs[1].info["stage1_observe"]["outcome"] == "dropped"
+    assert obs[1].results[-1].failure_reason == "overloaded" and obs[1].results[-1].role == "shadow"
+
+
+def test_observe_work_is_bounded_and_drops_instead_of_queueing():
+    reqs = [(f"w{i} w2 w3", 0.01 * i) for i in range(4)]
+    config = cfg(stage1_observe_concurrency=1)
+    ref = run_concurrent(reqs, stage1=False, mode="route", config=config)
+    obs = run_concurrent(reqs, stage1=FakeStage1(delay_s=0.2), mode="observe", config=config)
+    assert [active_view(o) for o in obs] == [active_view(o) for o in ref]
+    outcomes = [o.info["stage1_observe"]["outcome"] for o in obs]
+    assert outcomes.count("dropped") == 3 and outcomes[0] == "would_finalize_allow"
+
+
+def test_observe_failures_are_labelled_shadow_in_metrics():
+    det = FakeDetector()
+    app = create_app(cfg(), det, stage1=FakeStage1(fail=RuntimeError("boom")), language=FixedLanguage("en"),
+                     stage1_mode="observe")
+    with TestClient(app) as c:
+        c.post("/classify", json={"text": "w1 w2", "request_id": "x"})
+        m = c.get("/metrics").text
+    assert ('sentinel_detector_failures_total{detector_id="fake-s1",reason="exception",role="shadow",'
+            'status="error"} 1.0') in m
+    assert 'role="active",status="error"' not in m

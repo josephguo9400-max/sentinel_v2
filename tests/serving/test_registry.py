@@ -194,7 +194,8 @@ def test_gateway_loads_from_registry_and_reports_rejection_in_health(tmp_path):
     write_token_artifact(tmp_path, "baseline/tiny")
     write_stage1_artifact(tmp_path, "candidates/s1")
     write_token_artifact(tmp_path, "candidates/bad", sha256="2" * 64)
-    write_registry(tmp_path, stage1="candidates/s1", stage2="baseline/tiny", shadow="candidates/bad")
+    write_registry(tmp_path, stage1="candidates/s1", stage1_mode="route", stage2="baseline/tiny",
+                   shadow="candidates/bad")
     with TestClient(create_app(gw_config(tmp_path), language=FixedLanguage("en"))) as c:
         h = c.get("/health").json()
         # Real Stage 1 escalates this obvious injection; the tiny Stage 2 flags it on the INJECT token.

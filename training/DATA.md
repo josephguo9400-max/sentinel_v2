@@ -396,9 +396,11 @@ the run is going) it reports flag rate and escalation rate (from `stages_run`) w
 apart from timeouts and exceptions, transport/HTTP/invalid-response error counts, shadow agreement with the served
 decision and shadow failure reasons, client latency percentiles, and the window's non-English share (replay
 metadata the gateway never sees). A label is used only once `send time + label_available_after_s x scale` has
-passed; each window reports the labels revealed in it and cumulatively. Tested only against a fake gateway
-(`tests/training/test_replay_runner.py`); **it has not been run against the real gateway in this milestone**, and
-no number from it is reported here.
+passed; each window reports the labels revealed in it and cumulatively. Tested against a fake gateway
+(`tests/training/test_replay_runner.py`) and run against the real gateway twice in this milestone: the route-mode
+cascade (`reports/cascade-and-shadow/replay_after/`) and the D23 deployment, DeBERTa deciding with Stage 1
+observe-only (`reports/cascade-and-shadow/d23/replay/`). Both at 2 req/s on the shared 2-core host; results and
+their reading are in `training/CASCADE.md` and `docs/RFC.md` (D23).
 
 ## Changelog
 
