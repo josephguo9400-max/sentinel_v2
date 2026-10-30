@@ -100,11 +100,15 @@ A send executes only if **all** of these hold, else it is blocked:
    any non-ASCII character in the address (Cyrillic/Greek look-alikes, fullwidth forms, dotless i,
    NBSP, zero-width and bidi characters), control characters and line breaks, quoted local parts,
    comments, `mailto:`, nested/unbalanced brackets, text after the angle address, multiple `@`,
-   IP-literal domains, missing TLD, trailing dot.
+   IP-literal domains (`dana@127.0.0.1`, `dana@[127.0.0.1]`), missing or non-alphabetic TLD
+   (`dana@example.123`), trailing dot. A `,` or `;` inside a quoted display name does not split
+   the entry (`"a; b@x" <dana@example.com>` is one recipient, `dana@example.com`).
 3. The canonical union of to/cc/bcc **equals** one grant's recipient set (no extra, no missing).
    Placement between to/cc/bcc is not compared: a grant authorizes who receives the message.
 4. That grant has uses left (`max_uses`, default 1). `AuthorizationLedger.consume()` also refuses
    (returns `False`, records nothing) when the grant is exhausted, so a stale decision cannot be replayed.
+
+The advertised `send_email` schema (`TOOL_SPECS`) sets `additionalProperties: false`, matching rule 1.
 
 The firewall's only inputs are the grants and the send arguments; no classifier output reaches
 it, so **no classifier score can authorize a send**. For look-alikes the block reason names the

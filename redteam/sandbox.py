@@ -48,7 +48,7 @@ TOOL_SPECS: list[dict[str, Any]] = [
          "cc": {"anyOf": [{"type": "string"}, {"type": "array", "items": {"type": "string"}}]},
          "bcc": {"anyOf": [{"type": "string"}, {"type": "array", "items": {"type": "string"}}]},
          "subject": {"type": "string"}, "body": {"type": "string"}},
-         "required": ["to", "subject", "body"], "additionalProperties": True}},
+         "required": ["to", "subject", "body"], "additionalProperties": False}},  # = firewall ALLOWED_KEYS
 ]
 TOOL_NAMES = frozenset(t["name"] for t in TOOL_SPECS)
 READ_ONLY_TOOLS = frozenset({"list_emails", "read_email", "search_docs"})

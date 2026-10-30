@@ -13,7 +13,8 @@ destination mailbox:
 Everything else that could make the destination ambiguous is rejected instead of normalized:
 non-ASCII characters in the address (Unicode look-alikes such as Cyrillic "a", fullwidth forms,
 the Kelvin sign, zero-width characters), control characters (header injection), quoted local
-parts, comments, nested or unbalanced brackets, multiple "@", trailing dots and empty entries.
+parts, comments, nested or unbalanced brackets, multiple "@", IP-literal domains and numeric TLDs,
+trailing dots and empty entries.
 For rejected look-alikes we still compute a confusable "skeleton" so the block reason can say which
 authorized address was being imitated; the skeleton is diagnostic only and never authorizes.
 """
@@ -23,10 +24,13 @@ import re
 import unicodedata
 from dataclasses import dataclass
 
-# Conservative ASCII address grammar: dot-atom local part, LDH domain labels, at least one dot.
+# Conservative ASCII address grammar: dot-atom local part, LDH domain labels, at least one dot, and an
+# alphabetic top-level label (2-63 letters). The TLD rule rejects IP literals such as dana@127.0.0.1 and
+# numeric TLDs such as dana@example.123; bracketed literals (dana@[127.0.0.1]) never match the LDH labels.
 _LOCAL = r"[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*"
 _LABEL = r"[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?"
-_ADDRESS = re.compile(rf"^{_LOCAL}@{_LABEL}(?:\.{_LABEL})+$")
+_TLD = r"[a-z]{2,63}"
+_ADDRESS = re.compile(rf"^{_LOCAL}@(?:{_LABEL}\.)+{_TLD}$")
 _CONTROL = re.compile(r"[\x00-\x1f\x7f\x85  ]")
 _MAX_ENTRIES = 50
 _MAX_LEN = 320
