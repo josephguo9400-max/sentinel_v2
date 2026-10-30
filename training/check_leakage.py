@@ -13,6 +13,11 @@ Checks:
      (training.benign_hard.sentence_skeletons), occurs in both a val and a frozen_test benign-hard record.
      Near-duplicate checks do not catch this, because records that share a few sentences stay below
      Jaccard 0.8.
+  6. Replay set (every data/replay/*.jsonl, default splits dir only, or --replay-dir): no replay item is an
+     exact or near duplicate of any train / val / frozen_test record, no replay id collides with a split id,
+     no exact duplicate inside the replay set, and no synthetic replay email shares a benign-hard sentence
+     (exact or skeleton) with a val or frozen benign-hard record. Only dedup keys are derived from
+     frozen_test; nothing else of it is read.
 """
 from __future__ import annotations
 
@@ -24,8 +29,48 @@ from pathlib import Path
 from training.common import (FROZEN_TEST_SHA, NEAR_DUP_JACCARD, ROOT, SPLIT_NAMES, SPLITS_DIR, dedup_key,
                              near_duplicate_pairs, read_jsonl, sha256_file)
 
+REPLAY_DIR = ROOT / "data" / "replay"
 
-def check(splits_dir: Path, verify_hash: bool = True) -> list[str]:
+
+def check_replay(recs: list[tuple[str, dict]], keys: list[str], replay_dir: Path) -> tuple[list[str], int]:
+    """recs/keys: every split record and its dedup key. Returns (errors, n replay items checked)."""
+    from training.benign_hard import sentence_skeletons, sentences
+
+    errors: list[str] = []
+    items = []
+    for p in sorted(replay_dir.glob("*.jsonl")):
+        items += [(p.name, r) for r in read_jsonl(p)]
+    if not items:
+        return errors, 0
+    split_ids = {r["id"] for _, r in recs}
+    split_key = {k: s for (s, _), k in zip(recs, keys)}
+    rkeys = [dedup_key(r["text"]) for _, r in items]
+    seen: dict[str, str] = {}
+    for (f, r), k in zip(items, rkeys):
+        if r["id"] in split_ids:
+            errors.append(f"REPLAY id {r['id']} ({f}) is also a split id")
+        if k in split_key:
+            errors.append(f"REPLAY EXACT duplicate of a {split_key[k]} record: {f}:{r['id']}")
+        if k in seen:
+            errors.append(f"REPLAY EXACT duplicate inside the replay set: {seen[k]} vs {r['id']}")
+        seen.setdefault(k, r["id"])
+    n_split = len(recs)
+    for i, j, jac in near_duplicate_pairs(keys + rkeys):
+        if i < n_split <= j:
+            errors.append(f"REPLAY NEAR duplicate (Jaccard {jac:.3f}) {recs[i][0]}:{recs[i][1]['id']} vs "
+                          f"{items[j - n_split][0]}:{items[j - n_split][1]['id']}")
+    bh = [r["text"] for s, r in recs if s in ("val", "frozen_test") and r.get("source") == "benign_hard"]
+    bh_sent = {x for t in bh for x in sentences(t)}
+    bh_skel = {x for t in bh for x in sentence_skeletons(t)}
+    for f, r in items:
+        if r.get("synthetic"):
+            hit = (set(sentences(r["text"])) & bh_sent) | (sentence_skeletons(r["text"]) & bh_skel)
+            for x in sorted(hit)[:3]:
+                errors.append(f"REPLAY synthetic {f}:{r['id']} shares a benign-hard sentence: {x[:80]!r}")
+    return errors, len(items)
+
+
+def check(splits_dir: Path, verify_hash: bool = True, replay_dir: Path | None = None) -> list[str]:
     errors: list[str] = []
     recs = []
     for s in SPLIT_NAMES:
@@ -71,6 +116,11 @@ def check(splits_dir: Path, verify_hash: bool = True) -> list[str]:
             errors.append(f"BENIGN_HARD {kind} sentence in both val and frozen_test: {x[:80]!r}")
     n_bh = len(ov["exact"]) + len(ov["skeleton"])
 
+    n_replay = 0
+    if replay_dir is not None and replay_dir.exists():
+        rerr, n_replay = check_replay(recs, keys, replay_dir)
+        errors += rerr
+
     if verify_hash:
         expected = FROZEN_TEST_SHA.read_text().split()[0] if FROZEN_TEST_SHA.exists() else None
         actual = sha256_file(splits_dir / "frozen_test.jsonl")
@@ -78,7 +128,8 @@ def check(splits_dir: Path, verify_hash: bool = True) -> list[str]:
             errors.append(f"frozen_test sha256 {actual} != {FROZEN_TEST_SHA.relative_to(ROOT)} ({expected})")
     print(f"checked {len(recs)} records in {len(SPLIT_NAMES)} splits: "
           f"{n_exact} exact and {n_near} near cross-split duplicates, "
-          f"{n_bh} benign-hard sentences shared by val and frozen_test, {len(errors)} errors")
+          f"{n_bh} benign-hard sentences shared by val and frozen_test; {n_replay} replay items checked against "
+          f"all splits; {len(errors)} errors")
     return errors
 
 
@@ -86,9 +137,12 @@ def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--splits-dir", type=Path, default=SPLITS_DIR)
     ap.add_argument("--no-hash-check", action="store_true")
+    ap.add_argument("--replay-dir", type=Path, default=None,
+                    help="replay set directory to check (default: data/replay when --splits-dir is the default)")
     a = ap.parse_args(argv)
     default = a.splits_dir.resolve() == SPLITS_DIR.resolve()
-    errors = check(a.splits_dir, verify_hash=default and not a.no_hash_check)
+    replay = a.replay_dir if a.replay_dir is not None else (REPLAY_DIR if default else None)
+    errors = check(a.splits_dir, verify_hash=default and not a.no_hash_check, replay_dir=replay)
     for e in errors[:50]:
         print("ERROR", e, file=sys.stderr)
     if len(errors) > 50:

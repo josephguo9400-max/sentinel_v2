@@ -1,0 +1,173 @@
+{
+  "replay_version": "replay-v1",
+  "seed": "replay-v1:20261030",
+  "n_items": 2000,
+  "file": "replay-v1.jsonl",
+  "sha256": "47ac4c845ab7604dc6940ff6fefa02049e383cb1b960818fa481da5fd1a07592",
+  "purpose": "systems measurements (shadow agreement, latency, errors, drift visibility); NOT an accuracy test set: labels are partial, mosscap is unlabeled, and sources differ from the gate's",
+  "drawn_from_train_val_or_frozen": false,
+  "sources": {
+    "mosscap": {
+      "repo_id": "Lakera/mosscap_prompt_injection",
+      "revision": "b7e495ff63373ff7f7dabc1e9390cf62b5838570",
+      "license": "mit",
+      "files": {
+        "data/test-00000-of-00001-06acab2d6a2bcf9f.parquet": "9311f64ca579c947e43ff64ad4996585c51e4dae8ae747342926cf0091160d21"
+      },
+      "label_definition": "unlabeled game prompts (null)",
+      "stage2_overlap": "unknown"
+    },
+    "gandalf_summ": {
+      "repo_id": "Lakera/gandalf_summarization",
+      "revision": "8e213cc8dd65f099c61dc32dbcfdb2ff6b1c92d8",
+      "license": "mit",
+      "files": {
+        "data/train-00000-of-00001-44378fdb62cbf9b7.parquet": "8d160db880b4eb8efd8e6dc5425f10466ba594fa32da8aa6da4b2ceb22899214",
+        "data/validation-00000-of-00001-c7b174a69fca3472.parquet": "d1a29b60a10228db16e0cf75dae9cd9be9904f905eefdaa5f9a48a0f557ea52b",
+        "data/test-00000-of-00001-1696577a5023b698.parquet": "cf63d8ee1a9a4c0ce45f53f2e6702d526cf35544bb4b4c86f746503923dc43b1"
+      },
+      "label_definition": "successful indirect injections (all 1)",
+      "stage2_overlap": "unknown"
+    },
+    "itw_jailbreak": {
+      "repo_id": "TrustAIRLab/in-the-wild-jailbreak-prompts",
+      "revision": "a10aab8eff1c73165a442d4464dce192bd28b9c5",
+      "license": "mit",
+      "files": {
+        "jailbreak_2023_12_25/train-00000-of-00001.parquet": "55bbc5e2be771ee16ed67aed4edb5ecef5f44ac69cea317a67e5405c5c6057a4"
+      },
+      "label_definition": "jailbreak prompts (1; jailbreak != injection)",
+      "stage2_overlap": "unknown"
+    },
+    "itw_regular": {
+      "repo_id": "TrustAIRLab/in-the-wild-jailbreak-prompts",
+      "revision": "a10aab8eff1c73165a442d4464dce192bd28b9c5",
+      "license": "mit",
+      "files": {
+        "regular_2023_12_25/train-00000-of-00001.parquet": "23e90010ccbc85574bf46678528cddce5b02abc86d9a047209218af65cb37c68"
+      },
+      "label_definition": "regular prompts (0)",
+      "stage2_overlap": "unknown"
+    },
+    "aya": {
+      "repo_id": "CohereLabs/aya_dataset",
+      "revision": "f9ea04583f02a8f86404ff6c58bf75fe637df8a2",
+      "license": "apache-2.0",
+      "files": {
+        "data/test-00000-of-00001.parquet": "52bbb79461bff9887c9987a5737d9a06f5ec6c78c08d770828c37fc182ce2cca"
+      },
+      "label_definition": "human-written instruction prompts, benign (0)",
+      "stage2_overlap": "unknown"
+    },
+    "replay_email": {
+      "generator": "training/replay_emails.py replay-emails-v1",
+      "license": "this repo"
+    },
+    "sandbox_dev": {
+      "path": "fixtures/scenarios/dev/*.json",
+      "license": "this repo"
+    }
+  },
+  "candidate_pool": {
+    "mosscap": 700,
+    "gandalf_summ": 140,
+    "itw_jailbreak": 260,
+    "itw_regular": 420,
+    "aya": 1750,
+    "replay_email": 460,
+    "sandbox_dev": 11
+  },
+  "dedup": {
+    "against": "train, val, frozen_test (exact dedup_key + MinHash near >= 0.8) and benign-hard sentences of val/frozen",
+    "removed": {
+      "empty_key": 2,
+      "exact_split:itw_jailbreak": 110,
+      "exact_split:itw_regular": 2,
+      "exact_within:aya": 10,
+      "exact_within:itw_jailbreak": 4,
+      "exact_within:mosscap": 16,
+      "near_split:itw_jailbreak": 24,
+      "near_split:itw_regular": 1,
+      "near_split:mosscap": 1,
+      "near_within:aya": 11,
+      "near_within:itw_jailbreak": 18,
+      "near_within:mosscap": 3,
+      "near_within_synthetic_pairs_kept": 263
+    }
+  },
+  "composition": {
+    "aya:label=0": 492,
+    "gandalf_summ:label=1": 140,
+    "itw_jailbreak:label=1": 93,
+    "itw_regular:label=0": 295,
+    "mosscap:label=None": 509,
+    "replay_email:label=0": 390,
+    "replay_email:label=1": 70,
+    "sandbox_dev:label=0": 8,
+    "sandbox_dev:label=1": 3
+  },
+  "by_source": {
+    "aya": 492,
+    "gandalf_summ": 140,
+    "itw_jailbreak": 93,
+    "itw_regular": 295,
+    "mosscap": 509,
+    "replay_email": 460,
+    "sandbox_dev": 11
+  },
+  "by_lang": {
+    "en": 1550,
+    "pt": 92,
+    "te": 59,
+    "ar": 49,
+    "zh-cn": 46,
+    "tr": 41,
+    "de": 32,
+    "fr": 30,
+    "es": 29,
+    "it": 29,
+    "vi": 16,
+    "sw": 7,
+    "ko": 5,
+    "id": 5,
+    "so": 3,
+    "ru": 2,
+    "no": 2,
+    "he": 1,
+    "ca": 1,
+    "ro": 1
+  },
+  "labels": {
+    "positive": 306,
+    "negative": 1185,
+    "null": 509,
+    "revealed": 452
+  },
+  "drift": {
+    "schedule": "target non-English share linear 0.05 -> 0.4 over seq",
+    "non_en_share_by_tenth": [
+      0.065,
+      0.105,
+      0.135,
+      0.175,
+      0.205,
+      0.245,
+      0.275,
+      0.315,
+      0.345,
+      0.385
+    ]
+  },
+  "timing": {
+    "nominal_rps": 10.0,
+    "arrivals": "Poisson (exponential gaps) at nominal_rps",
+    "duration_s_nominal": 197.5167,
+    "label_reveal_probability": 0.3,
+    "label_delay_s_nominal": [
+      30.0,
+      120.0
+    ],
+    "scaling": "a runner at rate R multiplies arrival offsets and label delays by nominal_rps / R"
+  },
+  "max_chars": 20000
+}

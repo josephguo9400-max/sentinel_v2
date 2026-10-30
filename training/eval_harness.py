@@ -11,10 +11,16 @@ Backends
     python -m training.eval_harness --backend http --url http://127.0.0.1:8000 --split val --out ...
 
 What counts as a model prediction (http backend)
-  Only a response whose active results all have status "ok" and whose policy_applied is null is a model
-  prediction (predicted = decision == "flag"). A response decided by a failure policy (timeout / error /
-  skipped -> fail_open or fail_closed) is NOT counted in precision / recall / FPR; it is reported under
-  `policy_decisions` (counts by status, by policy_applied and by decision x label), overall and per slice.
+  Every response is validated with contracts.ClassifyResponse (v1.2); anything that does not validate is an
+  error ("bad response"). Only a response whose active results all have status "ok", whose policy_applied is
+  null and whose coverage_policy_applied is not flag / allow / quarantine is a model prediction (predicted =
+  decision == "flag"); deep_scan is a model decision. A response decided by a failure policy (timeout / error /
+  skipped -> fail_open or fail_closed) or by a coverage policy is NOT counted in the model-only precision /
+  recall / FPR; it is reported under `policy_decisions` (counts by status, by policy_applied and by decision x
+  label), overall and per slice, and it IS counted in the as-served view, which is the gate view.
+  Per slice, `served` counts stages_run combinations (escalation to Stage 2), coverage_policy_applied (by policy,
+  decision and label) and failure_reason of failed active results, with overloaded (load shedding) separated
+  from timeouts and exceptions (`served.failures`), plus shadow failure reasons.
   Transport failures (httpx errors, after bounded retries), non-200 responses and malformed responses are
   recorded under `errors` and the run continues. `truncated` (any input content not scored) is counted over
   every response that carried results, overall and per slice; truncated model predictions stay in the
@@ -43,7 +49,7 @@ from collections import Counter
 from pathlib import Path
 from typing import Callable, Iterable, Protocol
 
-from contracts import DetectorResult
+from contracts import ClassifyResponse, DetectorResult
 from training.common import ROOT, SPLITS_DIR, read_jsonl, sha256_file, write_json
 from training.metrics import rate, summarize
 
@@ -90,58 +96,67 @@ class GatewayResponseError(ValueError):
     pass
 
 
-RESPONSE_KEYS = ("request_id", "decision", "decided_by", "policy_applied", "results")
-POLICIES = (None, "fail_open", "fail_closed")
+# Coverage-policy outcomes that replace a model decision on unscored content. "deep_scan" means the gateway scored
+# the rest of the input, so the decision is still a model decision (counted, and kept in the metrics).
+COVERAGE_POLICY_DECISIONS = ("flag", "allow", "quarantine")
+
+
+def failure_reason(r: DetectorResult) -> str | None:
+    """failure_reason of a non-ok result; v1.1 results (no field) map timeout -> timeout, error -> unspecified."""
+    if r.status == "ok":
+        return None
+    if r.failure_reason:
+        return r.failure_reason
+    return {"timeout": "timeout", "error": "unspecified_error", "skipped": "skipped"}[r.status]
 
 
 def parse_gateway_response(payload: dict, request_id: str | None = None) -> dict:
-    """Validate the gateway response shape. Raises GatewayResponseError on anything unexpected.
+    """Validate a /classify response with contracts.ClassifyResponse (v1.2). Raises GatewayResponseError.
 
-    Returns `model_prediction` True only when every active result has status "ok" and no failure policy
-    was applied; only then is `predicted` a model prediction.
+    `model_prediction` is True only when every active result has status "ok", no failure policy was applied and
+    no coverage policy replaced the decision (deep_scan does not); only then is `predicted` a model prediction.
     """
     if not isinstance(payload, dict):
         raise GatewayResponseError("response is not a JSON object")
-    missing = [k for k in RESPONSE_KEYS if k not in payload]
-    if missing:
-        raise GatewayResponseError(f"response is missing keys {missing}")
-    decision = payload["decision"]
-    if decision not in ("allow", "flag"):
-        raise GatewayResponseError(f"decision must be 'allow' or 'flag', got {decision!r}")
-    policy = payload["policy_applied"]
-    if policy not in POLICIES:
-        raise GatewayResponseError(f"policy_applied must be null, 'fail_open' or 'fail_closed', got {policy!r}")
-    if request_id is not None and payload["request_id"] != request_id:
-        raise GatewayResponseError(f"request_id mismatch: sent {request_id!r}, got {payload['request_id']!r}")
-    results = payload["results"]
-    if not isinstance(results, list):
-        raise GatewayResponseError("results must be a list")
-    parsed = []
-    for i, r in enumerate(results):
-        try:
-            parsed.append(DetectorResult.model_validate(r))
-        except Exception as exc:  # pydantic.ValidationError
-            raise GatewayResponseError(f"results[{i}] is not a valid DetectorResult: {exc}") from exc
-    active = [r for r in parsed if r.role == "active"]
+    try:
+        resp = ClassifyResponse.model_validate(payload)
+    except Exception as exc:  # pydantic.ValidationError
+        raise GatewayResponseError(f"not a valid ClassifyResponse: {str(exc)[:300]}") from exc
+    if request_id is not None and resp.request_id != request_id:
+        raise GatewayResponseError(f"request_id mismatch: sent {request_id!r}, got {resp.request_id!r}")
+    policy = resp.policy_applied
+    coverage = resp.coverage_policy_applied
+    active = [r for r in resp.results if r.role == "active"]
+    shadow = [r for r in resp.results if r.role == "shadow"]
     statuses = [r.status for r in active]
     non_ok = [st for st in statuses if st != "ok"]
     # Item status: "ok" only if every active detector produced a score. A policy without a failed result
     # is inconsistent and is not trusted as a model prediction either.
     status = non_ok[0] if non_ok else ("ok" if policy is None else "inconsistent_policy")
+    coverage_decided = coverage in COVERAGE_POLICY_DECISIONS
+    if coverage_decided and status == "ok":
+        status = f"coverage_{coverage}"  # reported under policy_decisions.by_status, never as a model prediction
     ok_scores = [r.score for r in active if r.status == "ok"]
+    # stages_run is authoritative (v1.2); a v1.1 gateway that omits it falls back to the active results' stages.
+    stages = list(resp.stages_run) or [r.stage for r in active]
     return {
-        "predicted": int(decision == "flag"),
-        "model_prediction": status == "ok" and policy is None and bool(active),
+        "predicted": int(resp.decision == "flag"),
+        "model_prediction": status == "ok" and policy is None and not coverage_decided and bool(active),
         "status": status if active else "no_active_result",
-        "decision": decision,
-        "decided_by": payload["decided_by"],
+        "decision": resp.decision,
+        "decided_by": resp.decided_by,
         "policy_applied": policy,
+        "coverage_policy_applied": coverage,
         "score": max(ok_scores) if ok_scores else None,
-        "stages": [r.stage for r in active],
+        "stages": stages,
+        "stages_run_reported": bool(resp.stages_run),
         "statuses": statuses,
-        "escalated": any(r.stage == "stage2" for r in active),
-        "truncated": any(r.truncated for r in parsed),
-        "n_results": len(parsed),
+        "failure_reasons": [failure_reason(r) for r in active if r.status != "ok"],
+        "shadow_failure_reasons": [failure_reason(r) for r in shadow if r.status != "ok"],
+        "n_shadow": len(shadow),
+        "escalated": "stage2" in stages,
+        "truncated": any(r.truncated for r in resp.results),
+        "n_results": len(resp.results),
     }
 
 
@@ -268,6 +283,39 @@ class _SliceAcc:
         self.with_results = 0
         self.truncated = 0
         self.truncated_predictions = 0
+        self.stages = Counter()  # "+".join(stages_run)
+        self.coverage = Counter()  # (coverage_policy_applied, decision, label)
+        self.reasons = Counter()  # failure_reason of failed active results
+        self.shadow_reasons = Counter()
+
+
+def _served_block(a: "_SliceAcc") -> dict | None:
+    """v1.2 routing / coverage / failure counts. None for backends that report none of them (local Stage 1)."""
+    if not a.with_results:
+        return None
+    reasons = dict(sorted(a.reasons.items()))
+    overloaded = a.reasons.get("overloaded", 0)
+    return {
+        "n_responses": a.with_results,
+        "stages_run": dict(sorted(a.stages.items())),
+        "escalated_to_stage2": sum(v for k, v in a.stages.items() if "stage2" in k.split("+")),
+        "coverage_policy_applied": {
+            "by_policy": dict(sorted(_sum_by(a.coverage, 0).items())),
+            "by_policy_decision_and_label": {f"{p}:{d}:label={y}": v for (p, d, y), v in sorted(a.coverage.items(),
+                                                                                                 key=str)}},
+        "failure_reason": reasons,
+        # Load shedding is a capacity signal, not a detector fault: the gate's error-rate check excludes it.
+        "failures": {"overloaded": overloaded,
+                     "timeout_or_exception": sum(v for k, v in a.reasons.items() if k != "overloaded")},
+        "shadow_failure_reason": dict(sorted(a.shadow_reasons.items())),
+    }
+
+
+def _sum_by(c: Counter, idx: int) -> Counter:
+    out = Counter()
+    for k, v in c.items():
+        out[str(k[idx])] += v
+    return out
 
 
 def _policy_block(c: Counter) -> dict:
@@ -314,6 +362,13 @@ def evaluate(rows: Iterable[dict], backend: Backend, progress: Callable[[int], N
                 if "truncated" in r:
                     a.with_results += 1
                     a.truncated += int(bool(r["truncated"]))
+                if "stages" in r:
+                    a.stages["+".join(r["stages"]) or "none"] += 1
+                    a.coverage[(r.get("coverage_policy_applied"), r.get("decision"), row["label"])] += 1
+                    for fr in r.get("failure_reasons", []):
+                        a.reasons[fr] += 1
+                    for fr in r.get("shadow_failure_reasons", []):
+                        a.shadow_reasons[fr] += 1
                 if r.get("model_prediction", True):
                     a.ys.append(row["label"]); a.ps.append(r["predicted"])
                     a.truncated_predictions += int(bool(r.get("truncated", False)))
@@ -352,6 +407,9 @@ def _assemble(rows, n_done, acc, errors, lat, zones, complete, aborted) -> dict:
         if a.with_results:
             m["truncated"] = {"n_responses_with_results": a.with_results, "n_truncated": a.truncated,
                               "n_truncated_model_predictions": a.truncated_predictions}
+        served = _served_block(a)
+        if served and a.stages:
+            m["served"] = served
         slices[name] = m
     la = np.array(lat) if lat else np.zeros(1)
     overall = slices.get("overall")

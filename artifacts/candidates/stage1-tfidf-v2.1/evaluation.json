@@ -1,0 +1,194 @@
+{
+  "detector_version": "stage1-tfidf-v2.1",
+  "derived_from": {
+    "detector_version": "stage1-tfidf-v2",
+    "model_sha256": "2a5df39a27e300b0a74d0f9565d4fee13e9862c2afa79fcc2af26e205f4b6af3",
+    "change": "config only: manifest schema 1.2 (tokenizer, input_languages) and the swept gray zone; model.onnx is byte-identical"
+  },
+  "tokenizer": {
+    "value": "regex:[\\p{L}\\p{N}_]{2,}",
+    "source": "tokenexp attribute of the ONNX Tokenizer node",
+    "python_equivalent": "[^\\W]{2,}",
+    "preprocessing": "ASCII-only lowercasing (StringNormalizer LOWER, locale C) before tokenizing"
+  },
+  "input_languages": {
+    "value": [
+      "en"
+    ],
+    "why": "train/val are >97% English (data/language_mix.json); Stage 1 v2 recalls 120/682 = 17.6% of non-English frozen-test injections (training/results/stage1-tfidf-v2_frozen_test.json), so non-English input must escalate"
+  },
+  "gray_zone": {
+    "value": [
+      0.505068,
+      1.0
+    ],
+    "selected_by": "training/cascade_sweep.py",
+    "results_file": "training/results/cascade_sweep_val.json",
+    "results_sha256": "a7951cb86e7feced29b5d857b69e748a33a9b177fe1d73662d3b06191f161521",
+    "rule": {
+      "objective": "maximize saved_requests (overall, val)",
+      "constraints": {
+        "a": "paired 95% CI lower bound of recall(cascade) - recall(DeBERTa) >= -0.02",
+        "b": "Wilson 95% lower bound of recall(cascade) >= recall(DeBERTa) - 0.02",
+        "c": "paired 95% CI upper bound of FPR(cascade) - FPR(DeBERTa) <= +0.02",
+        "d": "benign_hard false positives(cascade) <= benign_hard false positives(DeBERTa)"
+      },
+      "routing": "allow-only (high = 1.0); flag-finalizing settings (high < 1.0) are reported, never chosen",
+      "tie_break": "smaller low",
+      "grid": {
+        "low": [
+          0.01,
+          0.02,
+          0.03,
+          0.04,
+          0.05,
+          0.06,
+          0.07,
+          0.08,
+          0.09,
+          0.1,
+          0.11,
+          0.12,
+          0.13,
+          0.14,
+          0.15,
+          0.16,
+          0.17,
+          0.18,
+          0.19,
+          0.2,
+          0.21,
+          0.22,
+          0.23,
+          0.24,
+          0.25,
+          0.26,
+          0.27,
+          0.28,
+          0.282715,
+          0.29,
+          0.3,
+          0.31,
+          0.32,
+          0.33,
+          0.34,
+          0.35,
+          0.36,
+          0.37,
+          0.38,
+          0.39,
+          0.4,
+          0.41,
+          0.42,
+          0.43,
+          0.44,
+          0.45,
+          0.46,
+          0.47,
+          0.48,
+          0.49,
+          0.5,
+          0.505068
+        ],
+        "high": [
+          0.764614,
+          0.8,
+          0.85,
+          0.9,
+          0.95,
+          0.98,
+          0.99,
+          0.995,
+          0.999,
+          1.0
+        ]
+      }
+    },
+    "kill_criterion": {
+      "rule": "RFC: saved_requests < 0.3 at equal recall -> fall back to the single model and report the negative result",
+      "at_chosen": {
+        "low": 0.505068,
+        "saved_requests": 0.2868699439950218,
+        "triggered": true
+      },
+      "at_strictly_equal_recall": {
+        "low": 0.18,
+        "saved_requests": 0.23646546359676415,
+        "triggered": true
+      },
+      "triggered": true,
+      "why": "under allow-only routing Stage 1 can save a request only by allowing it, so savings are bounded by the benign share of the traffic; val is 974/3214 benign. See named_settings.*.saved_by_label and saved_reweighted_by_base_rate."
+    },
+    "val_overall": {
+      "n": 3214,
+      "zones": {
+        "low": 922,
+        "stage2": 2292,
+        "high": 0
+      },
+      "escalated": {
+        "value": 0.7131300560049783,
+        "numerator": 2292,
+        "denominator": 3214,
+        "ci95": [
+          0.697245936672616,
+          0.728505306057065
+        ],
+        "ci_method": "wilson"
+      },
+      "saved_requests": {
+        "value": 0.2868699439950218,
+        "numerator": 922,
+        "denominator": 3214,
+        "ci95": [
+          0.27149469394293496,
+          0.302754063327384
+        ],
+        "ci_method": "wilson"
+      },
+      "cascade_recall": {
+        "value": 0.9580357142857143,
+        "numerator": 2146,
+        "denominator": 2240,
+        "ci95": [
+          0.9489183120411383,
+          0.9655848013287694
+        ],
+        "ci_method": "wilson"
+      },
+      "cascade_fpr": {
+        "value": 0.017453798767967144,
+        "numerator": 17,
+        "denominator": 974,
+        "ci95": [
+          0.010925456438676618,
+          0.02777351513728013
+        ],
+        "ci_method": "wilson"
+      },
+      "deberta_alone": {
+        "recall": {
+          "value": 0.9665178571428571,
+          "numerator": 2165,
+          "denominator": 2240,
+          "ci95": [
+            0.9582331841918498,
+            0.9732051720182412
+          ],
+          "ci_method": "wilson"
+        },
+        "fpr": {
+          "value": 0.08829568788501027,
+          "numerator": 86,
+          "denominator": 974,
+          "ci95": [
+            0.07205644395334827,
+            0.10776969988060632
+          ],
+          "ci_method": "wilson"
+        }
+      }
+    }
+  },
+  "stage1_alone_metrics": "unchanged from stage1-tfidf-v2: see artifacts/candidates/stage1-tfidf-v2/evaluation.json"
+}
