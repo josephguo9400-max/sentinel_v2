@@ -4,3 +4,6 @@ httpx==0.28.1
 httpcore==1.0.9
 anyio==4.15.1
 pydantic==2.13.5
+# Live LLM defender only (optional). Imported lazily; the fake client, replay and all tests need no
+# key and no network, so this is not required for `pytest -q`. Install before a real recorded run.
+# anthropic>=0.40

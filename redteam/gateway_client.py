@@ -1,8 +1,9 @@
 """HTTP client for the classifier gateway: POST {url}/classify.
 
-Request:  {"text": str, "request_id": str}
-Response: {"decision": "allow"|"flag", "decided_by": str, "policy_applied": str,
-           "results": [DetectorResult v1.1 dicts]}   (extra keys are ignored)
+Request:  contracts.ClassifyRequest  {"text": str, "request_id": str}
+Response: contracts.ClassifyResponse (v1.2), validated strictly: unknown keys, a request_id other than
+          the one sent, or any invalid DetectorResult make the response unusable (bad_response).
+          stages_run, coverage_policy_applied and each result's failure_reason are kept in the verdict.
 
 When the gateway cannot be used (timeout, connection error, non-2xx, malformed response) the
 client applies `on_unavailable`:
@@ -27,7 +28,7 @@ from typing import Literal
 import httpx
 from pydantic import ValidationError
 
-from contracts import DetectorResult
+from contracts import ClassifyRequest, ClassifyResponse
 
 from .classifier import ClassifierUnavailable, ClassifierVerdict, GatewayStatus
 
@@ -92,8 +93,8 @@ class GatewayClient:
     def classify(self, text: str, request_id: str) -> ClassifierVerdict:
         t0 = time.perf_counter()
         try:
-            resp = self._client.post(self.url, json={"text": text, "request_id": request_id},
-                                     timeout=self._timeout)
+            payload = ClassifyRequest(text=text, request_id=request_id).model_dump()
+            resp = self._client.post(self.url, json=payload, timeout=self._timeout)
         except httpx.TimeoutException as exc:
             return self._fallback("timeout", f"{type(exc).__name__}: {exc}", t0)
         except httpx.HTTPError as exc:
@@ -104,27 +105,25 @@ class GatewayClient:
             data = resp.json()
         except ValueError:
             return self._fallback("bad_response", "response is not JSON", t0)
-        return self._parse(data, t0)
+        return self._parse(data, request_id, t0)
 
-    def _parse(self, data: object, t0: float) -> ClassifierVerdict:
+    def _parse(self, data: object, request_id: str, t0: float) -> ClassifierVerdict:
         if not isinstance(data, dict):
             return self._fallback("bad_response", "response is not a JSON object", t0)
-        decision = data.get("decision")
-        if decision not in ("allow", "flag"):
-            return self._fallback("bad_response", f"invalid decision {decision!r}", t0)
-        raw_results = data.get("results", [])
-        if not isinstance(raw_results, list):
-            return self._fallback("bad_response", "results must be a list", t0)
         try:
-            results = tuple(DetectorResult.model_validate(r) for r in raw_results)
+            resp = ClassifyResponse.model_validate(data)
         except ValidationError as exc:
-            return self._fallback("bad_response", f"invalid DetectorResult: {exc.errors()[0]['msg']}", t0)
-        decided_by, policy = data.get("decided_by"), data.get("policy_applied")
+            err = exc.errors()[0]
+            loc = ".".join(str(x) for x in err.get("loc", ()))
+            return self._fallback("bad_response", f"invalid ClassifyResponse at {loc or '<root>'}: {err['msg']}", t0)
+        if resp.request_id != request_id:
+            return self._fallback("bad_response", f"response request_id {resp.request_id!r} != sent {request_id!r}",
+                                  t0)
         return ClassifierVerdict(
-            decision=decision,
-            decided_by=decided_by if isinstance(decided_by, str) else None,
-            policy_applied=policy if isinstance(policy, str) else None,
-            results=results, gateway_status="ok", latency_ms=_ms(t0),
+            decision=resp.decision, decided_by=resp.decided_by, policy_applied=resp.policy_applied,
+            results=tuple(resp.results), gateway_status="ok", latency_ms=_ms(t0),
+            request_id=resp.request_id, stages_run=tuple(resp.stages_run),
+            coverage_policy_applied=resp.coverage_policy_applied,
         )
 
     def _fallback(self, status: GatewayStatus, error: str, t0: float) -> ClassifierVerdict:
