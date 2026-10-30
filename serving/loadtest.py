@@ -61,6 +61,40 @@ def cpu_model() -> str:
     return platform.processor() or platform.machine()
 
 
+def load_average() -> list[float] | None:
+    """1, 5 and 15 minute load averages (as `uptime` prints them), or None where unavailable."""
+    try:
+        return [round(x, 2) for x in os.getloadavg()]
+    except OSError:
+        return None
+
+
+def metric_value(metrics_text: str, name: str) -> float | None:
+    """Value of an unlabelled sample in Prometheus text, e.g. `sentinel_inference_real_tokens_total`."""
+    for ln in metrics_text.splitlines():
+        parts = ln.split()
+        if len(parts) == 2 and parts[0] == name:
+            return float(parts[1])
+    return None
+
+
+def server_counters(metrics_text: str) -> dict:
+    return {k: metric_value(metrics_text, f"sentinel_{k}") for k in
+            ("inference_batch_size_count", "inference_batch_size_sum", "inference_real_tokens_total",
+             "inference_computed_tokens_total")}
+
+
+def counter_delta(before: dict, after: dict) -> dict:
+    """Server counters for this run only (after minus before, so warmup and earlier runs are excluded)."""
+    d = {k: None if before.get(k) is None or after.get(k) is None else after[k] - before[k] for k in after}
+    calls, chunks = d["inference_batch_size_count"], d["inference_batch_size_sum"]
+    real, computed = d["inference_real_tokens_total"], d["inference_computed_tokens_total"]
+    return {"onnx_calls": calls, "chunks": chunks,
+            "mean_chunks_per_call": round(chunks / calls, 3) if calls else None,
+            "real_tokens": real, "computed_tokens": computed,
+            "computed_per_real_token": round(computed / real, 4) if real else None}
+
+
 def summarize(lat_ms: list[float]) -> dict:
     if not lat_ms:
         return {"count": 0}
@@ -100,10 +134,14 @@ async def run(url: str, n: int, concurrency: int, lengths: list[int], timeout_s:
                     rec["transport_error"] = type(exc).__name__
                 records.append(rec)
 
+        before = server_counters((await client.get("/metrics")).text)
+        load_before = load_average()
         wall0 = time.perf_counter()
         await asyncio.gather(*(worker() for _ in range(concurrency)))
         wall_s = time.perf_counter() - wall0
+        load_after = load_average()
         metrics_text = (await client.get("/metrics")).text
+        server_run = counter_delta(before, server_counters(metrics_text))
 
     ok = [r for r in records if r.get("status") == "ok"]
     transport = sum(1 for r in records if "transport_error" in r)
@@ -128,7 +166,8 @@ async def run(url: str, n: int, concurrency: int, lengths: list[int], timeout_s:
     return {
         "measured_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
         "hardware": {"cpu": cpu_model(), "logical_cores": os.cpu_count(), "gpu": None,
-                     "note": "client and server on the same machine"},
+                     "note": "client and server on the same machine",
+                     "load_average_1_5_15": {"before": load_before, "after": load_after}},
         "versions": {"python": platform.python_version(), "httpx": httpx.__version__, "onnxruntime": ort_version},
         "server": {"detector": health.get("detector"), "config": health.get("config")},
         "load": {"mode": "closed-loop", "concurrency": concurrency, "n": n, "warmup": warmup,
@@ -141,6 +180,7 @@ async def run(url: str, n: int, concurrency: int, lengths: list[int], timeout_s:
         "throughput_ok_rps": round(len(ok) / wall_s, 2),
         "wall_s": round(wall_s, 2),
         "server_batch_size_metric": batch_lines,
+        "server_this_run": server_run,
     }
 
 

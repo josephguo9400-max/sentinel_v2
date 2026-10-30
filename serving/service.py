@@ -56,7 +56,7 @@ class ClassifierService:
         self.metrics = metrics or GatewayMetrics()
         self.batcher = MicroBatcher(detector.infer, max_batch=config.max_batch, max_wait_ms=config.max_wait_ms,
                                     workers=config.workers, max_queue=config.max_queue,
-                                    on_batch=self.metrics.batch_size.observe)
+                                    on_batch=self.metrics.observe_batch)
         self.inflight = 0
         self.inflight_chars = 0
         self._tokenizer_pool: ThreadPoolExecutor | None = None

@@ -304,3 +304,25 @@ def test_config_rejects_char_cap_below_max_text_chars():
     with pytest.raises(ValueError):
         cfg(max_text_chars=1000, max_inflight_chars=999)
 
+
+def test_padding_metrics_count_real_and_padded_tokens():
+    """computed tokens = rows x longest row per ONNX call; real tokens = sum of row lengths."""
+    det = FakeDetector(delay_s=0.05)
+    config = cfg(max_batch=8, max_wait_ms=50)
+
+    async def scenario():
+        service = ClassifierService(det, config)
+        await service.start()
+        try:
+            await service.classify("warm", "w")  # 1 row of 3 tokens: [CLS] warm [SEP]
+            # While no worker is busy, these three queue up and go out as one batch of rows 3, 12, 102.
+            await asyncio.gather(*(service.classify(words(n), str(n)) for n in (1, 10, 100)))
+            from prometheus_client import generate_latest
+            return generate_latest(service.metrics.registry).decode()
+        finally:
+            await service.stop()
+
+    text = asyncio.run(scenario())
+    assert det.batches == [1, 3]
+    assert "sentinel_inference_real_tokens_total 120.0" in text  # 3 + (3 + 12 + 102)
+    assert "sentinel_inference_computed_tokens_total 309.0" in text  # 3 + 3 * 102
