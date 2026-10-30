@@ -31,8 +31,11 @@ class Source:
     license: str
     redistributable: bool
     files: tuple[RawFile, ...]
-    # "confirmed": named in the Stage 2 model card. "suspected": plausible from the card's unnamed
-    # license counts or the v1 card. "none_known": no evidence of use by Stage 2.
+    # Source-level tier (record-level matches are tracked separately as stage2_named_match):
+    # "confirmed":  named in the Stage 2 (v2) model card.
+    # "suspected":  named in the v1 card (gandalf), or treated as suspect as a precaution (deepset, the most
+    #               widely used public set; see DATA.md section 2).
+    # "none_known": not named in either card. This does NOT prove Stage 2 never saw it.
     stage2_overlap: str
     label_definition: str
     loader: Callable[["Source"], list[dict]] = field(repr=False, compare=False, default=None)

@@ -40,6 +40,17 @@ SPML_FRACTIONS = (0.60, 0.15)  # train, val; rest frozen_test
 JACKHHAO_TRAIN = 0.80
 
 
+def content_sha256(rows: list[dict]) -> str:
+    """Hash over (id, text, label) only: what a model trains on, independent of audit metadata fields."""
+    import hashlib
+    import json
+
+    h = hashlib.sha256()
+    for r in sorted(rows, key=lambda x: x["id"]):
+        h.update(json.dumps([r["id"], r["text"], r["label"]], ensure_ascii=False).encode("utf-8") + b"\n")
+    return h.hexdigest()
+
+
 def _lang(text: str) -> str:
     from langdetect import DetectorFactory, detect
     from langdetect.lang_detect_exception import LangDetectException
@@ -166,6 +177,7 @@ def build(out_dir: Path = SPLITS_DIR, frozen_sha_path: Path | None = FROZEN_TEST
             "negatives": sum(1 - x["label"] for x in rows[s]),
             "by_source_label": {f"{k[0]}:{k[1]}": v for k, v in sorted(by.items())},
             "sha256": sha256_file(p),
+            "content_sha256": content_sha256(rows[s]),
         }
     if frozen_sha_path is not None:
         rel = (out_dir / "frozen_test.jsonl").resolve().relative_to(ROOT)
