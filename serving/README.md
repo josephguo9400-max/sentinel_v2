@@ -50,6 +50,9 @@ active config, the queue depth and the number of busy workers. It returns 503 if
 | `sentinel_chunks_per_request` | Chunks scored per successful request |
 | `sentinel_truncated_requests_total{detector_id}` | Requests where some content was not scored (chunk cap or failure) |
 | `sentinel_inference_batch_size` | Chunks per ONNX call |
+| `sentinel_inference_real_tokens_total` | Token positions sent to the model that hold input, `[CLS]`/`[SEP]` included |
+| `sentinel_inference_computed_tokens_total` | Token positions the model computed: rows x longest row, per ONNX call |
+| `sentinel_inflight_requests` | Admitted requests not yet finished |
 | `sentinel_queue_depth`, `sentinel_busy_workers` | Queue backlog and running ONNX calls, including abandoned ones |
 
 ## Configuration
@@ -59,7 +62,7 @@ Each option is an environment variable `SENTINEL_<NAME>`. See `serving/config.py
 | Option | Default | Notes |
 | --- | --- | --- |
 | `MODEL_DIR` | `models/deberta-pi-v2/onnx` | |
-| `VERIFY_MODEL_SHA256` | `true` | Checks the pinned sha256 at load (about 2 s for 739 MB) |
+| `VERIFY_MODEL_SHA256` | `true` | Checks the pinned sha256 of `model.onnx` (739 MB) at load; see below to time it |
 | `THRESHOLD` | `0.5` | |
 | `MAX_LEN` / `STRIDE` | `512` / `384` | Gives 510 content tokens per chunk plus `[CLS]`/`[SEP]`, with 126 tokens of overlap |
 | `MAX_CHUNKS` | `4` | Chunks scored per request; 4 chunks covers up to 1,662 content tokens |
@@ -68,8 +71,21 @@ Each option is an environment variable `SENTINEL_<NAME>`. See `serving/config.py
 | `MAX_BATCH` / `MAX_WAIT_MS` | `1` / `2` | Micro-batching; `MAX_BATCH=1` turns it off (see results) |
 | `WORKERS` | `1` | Number of ONNX calls that can run at once |
 | `MAX_QUEUE` | `64` | Queued chunks; above this, requests fail fast and get the failure policy |
+| `MAX_INFLIGHT` | `64` | Admitted, unfinished requests; checked before tokenization, fails fast like `MAX_QUEUE` |
+| `MAX_INFLIGHT_CHARS` | `1000000` | Total characters of admitted, unfinished requests; must be >= `MAX_TEXT_CHARS` |
+| `TOKENIZE_WORKERS` | `1` | Threads that tokenize; tokenization never uses an unbounded pool |
 | `INTRA_OP_THREADS` | `0` | 0 uses the onnxruntime default (all cores) |
 | `MAX_TEXT_CHARS` | `200000` | |
+
+The sha256 check costs one read of the model file at startup. Time it on your machine with:
+
+```bash
+python -c "import time; from pathlib import Path; from serving.detector import sha256_file; \
+t = time.perf_counter(); sha256_file(Path('models/deberta-pi-v2/onnx/model.onnx')); print(time.perf_counter() - t)"
+```
+
+On the host used for the load tests below, with the file in the page cache, three runs gave 0.69, 0.69 and
+0.70 s. A cold read from disk takes longer.
 
 ## Design choices
 
@@ -96,7 +112,15 @@ policy. To limit the damage:
 3. The queue is bounded (`MAX_QUEUE` chunks). When it is full, a request is rejected at once with
    `status="error"`, `reason="overloaded"` and the failure policy. It does not wait out its timeout behind a hung
    worker, and memory stays bounded.
-4. `busy_workers` and `queue_depth` are exported, so a hung detector shows up as a stuck `busy_workers`.
+4. Admission control runs before tokenization. Tokenizing a 200,000-character body takes real CPU time, and the
+   chunk queue can only be checked after it. So each request is first admitted on the event loop against
+   `MAX_INFLIGHT` (requests) and `MAX_INFLIGHT_CHARS` (total characters of admitted requests). A request over
+   either cap is rejected at once, with the same `status="error"`, `reason="overloaded"` and failure policy as a
+   full queue, and is never tokenized. Admitted requests tokenize in a pool of `TOKENIZE_WORKERS` threads. A test
+   sends a burst of 20 large requests with `MAX_INFLIGHT=4`: 16 are rejected in under 40 ms without being
+   tokenized, and at most one tokenization runs at a time. Before this change all 20 were tokenized, up to 6 at
+   once. A tokenization that outlives its timeout keeps its thread until it returns, like an ONNX call.
+5. `busy_workers` and `queue_depth` are exported, so a hung detector shows up as a stuck `busy_workers`.
 
 I chose fail-fast under saturation over unbounded queueing because, once the backlog exceeds the timeout budget,
 queued requests would time out anyway. Rejecting them right away gives the same decision without the wait. A
