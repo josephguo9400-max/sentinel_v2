@@ -1,6 +1,6 @@
 # Design: Capability Manifests and Execution Policies
 
-2026-10-30 · Status: proposal for the next milestone (adaptive-eval), not implemented · Base: `milestone/cascade-and-shadow` @ `36ce683`
+2026-10-30 · Status: approved by the owner (D25, `docs/RFC.md` "Owner decisions"); implemented in milestone policy-runtime · Base: `milestone/cascade-and-shadow` @ `36ce683`
 
 ## 1. Problem
 
@@ -497,18 +497,20 @@ route-mode replay took 8.6 s for phase A and 331.5 s for phase B on 1,439 DeBERT
 scores more rows; its wall time is not measured and should be run under `/home/claude/measure.lock`. Unit and
 differential tests use fakes and need no model.
 
-## 12. Open questions for the owner
+## 12. Open questions for the owner (resolved: D25, 2026-10-30)
 
-1. Is `decision: "quarantine"` added in v1.3, or kept as `flag` plus `coverage_policy_applied`?
-2. `engine_version`: manual semantic version plus CI check (proposed), or the git commit of `serving/` directly?
-3. Should decision-affecting environment variables be a hard startup error under registry v2 (proposed) or a
-   warning for one milestone?
-4. Canary: minimum `share_bp`, which arm must reach the gate's minimum n, and the automatic-rollback thresholds
-   (error rate, p99, flag-rate deviation).
-5. Shape B's second decider: no candidate exists today (MiniLM is planned as a Stage 1 v2, i.e. a gate). Is shape B
-   required to be served in adaptive-eval, or is a fake-tested engine enough?
-6. Stage 1 scoring rule: re-calibrate `stage1-tfidf-v2.1`'s threshold with the served sub-windows (a new capability
-   version), or declare `subwindow_tokens: 0` in the capability and accept that serving changes? Either is a new
-   bundle.
-7. Collapse `stage1-tfidf-v2` and `v2.1` into one capability version (identical bytes and threshold), or keep both
-   for history?
+All seven are answered by owner decision D25 (`docs/RFC.md`, "Owner decisions").
+
+1. ~~Is `decision: "quarantine"` added in v1.3?~~ **Resolved:** no. v1.3 keeps `flag` plus `coverage_policy_applied`.
+2. ~~`engine_version`: manual semantic version plus CI check, or the git commit of `serving/`?~~ **Resolved:** manual
+   semantic version plus a test that fails when a decision-path file in `serving/` changes without a bump (a
+   committed sha256 list of those files tied to the version).
+3. ~~Hard startup error or warning?~~ **Resolved:** a hard startup error that names the policy field.
+4. ~~Canary parameters?~~ **Resolved for now:** canary is design only; the engine rejects a policy with `canary` set.
+   Minimum `share_bp`, the arm that must reach the gate's minimum n and the rollback thresholds stay open until the
+   canary is implemented.
+5. ~~Must shape B be served?~~ **Resolved:** implemented and tested with fake detectors only; not served.
+6. ~~Re-calibrate Stage 1 or declare `subwindow_tokens: 0`?~~ **Resolved:** neither. The capability records the served
+   scoring rule; its `calibration` records that the threshold was chosen with a different rule. Stage 1 is
+   observe-only, so this has no decision impact.
+7. ~~Collapse `stage1-tfidf-v2` and `v2.1`?~~ **Resolved:** keep both as separate immutable capability versions.

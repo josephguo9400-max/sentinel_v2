@@ -303,6 +303,27 @@ Step 3 shows measured results only. If a later adaptive attacker run is added an
 - [x] Time budget: calendar time until 2026-11-02 (~90 hours); scope extended beyond the original four-day plan.
 - [x] Stage 1: TF-IDF + logistic regression first; a MiniLM-class model as the Stage 1 v2 candidate. A probe is not used: its cost advantage depends on reusing the served model's activations, which an API-served defender does not expose.
 
+### Owner decisions
+
+Earlier decisions are recorded where they apply: D17 (a change to what decides is a config version change that goes
+through the release gate; `serving/README.md`, "Registry"), D22 and D23 (milestone 3 row above). This section starts
+the log with D25.
+
+- **D25 (2026-10-30): capability manifests and execution policies.** The owner approved
+  [`docs/design/capability-policy.md`](design/capability-policy.md) for implementation in milestone
+  **policy-runtime**, with these answers to its §12:
+  1. No `decision: "quarantine"` on the wire in v1.3: a quarantine stays `decision="flag"` with
+     `coverage_policy_applied="quarantine"`.
+  2. `engine_version` is a manual semantic version, plus a test that fails when a decision-path file in `serving/`
+     changes without a bump (a committed sha256 list of those files tied to the version).
+  3. Under registry v2 a decision-affecting environment variable is a hard startup error that names the policy
+     field to change.
+  4. Canary is designed only; the engine rejects a policy with `canary` set.
+  5. Shape B (parallel decide) is implemented and tested with fake detectors only; it is not served.
+  6. Stage 1 scoring mismatch: no recalibration now. The capability records the served scoring rule, and its
+     calibration records that the threshold was chosen with a different rule (observe-only, no decision impact).
+  7. `stage1-tfidf-v2` and `stage1-tfidf-v2.1` stay separate, immutable capability versions.
+
 ### Risks and mitigations
 
 | Risk | Likelihood | Mitigation |
