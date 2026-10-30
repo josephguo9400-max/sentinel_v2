@@ -1,4 +1,5 @@
 """Deterministic stand-in detector for fast gateway tests."""
+import re
 import threading
 import time
 
@@ -45,7 +46,16 @@ class FakeDetector:
                 self.tokenizing -= 1
 
     def _tokenize(self, text: str) -> list[int]:
-        return [INJECTION_ID if w == INJECTION_WORD else 10 + (sum(map(ord, w)) % 1000) for w in text.split()]
+        return [self._id(w) for w in text.split()]
+
+    @staticmethod
+    def _id(w: str) -> int:
+        return INJECTION_ID if w == INJECTION_WORD else 10 + (sum(map(ord, w)) % 1000)
+
+    def tokenize_with_offsets(self, text: str) -> tuple[list[int], list[tuple[int, int]]]:
+        self.tokenize(text)  # same counters and delays as tokenize()
+        spans = [m.span() for m in re.finditer(r"\S+", text)]
+        return [self._id(text[a:b]) for a, b in spans], spans
 
     def infer(self, batch: list[list[int]]) -> list[float]:
         with self._lock:
