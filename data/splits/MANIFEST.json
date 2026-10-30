@@ -1,0 +1,107 @@
+{
+  "pipeline_version": "splits-v1",
+  "seed": 20261029,
+  "limit_per_source": null,
+  "near_duplicate": {
+    "method": "MinHash LSH (datasketch) + exact Jaccard verification",
+    "shingles": "character 5-grams of dedup_key",
+    "num_perm": 128,
+    "lsh_candidate_threshold": 0.6,
+    "jaccard_threshold": 0.8
+  },
+  "sources": {
+    "deepset": {
+      "repo_id": "deepset/prompt-injections",
+      "revision": "4f61ecb038e9c3fb77e21034b22511b523772cdd",
+      "license": "apache-2.0",
+      "stage2_overlap": "suspected"
+    },
+    "spml": {
+      "repo_id": "reshabhs/SPML_Chatbot_Prompt_Injection",
+      "revision": "02ce8084e979bc7d4c24ee35d22ecb7f2db96ff5",
+      "license": "mit",
+      "stage2_overlap": "none_known"
+    },
+    "yanis": {
+      "repo_id": "yanismiraoui/prompt_injections",
+      "revision": "bd55359f2f332afc35f277ac3dd08f7111b024c9",
+      "license": "apache-2.0",
+      "stage2_overlap": "none_known"
+    },
+    "gandalf": {
+      "repo_id": "Lakera/gandalf_ignore_instructions",
+      "revision": "04737b65e90a6794ec227012e4a255a7def6344b",
+      "license": "mit",
+      "stage2_overlap": "suspected"
+    },
+    "jackhhao": {
+      "repo_id": "jackhhao/jailbreak-classification",
+      "revision": "2f2ceeb39658696fd3f462403562b6eea5306287",
+      "license": "apache-2.0",
+      "stage2_overlap": "confirmed"
+    }
+  },
+  "benign_hard_generator": "benign-hard-v1",
+  "n_input_records": 21073,
+  "n_exact_duplicate_links": 206,
+  "n_near_duplicate_pairs_among_unique": 379,
+  "removed_as_duplicate_by_source": {
+    "benign_hard": 2,
+    "deepset": 21,
+    "gandalf": 4,
+    "jackhhao": 155,
+    "spml": 162,
+    "yanis": 83
+  },
+  "dropped_label_conflict_by_source": {
+    "deepset": 2
+  },
+  "dropped_from_frozen_stage2_named_match_by_source": {
+    "spml": 7
+  },
+  "stage2_overlap_keys_sha256": "d1946b45b777bbcd4c90008312e0cec35a83a649e17ceaaf5f256d118d12768d",
+  "splits": {
+    "train": {
+      "n": 11149,
+      "positives": 7878,
+      "negatives": 3271,
+      "by_source_label": {
+        "deepset:0": 338,
+        "deepset:1": 189,
+        "jackhhao:0": 1045,
+        "jackhhao:1": 420,
+        "spml:0": 1888,
+        "spml:1": 7269
+      },
+      "sha256": "1454319588ca1f9494085b76cfec1f648cdbe9681babd88d2de4c2fd67e7a686"
+    },
+    "val": {
+      "n": 3214,
+      "positives": 2240,
+      "negatives": 974,
+      "by_source_label": {
+        "benign_hard:0": 92,
+        "deepset:0": 54,
+        "deepset:1": 58,
+        "jackhhao:0": 276,
+        "jackhhao:1": 102,
+        "spml:0": 552,
+        "spml:1": 2080
+      },
+      "sha256": "47263c60ea42b20b3c916e7d7afd9abc5891514556676f3c2e2c157791a10028"
+    },
+    "frozen_test": {
+      "n": 6274,
+      "positives": 5137,
+      "negatives": 1137,
+      "by_source_label": {
+        "benign_hard:0": 274,
+        "gandalf:1": 996,
+        "spml:0": 863,
+        "spml:1": 3190,
+        "yanis:1": 951
+      },
+      "sha256": "6e98eff17f7482c5a67ff42da3e5e08debc2e9c9a1c76215a7c970f3d2f4a388"
+    }
+  }
+}
