@@ -66,13 +66,17 @@ class ProbeOutcome:
     truncated: bool
     stages_run: tuple[str, ...]
     scored_positive: bool  # any scored chunk predicted injection
+    # per-stage detail, for diagnosing a decision: {stage: {"score", "n_chunks", "truncated", "status"}}
+    stage_scores: dict = field(default_factory=dict)
 
     @classmethod
     def from_verdict(cls, probe: Probe, v: ClassifierVerdict) -> "ProbeOutcome":
         scored_positive = any(r.status == "ok" and r.predicted_injection for r in v.results)
         return cls(probe.probe_id, probe.placement, probe.kind, probe.offset_label, probe.total_tokens,
                    v.decision, v.gateway_status, v.fallback, v.flag_cause, v.coverage_policy_applied,
-                   v.truncated, tuple(v.stages_run), scored_positive)
+                   v.truncated, tuple(v.stages_run), scored_positive,
+                   {(r.stage or r.detector_id): {"score": r.score, "n_chunks": r.n_chunks, "truncated": r.truncated,
+                                                 "status": r.status} for r in v.results})
 
 
 def _rate(k: int, n: int) -> dict:
@@ -124,7 +128,10 @@ def run_probes(classifier: Classifier, probes: list[Probe] | None = None,
         o = ProbeOutcome.from_verdict(p, v)
         outcomes.append(o)
         reports.setdefault(p.placement, PlacementReport(p.placement)).outcomes.append(o)
+    from .probes import PROBE_SET_VERSION
+
     return {
+        "probe_set_version": PROBE_SET_VERSION,
         "n_probes": len(probes),
         "placements": {name: rep.summary() for name, rep in sorted(reports.items())},
         "outcomes": [o.__dict__ for o in outcomes],

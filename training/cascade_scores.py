@@ -40,6 +40,9 @@ DEB_MAX_LEN = 512  # model input incl. [CLS] and [SEP]
 DEB_WINDOW = DEB_MAX_LEN - 2
 DEB_STRIDE = 384
 RESULTS = ROOT / "training" / "results"
+# The replay set (training/replay.py) is scored offline too, so the cascade can be compared with DeBERTa alone on
+# the same traffic mix it is judged on (D22); unlabeled items keep label None.
+REPLAY_FILE = ROOT / "data" / "replay" / "replay-v1.jsonl"
 
 
 def window_starts(n: int, window: int = DEB_WINDOW, stride: int = DEB_STRIDE) -> list[int]:
@@ -144,7 +147,8 @@ def run(split: str, max_items: int | None, threads: int, out: Path | None = None
     out = out or cache_path(split)
     repair(out)
     have = done_ids(out)
-    todo = [r for r in read_jsonl(SPLITS_DIR / f"{split}.jsonl") if r["id"] not in have]
+    src = REPLAY_FILE if split == "replay" else SPLITS_DIR / f"{split}.jsonl"
+    todo = [r for r in read_jsonl(src) if r["id"] not in have]
     todo.sort(key=lambda r: r["id"])
     if max_items is not None:
         todo = todo[:max_items]
@@ -168,7 +172,7 @@ def run(split: str, max_items: int | None, threads: int, out: Path | None = None
 
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--split", default="val", choices=["train", "val"])
+    ap.add_argument("--split", default="val", choices=["train", "val", "replay"])
     ap.add_argument("--max-items", type=int, default=None, help="score at most this many new items, then exit")
     ap.add_argument("--threads", type=int, default=2)
     a = ap.parse_args(argv)

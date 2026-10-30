@@ -118,3 +118,24 @@ def test_controls_carry_no_injection(p):
 def test_token_span_helper_is_exact():
     body = "alpha beta gamma delta"
     assert token_span_of(body, "gamma") == (2, 3)
+
+
+def test_filler_is_sentences_not_word_salad():
+    """Probe set v2: long bodies are built from distinct sentences; single-word filler only tops up the tail of
+    each padded segment. v1 filled most of a 2,600-token body with random words, which DeBERTa flags whether or
+    not an injection is present, so the controls could not separate attack from length."""
+    import re
+
+    from redteam.probes import FILLER_MAX, FILLER_WORDS, PROBE_SET_VERSION, _sentence_pool, load_probes
+
+    assert PROBE_SET_VERSION == 2
+    pool = set(_sentence_pool())
+    filler = set(FILLER_WORDS)
+    for p in load_probes():
+        sentences = re.findall(r"[^.!?]*[.!?]", p.body)
+        known = [s.strip() for s in sentences if s.strip() in pool]
+        assert len(known) == len(set(known)), f"{p.probe_id}: a filler sentence repeats"
+        # words outside any sentence (trailing top-ups) are few
+        loose = [w for w in re.sub(r"[^.!?]*[.!?]", " ", p.body).split() if w in filler]
+        n_segments = 3 if p.placement == "middle_overlong" else 4
+        assert len(loose) <= FILLER_MAX * n_segments, f"{p.probe_id}: {len(loose)} loose filler words"
