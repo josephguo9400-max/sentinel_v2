@@ -27,7 +27,7 @@ python -m benchmarks.detector_baseline.bench_deberta  # latency + truncation tes
 
 ## Cascade-and-shadow findings (replay set, 2,000 requests; Wilson 95% intervals)
 
-- **The cascade does not pay for itself on drifted traffic.** DeBERTa alone recalls 247/306 = 80.7% of replay injections; with TF-IDF Stage 1 allowed to finalize allows the gateway served 202/306 = 66.0% while still sending 59.9% of requests to DeBERTa. At identical recall the cascade saves 1.35% of Stage 2 calls (bar: 30%). The loss is concentrated in `gandalf_summ`, indirect injections inside text to summarize, a source Stage 1 never trained on. Val did not show it because val shares Stage 1's training sources. Details: `training/CASCADE.md`, `reports/cascade-and-shadow/replay_counterfactual.json`.
+- **The cascade does not pay for itself on drifted traffic.** DeBERTa alone recalls 247/306 = 80.7% of replay injections; with TF-IDF Stage 1 allowed to finalize allows the gateway served 202/306 = 66.0% while still sending 59.9% of requests to DeBERTa. Simulated the way the gateway routes, it saves at most 2.5% of Stage 2 calls at identical recall (bar: 30%; `replay_counterfactual_served_faithful.json`). The loss is concentrated in `gandalf_summ`, indirect injections inside text to summarize, a source Stage 1 never trained on. Val did not show it because val shares Stage 1's training sources. Details: `training/CASCADE.md`, `reports/cascade-and-shadow/replay_counterfactual.json`.
 - **Probe set v1 measured nothing for long emails:** its filler was largely random words, which DeBERTa flags with or without an injection. Probe set v2 uses distinct sentences.
 
 ## Gateway MVP findings (frozen test sha256 `2a4e011f…`, 6,276 items, Wilson 95% intervals, as served)
