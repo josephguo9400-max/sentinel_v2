@@ -14,7 +14,7 @@ Pipeline (see training/DATA.md for the rationale):
       spml                    -> by system-prompt group: 60% train / 15% val / 25% frozen_test
       deepset                 -> its original train split -> train, original test split -> val
       jackhhao                -> 80% train / 20% val (CONFIRMED in Stage 2 training data; never frozen)
-      benign_hard template 0  -> val (dev); templates 1-3 -> frozen_test
+      benign_hard template 0  -> val (dev); templates 1-3 -> frozen_test (sentence pools disjoint by split)
  5. Any frozen_test record whose cluster matched a dataset named in the Stage 2 card
     (data/stage2_overlap_keys.txt, produced by training.stage2_overlap) is dropped from frozen_test.
  6. Write JSONL sorted by id, the frozen-test hash and a counts manifest.
@@ -31,7 +31,7 @@ from training.common import (FROZEN_TEST_SHA, LSH_CANDIDATE_JACCARD, NEAR_DUP_JA
                              near_duplicate_pairs, sha256_file, stable_unit, write_json, write_jsonl)
 from training.sources import SOURCES, load_all
 
-PIPELINE_VERSION = "splits-v1"
+PIPELINE_VERSION = "splits-v2"
 OVERLAP_KEYS = ROOT / "data" / "stage2_overlap_keys.txt"
 # Representative choice inside a duplicate cluster: lower = preferred. Held-out frozen sources win so a
 # frozen record is never silently replaced by a training copy of itself; the copy is simply removed.

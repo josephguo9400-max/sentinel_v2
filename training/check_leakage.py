@@ -9,6 +9,10 @@ Checks:
      0.6, each verified with the exact Jaccard).
   3. Ids unique across all splits.
   4. data/frozen_test.sha256 matches data/splits/frozen_test.jsonl (default splits dir only).
+  5. Benign-hard separation: no sentence longer than 30 characters, exact or with slot values masked
+     (training.benign_hard.sentence_skeletons), occurs in both a val and a frozen_test benign-hard record.
+     Near-duplicate checks do not catch this, because records that share a few sentences stay below
+     Jaccard 0.8.
 """
 from __future__ import annotations
 
@@ -57,13 +61,24 @@ def check(splits_dir: Path, verify_hash: bool = True) -> list[str]:
             n_near += 1
             errors.append(f"NEAR duplicate (Jaccard {jac:.3f} >= {NEAR_DUP_JACCARD}) {si}:{ri['id']} vs {sj}:{rj['id']}")
 
+    from training.benign_hard import split_overlap
+
+    bh = {sp: [r["text"] for s2, r in recs if s2 == sp and r.get("source") == "benign_hard"]
+          for sp in ("val", "frozen_test")}
+    ov = split_overlap(bh["val"], bh["frozen_test"])
+    for kind in ("exact", "skeleton"):
+        for x in ov[kind]:
+            errors.append(f"BENIGN_HARD {kind} sentence in both val and frozen_test: {x[:80]!r}")
+    n_bh = len(ov["exact"]) + len(ov["skeleton"])
+
     if verify_hash:
         expected = FROZEN_TEST_SHA.read_text().split()[0] if FROZEN_TEST_SHA.exists() else None
         actual = sha256_file(splits_dir / "frozen_test.jsonl")
         if expected != actual:
             errors.append(f"frozen_test sha256 {actual} != {FROZEN_TEST_SHA.relative_to(ROOT)} ({expected})")
     print(f"checked {len(recs)} records in {len(SPLIT_NAMES)} splits: "
-          f"{n_exact} exact and {n_near} near cross-split duplicates, {len(errors)} errors")
+          f"{n_exact} exact and {n_near} near cross-split duplicates, "
+          f"{n_bh} benign-hard sentences shared by val and frozen_test, {len(errors)} errors")
     return errors
 
 

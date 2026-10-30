@@ -104,6 +104,52 @@ def test_benign_hard_generator_deterministic_and_large_enough():
     assert generate(124) != a
 
 
+def test_benign_hard_generator_val_and_frozen_share_no_sentence():
+    """Review: 711 frozen benign-hard sentences also appeared in val (pools shared across templates)."""
+    from training.benign_hard import DEV_TEMPLATE, generate, split_overlap
+    from training.common import SEED
+
+    for seed in (SEED, 1, 2):
+        recs = generate(seed)
+        val = [r["text"] for r in recs if r["template"] == DEV_TEMPLATE]
+        frozen = [r["text"] for r in recs if r["template"] != DEV_TEMPLATE]
+        ov = split_overlap(val, frozen)
+        assert ov == {"exact": [], "skeleton": []}, ov
+
+
+def test_benign_hard_skeleton_masks_slot_values():
+    from training.benign_hard import skeleton, split_overlap
+
+    a = "Bring your laptop and the Q3 budget draft to Room 4B on Monday at 9:15."
+    b = "Bring your laptop and the release notes to the Birch room on Friday at 14:30."
+    assert skeleton(a) == skeleton(b)
+    ov = split_overlap([f"Hi,\n\n{a}"], [f"Hello,\n\n{b}"])
+    assert ov["exact"] == [] and len(ov["skeleton"]) == 1
+
+
+def test_leakage_catches_benign_hard_sentence_shared_by_val_and_frozen(tmp_path):
+    shared = "Please keep the original subject line so the thread stays together."
+    v = dict(_rec(2, "Could you forward the vendor contract to Legal? " + shared), source="benign_hard")
+    f = dict(_rec(3, "Send the pricing sheet to Omar Haddad in Finance by noon, thanks a lot. " + shared),
+             source="benign_hard")
+    _write_splits(tmp_path, [_rec(0, BASE[0])], [v], [f])
+    errs = check_leakage.check(tmp_path, verify_hash=False)
+    assert any(e.startswith("BENIGN_HARD exact") for e in errs), errs
+    assert not any(e.startswith(("EXACT", "NEAR")) for e in errs)
+
+
+@pytest.mark.skipif(not (SPLITS_DIR / "frozen_test.jsonl").exists(), reason="splits not built")
+def test_committed_benign_hard_val_and_frozen_share_no_sentence():
+    from training.benign_hard import split_overlap
+
+    def bh(split):
+        return [r["text"] for r in read_jsonl(SPLITS_DIR / f"{split}.jsonl") if r["source"] == "benign_hard"]
+
+    val, frozen = bh("val"), bh("frozen_test")
+    assert val and frozen
+    assert split_overlap(val, frozen) == {"exact": [], "skeleton": []}
+
+
 def test_frozen_split_rules():
     from training.build_splits import assign_split
 
