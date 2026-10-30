@@ -1,0 +1,444 @@
+{
+  "at": "2026-10-30T08:30:20Z",
+  "config": {
+    "lang_max_chars": 2000,
+    "stage1_subwindow_stride": 32,
+    "stage1_subwindow_tokens": 64,
+    "stride": 384,
+    "structure_aware": true
+  },
+  "generated_by": "python -m serving.bench.stage1_latency ",
+  "host": {
+    "cpu": "Intel(R) Xeon(R) Processor @ 2.10GHz",
+    "logical_cores": 2,
+    "onnxruntime": "1.29.0",
+    "platform": "Linux-6.18.44-fc-v185-x86_64-with-glibc2.39",
+    "python": "3.13.18",
+    "tokenizers": "0.23.3"
+  },
+  "inputs": {
+    "probe_middle_overlong": {
+      "chunks": 7,
+      "language_only": {
+        "max_ms": 40.95,
+        "mean_ms": 25.13,
+        "n": 120,
+        "p50_ms": 24.17,
+        "p95_ms": 31.05,
+        "p99_is_max": false,
+        "p99_ms": 38.81
+      },
+      "n_inputs": 12,
+      "over_budget": {
+        "budget_ms": 50.0,
+        "k": 71,
+        "n": 120
+      },
+      "run_stage1": {
+        "max_ms": 71.17,
+        "mean_ms": 52.35,
+        "n": 120,
+        "p50_ms": 50.69,
+        "p95_ms": 62.96,
+        "p99_is_max": false,
+        "p99_ms": 69.82
+      },
+      "run_stage1_per_repeat": [
+        {
+          "max_ms": 66.21,
+          "mean_ms": 51.72,
+          "n": 40,
+          "p50_ms": 50.37,
+          "p95_ms": 61.75,
+          "p99_is_max": true,
+          "p99_ms": 66.21
+        },
+        {
+          "max_ms": 69.82,
+          "mean_ms": 53.8,
+          "n": 40,
+          "p50_ms": 51.13,
+          "p95_ms": 68.09,
+          "p99_is_max": true,
+          "p99_ms": 69.82
+        },
+        {
+          "max_ms": 71.17,
+          "mean_ms": 51.52,
+          "n": 40,
+          "p50_ms": 49.62,
+          "p95_ms": 58.09,
+          "p99_is_max": true,
+          "p99_ms": 71.17
+        }
+      ],
+      "stage1_regex_tokens": 2331,
+      "stage2_tokens": 2600
+    },
+    "val_benign_en_1000": {
+      "chunks": 3,
+      "language_only": {
+        "max_ms": 18.46,
+        "mean_ms": 10.97,
+        "n": 120,
+        "p50_ms": 9.66,
+        "p95_ms": 15.17,
+        "p99_is_max": false,
+        "p99_ms": 16.53
+      },
+      "n_inputs": 1,
+      "over_budget": {
+        "budget_ms": 50.0,
+        "k": 1,
+        "n": 120
+      },
+      "run_stage1": {
+        "max_ms": 50.96,
+        "mean_ms": 29.81,
+        "n": 120,
+        "p50_ms": 28.23,
+        "p95_ms": 36.34,
+        "p99_is_max": false,
+        "p99_ms": 49.14
+      },
+      "run_stage1_per_repeat": [
+        {
+          "max_ms": 42.43,
+          "mean_ms": 30.37,
+          "n": 40,
+          "p50_ms": 28.23,
+          "p95_ms": 37.02,
+          "p99_is_max": true,
+          "p99_ms": 42.43
+        },
+        {
+          "max_ms": 50.96,
+          "mean_ms": 29.1,
+          "n": 40,
+          "p50_ms": 27.18,
+          "p95_ms": 35.27,
+          "p99_is_max": true,
+          "p99_ms": 50.96
+        },
+        {
+          "max_ms": 37.86,
+          "mean_ms": 29.97,
+          "n": 40,
+          "p50_ms": 29.34,
+          "p95_ms": 33.98,
+          "p99_is_max": true,
+          "p99_ms": 37.86
+        }
+      ],
+      "stage1_regex_tokens": 750,
+      "stage2_tokens": 1000
+    },
+    "val_benign_en_256": {
+      "chunks": 1,
+      "language_only": {
+        "max_ms": 7.49,
+        "mean_ms": 4.04,
+        "n": 120,
+        "p50_ms": 3.35,
+        "p95_ms": 5.34,
+        "p99_is_max": false,
+        "p99_ms": 5.61
+      },
+      "n_inputs": 1,
+      "over_budget": {
+        "budget_ms": 50.0,
+        "k": 0,
+        "n": 120
+      },
+      "run_stage1": {
+        "max_ms": 13.06,
+        "mean_ms": 7.02,
+        "n": 120,
+        "p50_ms": 6.53,
+        "p95_ms": 9.0,
+        "p99_is_max": false,
+        "p99_ms": 12.0
+      },
+      "run_stage1_per_repeat": [
+        {
+          "max_ms": 12.0,
+          "mean_ms": 7.25,
+          "n": 40,
+          "p50_ms": 6.5,
+          "p95_ms": 9.15,
+          "p99_is_max": true,
+          "p99_ms": 12.0
+        },
+        {
+          "max_ms": 10.13,
+          "mean_ms": 6.74,
+          "n": 40,
+          "p50_ms": 6.34,
+          "p95_ms": 8.59,
+          "p99_is_max": true,
+          "p99_ms": 10.13
+        },
+        {
+          "max_ms": 13.06,
+          "mean_ms": 7.08,
+          "n": 40,
+          "p50_ms": 6.69,
+          "p95_ms": 8.11,
+          "p99_is_max": true,
+          "p99_ms": 13.06
+        }
+      ],
+      "stage1_regex_tokens": 200,
+      "stage2_tokens": 256
+    },
+    "val_benign_en_2600": {
+      "chunks": 7,
+      "language_only": {
+        "max_ms": 43.52,
+        "mean_ms": 26.2,
+        "n": 120,
+        "p50_ms": 23.58,
+        "p95_ms": 39.51,
+        "p99_is_max": false,
+        "p99_ms": 43.51
+      },
+      "n_inputs": 1,
+      "over_budget": {
+        "budget_ms": 50.0,
+        "k": 113,
+        "n": 120
+      },
+      "run_stage1": {
+        "max_ms": 95.58,
+        "mean_ms": 58.91,
+        "n": 120,
+        "p50_ms": 54.51,
+        "p95_ms": 81.09,
+        "p99_is_max": false,
+        "p99_ms": 94.6
+      },
+      "run_stage1_per_repeat": [
+        {
+          "max_ms": 72.45,
+          "mean_ms": 54.84,
+          "n": 40,
+          "p50_ms": 52.97,
+          "p95_ms": 64.72,
+          "p99_is_max": true,
+          "p99_ms": 72.45
+        },
+        {
+          "max_ms": 73.04,
+          "mean_ms": 56.45,
+          "n": 40,
+          "p50_ms": 53.37,
+          "p95_ms": 72.47,
+          "p99_is_max": true,
+          "p99_ms": 73.04
+        },
+        {
+          "max_ms": 95.58,
+          "mean_ms": 65.44,
+          "n": 40,
+          "p50_ms": 61.36,
+          "p95_ms": 91.29,
+          "p99_is_max": true,
+          "p99_ms": 95.58
+        }
+      ],
+      "stage1_regex_tokens": 1541,
+      "stage2_tokens": 2600
+    },
+    "val_benign_en_5000": {
+      "chunks": 14,
+      "language_only": {
+        "max_ms": 83.34,
+        "mean_ms": 51.56,
+        "n": 120,
+        "p50_ms": 49.35,
+        "p95_ms": 64.19,
+        "p99_is_max": false,
+        "p99_ms": 73.4
+      },
+      "n_inputs": 1,
+      "over_budget": {
+        "budget_ms": 50.0,
+        "k": 120,
+        "n": 120
+      },
+      "run_stage1": {
+        "max_ms": 187.57,
+        "mean_ms": 137.61,
+        "n": 120,
+        "p50_ms": 131.66,
+        "p95_ms": 166.55,
+        "p99_is_max": false,
+        "p99_ms": 175.5
+      },
+      "run_stage1_per_repeat": [
+        {
+          "max_ms": 187.57,
+          "mean_ms": 139.79,
+          "n": 40,
+          "p50_ms": 132.8,
+          "p95_ms": 167.28,
+          "p99_is_max": true,
+          "p99_ms": 187.57
+        },
+        {
+          "max_ms": 175.5,
+          "mean_ms": 138.0,
+          "n": 40,
+          "p50_ms": 131.64,
+          "p95_ms": 166.55,
+          "p99_is_max": true,
+          "p99_ms": 175.5
+        },
+        {
+          "max_ms": 167.27,
+          "mean_ms": 135.04,
+          "n": 40,
+          "p50_ms": 129.96,
+          "p95_ms": 162.01,
+          "p99_is_max": true,
+          "p99_ms": 167.27
+        }
+      ],
+      "stage1_regex_tokens": 3247,
+      "stage2_tokens": 5000
+    },
+    "val_benign_en_510": {
+      "chunks": 1,
+      "language_only": {
+        "max_ms": 6.22,
+        "mean_ms": 3.93,
+        "n": 120,
+        "p50_ms": 3.66,
+        "p95_ms": 5.99,
+        "p99_is_max": false,
+        "p99_ms": 6.17
+      },
+      "n_inputs": 1,
+      "over_budget": {
+        "budget_ms": 50.0,
+        "k": 0,
+        "n": 120
+      },
+      "run_stage1": {
+        "max_ms": 16.95,
+        "mean_ms": 10.61,
+        "n": 120,
+        "p50_ms": 10.26,
+        "p95_ms": 11.98,
+        "p99_is_max": false,
+        "p99_ms": 16.79
+      },
+      "run_stage1_per_repeat": [
+        {
+          "max_ms": 16.95,
+          "mean_ms": 10.73,
+          "n": 40,
+          "p50_ms": 10.33,
+          "p95_ms": 11.98,
+          "p99_is_max": true,
+          "p99_ms": 16.95
+        },
+        {
+          "max_ms": 16.57,
+          "mean_ms": 10.85,
+          "n": 40,
+          "p50_ms": 10.28,
+          "p95_ms": 13.46,
+          "p99_is_max": true,
+          "p99_ms": 16.57
+        },
+        {
+          "max_ms": 11.43,
+          "mean_ms": 10.23,
+          "n": 40,
+          "p50_ms": 10.11,
+          "p95_ms": 10.66,
+          "p99_is_max": true,
+          "p99_ms": 11.43
+        }
+      ],
+      "stage1_regex_tokens": 411,
+      "stage2_tokens": 510
+    },
+    "val_benign_en_64": {
+      "chunks": 1,
+      "language_only": {
+        "max_ms": 3.55,
+        "mean_ms": 1.66,
+        "n": 120,
+        "p50_ms": 1.55,
+        "p95_ms": 2.05,
+        "p99_is_max": false,
+        "p99_ms": 2.82
+      },
+      "n_inputs": 1,
+      "over_budget": {
+        "budget_ms": 50.0,
+        "k": 0,
+        "n": 120
+      },
+      "run_stage1": {
+        "max_ms": 8.57,
+        "mean_ms": 2.86,
+        "n": 120,
+        "p50_ms": 2.62,
+        "p95_ms": 3.69,
+        "p99_is_max": false,
+        "p99_ms": 8.52
+      },
+      "run_stage1_per_repeat": [
+        {
+          "max_ms": 3.46,
+          "mean_ms": 2.65,
+          "n": 40,
+          "p50_ms": 2.6,
+          "p95_ms": 2.94,
+          "p99_is_max": true,
+          "p99_ms": 3.46
+        },
+        {
+          "max_ms": 8.57,
+          "mean_ms": 2.97,
+          "n": 40,
+          "p50_ms": 2.6,
+          "p95_ms": 5.32,
+          "p99_is_max": true,
+          "p99_ms": 8.57
+        },
+        {
+          "max_ms": 8.52,
+          "mean_ms": 2.97,
+          "n": 40,
+          "p50_ms": 2.65,
+          "p95_ms": 4.31,
+          "p99_is_max": true,
+          "p99_ms": 8.52
+        }
+      ],
+      "stage1_regex_tokens": 48,
+      "stage2_tokens": 64
+    }
+  },
+  "protocol": {
+    "calls": 40,
+    "cooperative_deadline": false,
+    "repeats": 3,
+    "warmup": 5
+  },
+  "stage1": {
+    "detector_version": "stage1-tfidf-v2.1",
+    "effective_budget_ms": 50.0,
+    "input_languages": [
+      "en"
+    ],
+    "manifest_timeout_ms": 50,
+    "pointer": "candidates/stage1-tfidf-v2.1"
+  },
+  "uptime_after": "01:31:15 up 9 min,  0 user,  load average: 1.84, 1.24, 0.57",
+  "uptime_before": "01:30:20 up 8 min,  0 user,  load average: 1.88, 1.12, 0.50"
+}
