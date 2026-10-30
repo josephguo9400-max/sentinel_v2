@@ -1,0 +1,8 @@
+{
+  "schema": "sentinel-registry-v1",
+  "comment": "The sentinel-registry-v1 state this project served for D23, kept as the historical record and as the input of the conversion to registry v2 (serving/convert_registry.py, policy d23-deberta-decides/1). artifacts/registry.json now holds that v2 bundle; this file is not the active registry. The v1 path still loads it (converted in memory, /health policy_source \"legacy_registry\") until it is removed one milestone later (design \u00a77, migration 6). Original comment: Active and shadow pointers, relative to artifacts/. Only the owner moves stage1/stage2 (after a gate PASS); shadow may point at any candidate. D23 (2026-10-30): DeBERTa decides every request; Stage 1 (stage1-tfidf-v2.1) runs observe-only and is reported with role=shadow. Config version change pending the release gate (D17; gate lands in adaptive-eval).",
+  "stage1": "candidates/stage1-tfidf-v2.1",
+  "stage1_mode": "observe",
+  "stage2": "baseline/deberta-pi-v2",
+  "shadow": null
+}

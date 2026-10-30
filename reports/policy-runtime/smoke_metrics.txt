@@ -1,0 +1,216 @@
+# HELP sentinel_classify_requests_total Classify requests by final decision
+# TYPE sentinel_classify_requests_total counter
+sentinel_classify_requests_total{decision="allow",policy_applied="none"} 13.0
+sentinel_classify_requests_total{decision="flag",policy_applied="none"} 13.0
+# HELP sentinel_classify_requests_created Classify requests by final decision
+# TYPE sentinel_classify_requests_created gauge
+sentinel_classify_requests_created{decision="allow",policy_applied="none"} 1.7933931806853926e+09
+sentinel_classify_requests_created{decision="flag",policy_applied="none"} 1.7933931807497618e+09
+# HELP sentinel_cascade_path_total Requests by routing outcome (stage1_allow, stage2_flag, coverage_flag, stage2_timeout, overloaded, ...)
+# TYPE sentinel_cascade_path_total counter
+sentinel_cascade_path_total{path="stage2_allow"} 13.0
+sentinel_cascade_path_total{path="stage2_flag"} 1.0
+sentinel_cascade_path_total{path="coverage_flag"} 12.0
+# HELP sentinel_cascade_path_created Requests by routing outcome (stage1_allow, stage2_flag, coverage_flag, stage2_timeout, overloaded, ...)
+# TYPE sentinel_cascade_path_created gauge
+sentinel_cascade_path_created{path="stage2_allow"} 1.7933931806854112e+09
+sentinel_cascade_path_created{path="stage2_flag"} 1.7933931807497787e+09
+sentinel_cascade_path_created{path="coverage_flag"} 1.7933932091523757e+09
+# HELP sentinel_coverage_policy_applied_total Requests decided by the coverage policy (content scored by neither stage)
+# TYPE sentinel_coverage_policy_applied_total counter
+sentinel_coverage_policy_applied_total{policy="flag"} 12.0
+# HELP sentinel_coverage_policy_applied_created Requests decided by the coverage policy (content scored by neither stage)
+# TYPE sentinel_coverage_policy_applied_created gauge
+sentinel_coverage_policy_applied_created{policy="flag"} 1.7933932091524146e+09
+# HELP sentinel_unscored_requests_total Requests with content neither cleared by the gate nor scored by a decide detector (ClassifyResponse.unscored_by_any_step), by decision
+# TYPE sentinel_unscored_requests_total counter
+sentinel_unscored_requests_total{decision="flag"} 12.0
+# HELP sentinel_unscored_requests_created Requests with content neither cleared by the gate nor scored by a decide detector (ClassifyResponse.unscored_by_any_step), by decision
+# TYPE sentinel_unscored_requests_created gauge
+sentinel_unscored_requests_created{decision="flag"} 1.7933932091524222e+09
+# HELP sentinel_detector_latency_seconds Detector latency per request; role=active is the decision path, role=shadow the observe-only Stage 1
+# TYPE sentinel_detector_latency_seconds histogram
+sentinel_detector_latency_seconds_bucket{detector_id="deberta-pi-v2",le="0.001",role="active",status="ok"} 0.0
+sentinel_detector_latency_seconds_bucket{detector_id="deberta-pi-v2",le="0.0025",role="active",status="ok"} 0.0
+sentinel_detector_latency_seconds_bucket{detector_id="deberta-pi-v2",le="0.005",role="active",status="ok"} 0.0
+sentinel_detector_latency_seconds_bucket{detector_id="deberta-pi-v2",le="0.01",role="active",status="ok"} 0.0
+sentinel_detector_latency_seconds_bucket{detector_id="deberta-pi-v2",le="0.025",role="active",status="ok"} 0.0
+sentinel_detector_latency_seconds_bucket{detector_id="deberta-pi-v2",le="0.05",role="active",status="ok"} 0.0
+sentinel_detector_latency_seconds_bucket{detector_id="deberta-pi-v2",le="0.1",role="active",status="ok"} 2.0
+sentinel_detector_latency_seconds_bucket{detector_id="deberta-pi-v2",le="0.2",role="active",status="ok"} 2.0
+sentinel_detector_latency_seconds_bucket{detector_id="deberta-pi-v2",le="0.3",role="active",status="ok"} 2.0
+sentinel_detector_latency_seconds_bucket{detector_id="deberta-pi-v2",le="0.5",role="active",status="ok"} 2.0
+sentinel_detector_latency_seconds_bucket{detector_id="deberta-pi-v2",le="0.75",role="active",status="ok"} 2.0
+sentinel_detector_latency_seconds_bucket{detector_id="deberta-pi-v2",le="1.0",role="active",status="ok"} 2.0
+sentinel_detector_latency_seconds_bucket{detector_id="deberta-pi-v2",le="1.5",role="active",status="ok"} 2.0
+sentinel_detector_latency_seconds_bucket{detector_id="deberta-pi-v2",le="2.0",role="active",status="ok"} 7.0
+sentinel_detector_latency_seconds_bucket{detector_id="deberta-pi-v2",le="3.0",role="active",status="ok"} 16.0
+sentinel_detector_latency_seconds_bucket{detector_id="deberta-pi-v2",le="5.0",role="active",status="ok"} 26.0
+sentinel_detector_latency_seconds_bucket{detector_id="deberta-pi-v2",le="7.5",role="active",status="ok"} 26.0
+sentinel_detector_latency_seconds_bucket{detector_id="deberta-pi-v2",le="10.0",role="active",status="ok"} 26.0
+sentinel_detector_latency_seconds_bucket{detector_id="deberta-pi-v2",le="20.0",role="active",status="ok"} 26.0
+sentinel_detector_latency_seconds_bucket{detector_id="deberta-pi-v2",le="+Inf",role="active",status="ok"} 26.0
+sentinel_detector_latency_seconds_count{detector_id="deberta-pi-v2",role="active",status="ok"} 26.0
+sentinel_detector_latency_seconds_sum{detector_id="deberta-pi-v2",role="active",status="ok"} 62.47106091000023
+sentinel_detector_latency_seconds_bucket{detector_id="stage1-tfidf-lr",le="0.001",role="observe",status="ok"} 1.0
+sentinel_detector_latency_seconds_bucket{detector_id="stage1-tfidf-lr",le="0.0025",role="observe",status="ok"} 1.0
+sentinel_detector_latency_seconds_bucket{detector_id="stage1-tfidf-lr",le="0.005",role="observe",status="ok"} 1.0
+sentinel_detector_latency_seconds_bucket{detector_id="stage1-tfidf-lr",le="0.01",role="observe",status="ok"} 1.0
+sentinel_detector_latency_seconds_bucket{detector_id="stage1-tfidf-lr",le="0.025",role="observe",status="ok"} 7.0
+sentinel_detector_latency_seconds_bucket{detector_id="stage1-tfidf-lr",le="0.05",role="observe",status="ok"} 26.0
+sentinel_detector_latency_seconds_bucket{detector_id="stage1-tfidf-lr",le="0.1",role="observe",status="ok"} 26.0
+sentinel_detector_latency_seconds_bucket{detector_id="stage1-tfidf-lr",le="0.2",role="observe",status="ok"} 26.0
+sentinel_detector_latency_seconds_bucket{detector_id="stage1-tfidf-lr",le="0.3",role="observe",status="ok"} 26.0
+sentinel_detector_latency_seconds_bucket{detector_id="stage1-tfidf-lr",le="0.5",role="observe",status="ok"} 26.0
+sentinel_detector_latency_seconds_bucket{detector_id="stage1-tfidf-lr",le="0.75",role="observe",status="ok"} 26.0
+sentinel_detector_latency_seconds_bucket{detector_id="stage1-tfidf-lr",le="1.0",role="observe",status="ok"} 26.0
+sentinel_detector_latency_seconds_bucket{detector_id="stage1-tfidf-lr",le="1.5",role="observe",status="ok"} 26.0
+sentinel_detector_latency_seconds_bucket{detector_id="stage1-tfidf-lr",le="2.0",role="observe",status="ok"} 26.0
+sentinel_detector_latency_seconds_bucket{detector_id="stage1-tfidf-lr",le="3.0",role="observe",status="ok"} 26.0
+sentinel_detector_latency_seconds_bucket{detector_id="stage1-tfidf-lr",le="5.0",role="observe",status="ok"} 26.0
+sentinel_detector_latency_seconds_bucket{detector_id="stage1-tfidf-lr",le="7.5",role="observe",status="ok"} 26.0
+sentinel_detector_latency_seconds_bucket{detector_id="stage1-tfidf-lr",le="10.0",role="observe",status="ok"} 26.0
+sentinel_detector_latency_seconds_bucket{detector_id="stage1-tfidf-lr",le="20.0",role="observe",status="ok"} 26.0
+sentinel_detector_latency_seconds_bucket{detector_id="stage1-tfidf-lr",le="+Inf",role="observe",status="ok"} 26.0
+sentinel_detector_latency_seconds_count{detector_id="stage1-tfidf-lr",role="observe",status="ok"} 26.0
+sentinel_detector_latency_seconds_sum{detector_id="stage1-tfidf-lr",role="observe",status="ok"} 0.8163005269952919
+# HELP sentinel_detector_latency_seconds_created Detector latency per request; role=active is the decision path, role=shadow the observe-only Stage 1
+# TYPE sentinel_detector_latency_seconds_created gauge
+sentinel_detector_latency_seconds_created{detector_id="deberta-pi-v2",role="active",status="ok"} 1.79339318068547e+09
+sentinel_detector_latency_seconds_created{detector_id="stage1-tfidf-lr",role="observe",status="ok"} 1.793393180685611e+09
+# HELP sentinel_detector_failures_total Detector results with status != ok (role=active: decision path; role=shadow: observe-only Stage 1, never part of a decision)
+# TYPE sentinel_detector_failures_total counter
+# HELP sentinel_request_chunks Chunks in the request's chunk plan
+# TYPE sentinel_request_chunks histogram
+sentinel_request_chunks_bucket{le="1.0"} 2.0
+sentinel_request_chunks_bucket{le="2.0"} 2.0
+sentinel_request_chunks_bucket{le="3.0"} 14.0
+sentinel_request_chunks_bucket{le="4.0"} 14.0
+sentinel_request_chunks_bucket{le="6.0"} 14.0
+sentinel_request_chunks_bucket{le="8.0"} 26.0
+sentinel_request_chunks_bucket{le="12.0"} 26.0
+sentinel_request_chunks_bucket{le="16.0"} 26.0
+sentinel_request_chunks_bucket{le="32.0"} 26.0
+sentinel_request_chunks_bucket{le="64.0"} 26.0
+sentinel_request_chunks_bucket{le="128.0"} 26.0
+sentinel_request_chunks_bucket{le="+Inf"} 26.0
+sentinel_request_chunks_count 26.0
+sentinel_request_chunks_sum 122.0
+# HELP sentinel_request_chunks_created Chunks in the request's chunk plan
+# TYPE sentinel_request_chunks_created gauge
+sentinel_request_chunks_created 1.793393174980966e+09
+# HELP sentinel_chunks_per_request Chunks scored per request, per stage
+# TYPE sentinel_chunks_per_request histogram
+sentinel_chunks_per_request_bucket{le="1.0",role="active",stage="stage2"} 2.0
+sentinel_chunks_per_request_bucket{le="2.0",role="active",stage="stage2"} 2.0
+sentinel_chunks_per_request_bucket{le="3.0",role="active",stage="stage2"} 14.0
+sentinel_chunks_per_request_bucket{le="4.0",role="active",stage="stage2"} 26.0
+sentinel_chunks_per_request_bucket{le="6.0",role="active",stage="stage2"} 26.0
+sentinel_chunks_per_request_bucket{le="8.0",role="active",stage="stage2"} 26.0
+sentinel_chunks_per_request_bucket{le="12.0",role="active",stage="stage2"} 26.0
+sentinel_chunks_per_request_bucket{le="16.0",role="active",stage="stage2"} 26.0
+sentinel_chunks_per_request_bucket{le="32.0",role="active",stage="stage2"} 26.0
+sentinel_chunks_per_request_bucket{le="64.0",role="active",stage="stage2"} 26.0
+sentinel_chunks_per_request_bucket{le="128.0",role="active",stage="stage2"} 26.0
+sentinel_chunks_per_request_bucket{le="+Inf",role="active",stage="stage2"} 26.0
+sentinel_chunks_per_request_count{role="active",stage="stage2"} 26.0
+sentinel_chunks_per_request_sum{role="active",stage="stage2"} 86.0
+sentinel_chunks_per_request_bucket{le="1.0",role="observe",stage="stage1"} 2.0
+sentinel_chunks_per_request_bucket{le="2.0",role="observe",stage="stage1"} 2.0
+sentinel_chunks_per_request_bucket{le="3.0",role="observe",stage="stage1"} 15.0
+sentinel_chunks_per_request_bucket{le="4.0",role="observe",stage="stage1"} 24.0
+sentinel_chunks_per_request_bucket{le="6.0",role="observe",stage="stage1"} 26.0
+sentinel_chunks_per_request_bucket{le="8.0",role="observe",stage="stage1"} 26.0
+sentinel_chunks_per_request_bucket{le="12.0",role="observe",stage="stage1"} 26.0
+sentinel_chunks_per_request_bucket{le="16.0",role="observe",stage="stage1"} 26.0
+sentinel_chunks_per_request_bucket{le="32.0",role="observe",stage="stage1"} 26.0
+sentinel_chunks_per_request_bucket{le="64.0",role="observe",stage="stage1"} 26.0
+sentinel_chunks_per_request_bucket{le="128.0",role="observe",stage="stage1"} 26.0
+sentinel_chunks_per_request_bucket{le="+Inf",role="observe",stage="stage1"} 26.0
+sentinel_chunks_per_request_count{role="observe",stage="stage1"} 26.0
+sentinel_chunks_per_request_sum{role="observe",stage="stage1"} 87.0
+# HELP sentinel_chunks_per_request_created Chunks scored per request, per stage
+# TYPE sentinel_chunks_per_request_created gauge
+sentinel_chunks_per_request_created{role="active",stage="stage2"} 1.7933931806855776e+09
+sentinel_chunks_per_request_created{role="observe",stage="stage1"} 1.793393180685648e+09
+# HELP sentinel_truncated_requests_total Detector results where that detector did not score some content
+# TYPE sentinel_truncated_requests_total counter
+sentinel_truncated_requests_total{detector_id="deberta-pi-v2",role="active"} 12.0
+sentinel_truncated_requests_total{detector_id="stage1-tfidf-lr",role="observe"} 12.0
+# HELP sentinel_truncated_requests_created Detector results where that detector did not score some content
+# TYPE sentinel_truncated_requests_created gauge
+sentinel_truncated_requests_created{detector_id="deberta-pi-v2",role="active"} 1.7933932091524875e+09
+sentinel_truncated_requests_created{detector_id="stage1-tfidf-lr",role="observe"} 1.7933932091525018e+09
+# HELP sentinel_inference_batch_size Chunks per Stage 2 ONNX call
+# TYPE sentinel_inference_batch_size histogram
+sentinel_inference_batch_size_bucket{le="1.0"} 86.0
+sentinel_inference_batch_size_bucket{le="2.0"} 86.0
+sentinel_inference_batch_size_bucket{le="4.0"} 86.0
+sentinel_inference_batch_size_bucket{le="8.0"} 86.0
+sentinel_inference_batch_size_bucket{le="16.0"} 86.0
+sentinel_inference_batch_size_bucket{le="32.0"} 86.0
+sentinel_inference_batch_size_bucket{le="64.0"} 86.0
+sentinel_inference_batch_size_bucket{le="+Inf"} 86.0
+sentinel_inference_batch_size_count 86.0
+sentinel_inference_batch_size_sum 86.0
+# HELP sentinel_inference_batch_size_created Chunks per Stage 2 ONNX call
+# TYPE sentinel_inference_batch_size_created gauge
+sentinel_inference_batch_size_created 1.7933931749810271e+09
+# HELP sentinel_inference_real_tokens_total Non-padding token positions sent to the model
+# TYPE sentinel_inference_real_tokens_total counter
+sentinel_inference_real_tokens_total 35935.0
+# HELP sentinel_inference_real_tokens_created Non-padding token positions sent to the model
+# TYPE sentinel_inference_real_tokens_created gauge
+sentinel_inference_real_tokens_created 1.7933931749810452e+09
+# HELP sentinel_inference_computed_tokens_total Token positions the model computed, padding included
+# TYPE sentinel_inference_computed_tokens_total counter
+sentinel_inference_computed_tokens_total 35935.0
+# HELP sentinel_inference_computed_tokens_created Token positions the model computed, padding included
+# TYPE sentinel_inference_computed_tokens_created gauge
+sentinel_inference_computed_tokens_created 1.7933931749810536e+09
+# HELP sentinel_inflight_requests Admitted requests not yet finished
+# TYPE sentinel_inflight_requests gauge
+sentinel_inflight_requests 0.0
+# HELP sentinel_queue_depth Chunks waiting for a worker
+# TYPE sentinel_queue_depth gauge
+sentinel_queue_depth 0.0
+# HELP sentinel_busy_workers Inference workers currently running (incl. abandoned)
+# TYPE sentinel_busy_workers gauge
+sentinel_busy_workers 0.0
+# HELP sentinel_stage1_observed_total Observe-only Stage 1: what routed Stage 1 would have done (would_finalize_allow / would_escalate / not_scored / dropped)
+# TYPE sentinel_stage1_observed_total counter
+sentinel_stage1_observed_total{outcome="would_finalize_allow"} 13.0
+sentinel_stage1_observed_total{outcome="would_escalate"} 13.0
+# HELP sentinel_stage1_observed_created Observe-only Stage 1: what routed Stage 1 would have done (would_finalize_allow / would_escalate / not_scored / dropped)
+# TYPE sentinel_stage1_observed_created gauge
+sentinel_stage1_observed_created{outcome="would_finalize_allow"} 1.793393180685433e+09
+sentinel_stage1_observed_created{outcome="would_escalate"} 1.7933931807497966e+09
+# HELP sentinel_stage1_deadline_hits_total Stage 1 stopped at its soft deadline with chunks left unscored
+# TYPE sentinel_stage1_deadline_hits_total counter
+sentinel_stage1_deadline_hits_total{detector_id="stage1-tfidf-lr",stage1_mode="observe"} 12.0
+# HELP sentinel_stage1_deadline_hits_created Stage 1 stopped at its soft deadline with chunks left unscored
+# TYPE sentinel_stage1_deadline_hits_created gauge
+sentinel_stage1_deadline_hits_created{detector_id="stage1-tfidf-lr",stage1_mode="observe"} 1.793393209152465e+09
+# HELP sentinel_registry_loads_total Registry (re)loads by outcome
+# TYPE sentinel_registry_loads_total counter
+sentinel_registry_loads_total{outcome="ok"} 1.0
+# HELP sentinel_registry_loads_created Registry (re)loads by outcome
+# TYPE sentinel_registry_loads_created gauge
+sentinel_registry_loads_created{outcome="ok"} 1.793393179627285e+09
+# HELP sentinel_registry_rejections_total Detectors rejected at load
+# TYPE sentinel_registry_rejections_total counter
+# HELP sentinel_shadow_results_total Shadow results by status and failure_reason
+# TYPE sentinel_shadow_results_total counter
+# HELP sentinel_shadow_latency_seconds Shadow job latency (excl. queue wait)
+# TYPE sentinel_shadow_latency_seconds histogram
+# HELP sentinel_shadow_comparisons_total Shadow vs active decision (agree / disagree / not_comparable)
+# TYPE sentinel_shadow_comparisons_total counter
+# HELP sentinel_shadow_dropped_total Mirrored requests dropped (shadow queue full)
+# TYPE sentinel_shadow_dropped_total counter
+sentinel_shadow_dropped_total 0.0
+# HELP sentinel_shadow_dropped_created Mirrored requests dropped (shadow queue full)
+# TYPE sentinel_shadow_dropped_created gauge
+sentinel_shadow_dropped_created 1.7933931749811382e+09
+# HELP sentinel_shadow_queue_depth Requests waiting for the shadow
+# TYPE sentinel_shadow_queue_depth gauge
+sentinel_shadow_queue_depth 0.0

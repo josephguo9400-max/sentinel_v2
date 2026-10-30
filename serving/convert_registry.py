@@ -8,7 +8,9 @@ v1 manifests do not record about how each threshold was chosen, with its sources
 gateway converts a v1 registry in memory, so the derived capability_sha256 values equal the committed ones.
 
 Policies written (design §5 / §7):
-- d23-deberta-decides/1        artifacts/registry.json (D23: DeBERTa decides, Stage 1 observe-only)
+- d23-deberta-decides/1        reports/policy-runtime/registry_v1_d23.json, the v1 state D23 served
+                               (DeBERTa decides, Stage 1 observe-only); artifacts/registry.json now holds the
+                               resulting v2 bundle
 - cascade-tfidf-allow-only/1   reports/cascade-and-shadow/registry_integration_route.json (route mode, v2.1;
                                rejected by D23)
 - cascade-tfidf-provisional/1  route mode with stage1-tfidf-v2's gray zone (historical; never served by default)
@@ -66,7 +68,9 @@ D23_RATIONALE = ("D23 (docs/RFC.md, milestone 3): the cascade's kill criterion f
                  "(serving/README.md 'Registry'). Converted from artifacts/registry.json (sentinel-registry-v1) by "
                  "serving.convert_registry.")
 SOURCES = {
-    "d23-deberta-decides": {"registry": "artifacts/registry.json", "rationale": D23_RATIONALE},
+    # The v1 state this was converted from; artifacts/registry.json now holds the resulting v2 bundle.
+    "d23-deberta-decides": {"registry": "reports/policy-runtime/registry_v1_d23.json",
+                            "rationale": D23_RATIONALE},
     "cascade-tfidf-allow-only": {
         "registry": "reports/cascade-and-shadow/registry_integration_route.json",
         "rationale": "Rejected by D23: replay recall -15.0 pt [-19.4, -10.7] "

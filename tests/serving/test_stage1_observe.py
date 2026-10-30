@@ -320,9 +320,19 @@ def test_historical_integration_registry_is_rejected_and_its_route_copy_loads():
 
 
 def test_committed_registry_is_deberta_decides_with_stage1_observe():
-    reg = json.loads((ROOT / "artifacts" / "registry.json").read_text())
-    assert reg["stage1_mode"] == "observe" and reg["stage1"] == "candidates/stage1-tfidf-v2.1"
-    assert reg["stage2"] == "baseline/deberta-pi-v2" and reg["shadow"] is None
+    """D23 as a policy (D25): DeBERTa is the only decider and Stage 1 is an observe step, which is the same
+    deployment the v1 registry described (reports/policy-runtime/registry_v1_d23.json)."""
+    from serving.registry import load_policy_file, read_registry_v2
+
+    state = read_registry_v2(ROOT / "artifacts" / "registry.json")
+    policy = load_policy_file(ROOT / "artifacts", state["active"])
+    assert policy.gate is None and policy.shadow is None
+    assert [m.detector.detector_id for m in policy.decide.members] == ["deberta-pi-v2"]
+    assert [o.detector.detector_version for o in policy.observe] == ["stage1-tfidf-v2.1"]
+    assert policy.observe[0].on_failure.mode == "ASYNC_ONLY"
+    v1 = json.loads((ROOT / "reports/policy-runtime/registry_v1_d23.json").read_text())
+    assert v1["stage1_mode"] == "observe" and v1["stage1"] == "candidates/stage1-tfidf-v2.1"
+    assert v1["stage2"] == "baseline/deberta-pi-v2" and v1["shadow"] is None
 
 
 def test_gateway_from_registry_in_observe_mode(tmp_path):

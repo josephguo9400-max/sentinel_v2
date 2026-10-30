@@ -85,8 +85,11 @@ def test_t1_provisional_policy_and_both_stage1_capabilities():
     assert not v21.calibration.calibrated_with.score_segment_pieces and "D25.6" in v21.calibration.notes
 
 
+V1_D23 = "reports/policy-runtime/registry_v1_d23.json"  # the v1 state D23 served (artifacts/registry.json is v2)
+
+
 def test_converter_is_pure_and_follows_config():
-    reg = json.loads((ROOT / "artifacts/registry.json").read_text())
+    reg = json.loads((ROOT / V1_D23).read_text())
     ms = read_manifests(reg)
     a, _ = legacy_to_v2(reg, ms, GatewayConfig(), known_tokenizers=KNOWN_TOKENIZERS, calibrations=CALIBRATION_RECORDS)
     b, _ = legacy_to_v2(reg, ms, GatewayConfig(), known_tokenizers=KNOWN_TOKENIZERS, calibrations=CALIBRATION_RECORDS)
@@ -265,7 +268,7 @@ def test_v1_registry_converts_in_memory(tmp_path):
 
 
 def test_committed_v1_registry_converts_to_the_d23_capabilities():
-    reg = json.loads((ROOT / "artifacts/registry.json").read_text())
+    reg = json.loads((ROOT / V1_D23).read_text())
     p, caps = legacy_to_v2(reg, read_manifests(reg), GatewayConfig(), known_tokenizers=KNOWN_TOKENIZERS,
                            calibrations=CALIBRATION_RECORDS)
     d23, d23_caps = convert("d23-deberta-decides")
@@ -273,3 +276,52 @@ def test_committed_v1_registry_converts_to_the_d23_capabilities():
     strip = lambda x: {k: v for k, v in x.model_dump(mode="json").items()  # noqa: E731
                        if k not in ("policy_id", "policy_version", "rationale")}
     assert strip(p) == strip(d23)
+
+
+# ---------------------------------------------------------------- the committed registry (step g)
+
+def test_committed_registry_is_a_loadable_v2_bundle():
+    """artifacts/registry.json serves the D23 bundle; its hash is the one T3 and the smoke run recorded."""
+    from serving.registry import REGISTRY_SCHEMA_V2, load_policy_file, read_registry_v2
+
+    reg = ROOT / "artifacts" / "registry.json"
+    assert registry_schema(reg) == REGISTRY_SCHEMA_V2
+    state = read_registry_v2(reg)
+    assert state["active"] == "policies/d23-deberta-decides/1/policy.json"
+    assert state["capabilities_root"] == "capabilities"
+    # D23 was pending the gate before the conversion and stays pending (design §7, migration 4).
+    assert state["status"] == "pending_gate"
+    assert state["previous"] is None
+    policy = load_policy_file(ROOT / "artifacts", state["active"])
+    assert policy.decide.mode == "single" and policy.gate is None and len(policy.observe) == 1
+    assert policy.canary is None and policy.engine_version == "1.0.0"
+    converted, _ = convert("d23-deberta-decides")
+    assert policy == converted  # the committed policy is exactly what the converter derives
+    t3 = json.loads((ROOT / "reports/policy-runtime/t3_d23_equivalence.json").read_text())
+    assert bundle_sha256(policy) == t3["bundle"]["committed_bundle_sha256"]
+
+
+def test_committed_capabilities_are_pinned_by_the_committed_policies():
+    """Every DetectorRef of every committed policy resolves to a committed capability with that sha256."""
+    from contracts.policy import iter_refs
+    from serving.registry import load_capability, load_policy_file
+
+    for path in sorted((ROOT / "artifacts").glob("policies/*/*/policy.json")):
+        rel = str(path.relative_to(ROOT / "artifacts"))
+        policy = load_policy_file(ROOT / "artifacts", rel)
+        for r in iter_refs(policy):
+            cap = load_capability(ROOT / "artifacts", "capabilities", r)  # raises on a mismatch
+            assert cap.key == r.key
+
+
+def test_t3_and_t4_reports_record_a_pass():
+    """The merge condition of the refactor (design §8): T3 identical on every item."""
+    t3 = json.loads((ROOT / "reports/policy-runtime/t3_d23_equivalence.json").read_text())
+    assert t3["complete"] and t3["identical_on_every_item"] and t3["n_items_with_differences"] == 0
+    assert t3["n_items_compared"] == t3["n_items_total"] == 2000
+    assert t3["bundle"]["only_timeout_fields_differ"] is True
+    t4 = json.loads((ROOT / "reports/policy-runtime/t4_cascade_equivalence.json").read_text())
+    assert t4["identical_on_every_item"] and t4["headline_201_306_reproduced"]
+    assert t4["recall"]["as_fraction"] == "201/306" and t4["fpr"]["as_fraction"] == "191/1185"
+    t5 = json.loads((ROOT / "reports/policy-runtime/t5_live_comparison.json").read_text())
+    assert t5["identical_on_every_comparable_item"] and t5["n_different"] == 0
