@@ -9,10 +9,23 @@ Inputs
   data/replay/replay-v1.jsonl                     ground-truth labels (label None = unlabeled, excluded from rates)
   --served                                        optional: the gateway's per-request log from training/replay_runner
 
+OFFLINE APPROXIMATION. `cascade_offline` is not the served cascade: its Stage 1 score is Stage 1's own
+<=512-regex-token windows over the whole text and its language gate is the stored request-level langdetect tag.
+The gateway scores Stage 1 per chunk, per segment piece and over 64/32 sub-windows, and runs langdetect per chunk
+(min_letters / min_prob, else "unknown" -> escalate), so it escalates more. For the serving-faithful counterfactual
+(the real serving ClassifierService and Stage 1) see training/replay_counterfactual_served.py.
+
 Three views, each scored against ALL ground-truth labels (not only the labels revealed during the replay):
   deberta_only     flag iff max DeBERTa window score >= 0.5, every window scored (the reference)
-  cascade_offline  cascade_sweep.decide() at the served gray zone (Stage 1 finalizes allow only, in-scope languages)
+  cascade_offline  cascade_sweep.decide() at the served gray zone (Stage 1 finalizes allow only, in-scope languages;
+                   offline approximation of Stage 1, see above)
   served           the decisions the gateway actually returned (timeouts, coverage policy and fail-closed included)
+
+With --served, `views.served.same_items` compares the served decisions with the offline DeBERTa-only and offline
+cascade views on exactly the labeled items that got a response (same denominator), and splits the per-item flips
+by cause: coverage_policy (coverage_policy_applied set), failure_policy (policy_applied set, e.g. a Stage 2 timeout
+-> fail_closed), stage1_allow (the served Stage 1 finalized allow) and other (chunking / score differences).
+`disagrees_with_offline_*` counts every responded item, unlabeled ones included.
 
 Savings = share of requests Stage 2 never sees. The kill criterion asks for >= 30% savings at equal recall, so the
 report also gives the largest savings whose cascade recall equals DeBERTa's (no DeBERTa-caught injection finalized
@@ -58,6 +71,33 @@ def _paired(rows, a_key, b_key, label):
     return None if out is None else {"diff": out[0], "ci95": [out[1], out[2]], "only_first": b, "only_second": c}
 
 
+def _flip_cause(s: dict) -> str:
+    if s.get("coverage_policy_applied") is not None:
+        return "coverage_policy"
+    if s.get("policy_applied") is not None:
+        return "failure_policy"
+    if s.get("stages_run") == ["stage1"]:
+        return "stage1_allow"
+    return "other"
+
+
+def _same_items(sv: list[dict], served: dict[str, dict]) -> dict:
+    """Served vs offline views on the same labeled, responded items, with per-item flips by cause."""
+    out = {"n": len(sv), "n_positive": sum(r["label"] == 1 for r in sv),
+           "served": _rates([(r["label"], r["srv_flag"]) for r in sv]),
+           "deberta_only_offline": _rates([(r["label"], r["deb_flag"]) for r in sv]),
+           "cascade_offline": _rates([(r["label"], r["cas_flag"]) for r in sv])}
+    for ref in ("deb_flag", "cas_flag"):
+        flips: Counter = Counter()
+        for r in sv:
+            if r["srv_flag"] != r[ref]:
+                d = "to_flag" if r["srv_flag"] else "to_allow"
+                flips[f"{_flip_cause(served[r['id']])}:{d}:label={r['label']}"] += 1
+        out[f"flips_vs_{'deberta_only_offline' if ref == 'deb_flag' else 'cascade_offline'}"] = \
+            dict(sorted(flips.items()))
+    return out
+
+
 def build(cache: Path, served_path: Path | None) -> dict:
     rows = load(cache)
     truth = {r["id"]: r for r in read_jsonl(REPLAY)}
@@ -90,9 +130,11 @@ def build(cache: Path, served_path: Path | None) -> dict:
         got = [r for r in rows if r["srv_s2"] is not None]
         views["served"]["stage2_share"] = rate(sum(r["srv_s2"] for r in got), len(got))
         views["served"]["n_responses"] = len(got)
-        # served vs offline cascade: should agree except for timeouts, coverage policy and float noise
-        both = [r for r in got]
-        views["served"]["disagrees_with_offline_cascade"] = sum(r["srv_flag"] != r["cas_flag"] for r in both)
+        # served vs offline: should agree except for timeouts, coverage policy and chunking / float differences.
+        # Counted over every responded item, unlabeled ones included.
+        views["served"]["disagrees_with_offline_cascade"] = sum(r["srv_flag"] != r["cas_flag"] for r in got)
+        views["served"]["disagrees_with_offline_deberta_only"] = sum(r["srv_flag"] != r["deb_flag"] for r in got)
+        views["served"]["same_items"] = _same_items(sv, served)
 
     paired = {"cascade_minus_deberta_recall": _paired(labeled, "cas_flag", "deb_flag", 1),
               "cascade_minus_deberta_fpr": _paired(labeled, "cas_flag", "deb_flag", 0)}
@@ -130,6 +172,8 @@ def build(cache: Path, served_path: Path | None) -> dict:
     served_saved = 1 - views["cascade_offline"]["stage2_share"]["value"]
 
     return {
+        "view_kind": "offline approximation: cascade_offline uses request-level Stage 1 windows and the stored "
+                     "language tag, not the serving Stage 1 (see training/replay_counterfactual_served.py)",
         "inputs": {"cache": str(cache.relative_to(ROOT)), "cache_sha256": sha256_file(cache),
                    "replay_sha256": sha256_file(REPLAY),
                    "served": str(served_path) if served_path else None,
@@ -159,7 +203,8 @@ def main(argv=None) -> int:
     a = ap.parse_args(argv)
     rep = build(a.cache, a.served)
     write_json(a.out, rep)
-    print(json.dumps({k: rep[k] for k in ("views", "paired", "stage1_misses", "kill_criterion")}, indent=1))
+    print(json.dumps({k: rep[k] for k in ("view_kind", "views", "paired", "stage1_misses", "kill_criterion")},
+                     indent=1))
     return 0
 
 
