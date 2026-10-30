@@ -1,0 +1,14 @@
+{
+ "n_sent": 2000,
+ "n_responses": 1974,
+ "achieved_rps": 2.025,
+ "errors": {
+  "client_saturated": 26
+ },
+ "failure_reason": {
+  "timeout": 4
+ },
+ "flag_rate": 0.3779128672745694,
+ "escalation_rate": 1.0,
+ "windows": 99
+}
