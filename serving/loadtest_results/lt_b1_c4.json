@@ -1,0 +1,89 @@
+{
+  "measured_at": "2026-10-30T00:12:47Z",
+  "hardware": {
+    "cpu": "Intel(R) Xeon(R) Processor @ 2.10GHz",
+    "logical_cores": 2,
+    "gpu": null,
+    "note": "client and server on the same machine"
+  },
+  "versions": {
+    "python": "3.13.18",
+    "httpx": "0.28.1",
+    "onnxruntime": "1.29.0"
+  },
+  "server": {
+    "detector": {
+      "detector_id": "deberta-pi-v2",
+      "detector_version": "2.0.0+90c9989b.onnx.fp32",
+      "threshold": 0.5,
+      "max_len": 512,
+      "model_sha256": "f0ea7f239f765aedbde7c9e163a7cb38a79c5b8853d3f76db5152172047b228c"
+    },
+    "config": {
+      "stride": 384,
+      "max_chunks": 4,
+      "timeout_ms": 5000,
+      "failure_policy": "fail_closed",
+      "max_batch": 1,
+      "max_wait_ms": 2.0,
+      "workers": 1,
+      "max_queue": 64
+    }
+  },
+  "load": {
+    "mode": "closed-loop",
+    "concurrency": 4,
+    "n": 1000,
+    "warmup": 4,
+    "lengths_approx_tokens": [
+      64,
+      256
+    ],
+    "client_timeout_s": 60.0
+  },
+  "errors": {
+    "transport": 0,
+    "http_non_200": 0,
+    "detector_status_not_ok": {},
+    "total": 0
+  },
+  "latency_ok_requests": {
+    "count": 1000,
+    "p50_ms": 676.3,
+    "p95_ms": 762.1,
+    "p99_ms": 839.6,
+    "max_ms": 1004.8,
+    "mean_ms": 683.4,
+    "p99_is_max": false
+  },
+  "latency_by_length": {
+    "64": {
+      "count": 500,
+      "p50_ms": 676.7,
+      "p95_ms": 761.5,
+      "p99_ms": 803.2,
+      "max_ms": 1004.8,
+      "mean_ms": 682.3,
+      "p99_is_max": false,
+      "input_tokens_median": 56
+    },
+    "256": {
+      "count": 500,
+      "p50_ms": 675.9,
+      "p95_ms": 762.1,
+      "p99_ms": 874.8,
+      "max_ms": 991.9,
+      "mean_ms": 684.4,
+      "p99_is_max": false,
+      "input_tokens_median": 223
+    }
+  },
+  "throughput_rps": 5.84,
+  "throughput_ok_rps": 5.84,
+  "wall_s": 171.14,
+  "server_batch_size_metric": [
+    "sentinel_inference_batch_size_count 1004.0",
+    "sentinel_inference_batch_size_sum 1004.0"
+  ],
+  "label": "max_batch=1"
+}
