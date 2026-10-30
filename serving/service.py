@@ -8,8 +8,9 @@ Request flow (all CPU work runs in bounded thread pools, never on the event loop
 2. Prepare (tokenizer pool): segment the input (serving/structure.py) and build one chunk plan in Stage 2
    tokenizer units (windows of max_len - 2 content ids). Both stages see the same chunks.
 3. Stage 1 (stage-1 pool, Stage 1 timeout): for each of the first `stage1_max_chunks` chunks, the language of the
-   chunk text (serving/language.py) and the Stage 1 score (max over Stage 1's own <=512-regex-token windows of the
-   chunk text). A chunk is CLEARED iff Stage 1 scored it, score < gray_zone low, and its language is in Stage 1's
+   chunk text (serving/language.py) and the Stage 1 score: max over Stage 1's own <=512-regex-token windows of the
+   chunk text, of each segment piece alone when the chunk packs several, and of overlapping sub-windows of
+   `stage1_subwindow_tokens` regex tokens (anti-dilution; 0 turns sub-windows off). A chunk is CLEARED iff Stage 1 scored it, score < gray_zone low, and its language is in Stage 1's
    input_languages (when declared). Stage 1 failure clears nothing: Stage 1's failure policy is never applied while
    a Stage 2 exists, every chunk escalates instead.
 4. Stage 1 finalizes ALLOW iff every chunk is cleared. With `stage1_finalize_flag` (default off) it finalizes FLAG
@@ -47,7 +48,7 @@ from contracts import ClassifyResponse, DetectorResult
 
 from .batcher import MicroBatcher, Overloaded
 from .config import GatewayConfig
-from .detector import TFIDF_V1_TOKEN_RE, tokenize_with_offsets
+from .detector import TFIDF_V1_TOKEN_RE, tfidf_subwindows, tokenize_with_offsets
 from .language import UNKNOWN
 from .metrics import GatewayMetrics
 from .registry import DetectorSpec
@@ -200,7 +201,7 @@ class ClassifierService:
                             structure_aware=self.config.structure_aware)
 
     def _run_stage1(self, cs: ChunkSet) -> _Stage1Out:
-        s1 = self.stage1
+        s1, c = self.stage1, self.config
         n_tokens = sum(len(TFIDF_V1_TOKEN_RE.findall(s.text)) for s in cs.segments)
         scores: dict[int, float] = {}
         langs: dict[int, str] = {}
@@ -209,7 +210,14 @@ class ClassifierService:
                 continue
             if self.stage1_languages is not None:
                 langs[i] = self.language.detect(ch.text)[0]
-            windows, _ = s1.detector.windows(ch.text)
+            # Score the packed chunk and, when it packs several segment pieces, each piece on its own: a short
+            # injected paragraph packed with long benign text is diluted in TF-IDF features (measured: 0.999 alone,
+            # 0.067 packed), and Stage 1 is cheap enough to score both. Chunk score = max.
+            texts = [ch.text] + (ch.parts if len(ch.parts) > 1 else [])
+            windows = [w for t in texts for w in s1.detector.windows(t)[0]]
+            if c.stage1_subwindow_tokens:
+                windows += [w for t in texts for w in
+                            tfidf_subwindows(t, c.stage1_subwindow_tokens, c.stage1_subwindow_stride)]
             scores[i] = max(s1.detector.infer(windows))
         return _Stage1Out(scores=scores, langs=langs, n_tokens=n_tokens)
 

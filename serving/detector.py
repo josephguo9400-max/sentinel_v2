@@ -108,6 +108,15 @@ TFIDF_V1_TOKEN_RE = re.compile(r"[^\W]{2,}")
 TFIDF_V1_STRIDE = 384
 
 
+def tfidf_subwindows(text: str, size: int, stride: int) -> list[str]:
+    """Overlapping windows of `size` regex tokens (stride `stride`); [] if the text has <= size tokens."""
+    spans = [m.span() for m in TFIDF_V1_TOKEN_RE.finditer(text)]
+    if size <= 0 or len(spans) <= size:
+        return []
+    starts = list(range(0, len(spans) - size, stride)) + [len(spans) - size]
+    return [text[spans[a][0]: spans[a + size - 1][1]] for a in starts]
+
+
 def tfidf_windows(text: str, max_tokens: int, stride: int = TFIDF_V1_STRIDE) -> tuple[list[str], int]:
     """(windows, n_tokens): one window if n_tokens <= max_tokens, else overlapping windows covering the tail."""
     spans = [m.span() for m in TFIDF_V1_TOKEN_RE.finditer(text)]

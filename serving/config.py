@@ -39,6 +39,10 @@ class GatewayConfig:
     max_chunks: int = 4  # Stage 2 chunk budget per request (first + last + most suspicious)
     stage1_max_chunks: int = 512  # chunks Stage 1 scores; the rest are unscored by Stage 1 and escalate
     stage1_finalize_flag: bool = False  # Stage 1 may finalize FLAG when any chunk scores >= gray_zone high
+    # Anti-dilution: Stage 1 also scores overlapping sub-windows of this many regex tokens (0 = off); a chunk's
+    # Stage 1 score is the max over the chunk, its segment pieces and these sub-windows. See serving/README.md.
+    stage1_subwindow_tokens: int = 64
+    stage1_subwindow_stride: int = 32
     # Languages assumed for a Stage 1 manifest that declares no input_languages (v1.1). Comma list; "" = no limit.
     stage1_undeclared_languages: str = "en"
     stage1_timeout_ms: int = 0  # 0 = Stage 1 manifest timeout_ms
@@ -85,9 +89,11 @@ class GatewayConfig:
             if getattr(self, name) < 1:
                 raise ValueError(f"{name} must be >= 1")
         for name in ("stage1_timeout_ms", "stage2_timeout_ms", "shadow_timeout_ms", "pack_overlap_tokens",
-                     "lang_min_letters", "registry_poll_s", "shadow_intra_op_threads", "intra_op_threads"):
+                     "lang_min_letters", "registry_poll_s", "stage1_subwindow_tokens", "shadow_intra_op_threads", "intra_op_threads"):
             if getattr(self, name) < 0:
                 raise ValueError(f"{name} must be >= 0")
+        if self.stage1_subwindow_stride < 1:
+            raise ValueError("stage1_subwindow_stride must be >= 1")
         if self.max_inflight_chars < self.max_text_chars:
             raise ValueError("max_inflight_chars must be >= max_text_chars, or a maximal request is never admitted")
         if self.max_wait_ms < 0:

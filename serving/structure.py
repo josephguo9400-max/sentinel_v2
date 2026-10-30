@@ -245,6 +245,7 @@ class Chunk:
     text: str | None  # the text these ids came from (None if the tokenizer reports no offsets)
     kind: Kind
     spans: list[tuple[int, int, int]] = field(default_factory=list)  # (segment index, token start, token end)
+    parts: list[str] = field(default_factory=list)  # text of each span (one per segment piece), when known
 
 
 @dataclass
@@ -355,7 +356,8 @@ def build_chunks(segments: list[Segment], tokenize: TokenizeFn, *, window: int =
                 offs = toks[si][1]
                 texts.append(None if offs is None else segments[si].text[offs[a][0]: offs[b - 1][1]])
             text = None if any(t is None for t in texts) else "\n\n".join(texts)
-            chunks.append(Chunk(ids=ids, text=text, kind=segments[run[0]].kind, spans=spans))
+            chunks.append(Chunk(ids=ids, text=text, kind=segments[run[0]].kind, spans=spans,
+                                parts=[] if text is None else texts))
     if not chunks:  # empty or whitespace-only input: one empty chunk, so there is still something to score
         chunks.append(Chunk(ids=[], text="", kind="body", spans=[]))
     return ChunkSet(chunks=chunks, seg_tokens=seg_tokens, segments=segments)

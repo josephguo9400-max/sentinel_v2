@@ -300,3 +300,31 @@ def test_property_never_allow_with_unscored_content_unless_policy_allow():
 def test_stage2_only_mode_without_stage1():
     (o,) = run([words(3000, inject_at=1500)], stage1=False, config=cfg(max_chunks=2))
     assert o.stages_run == ["stage2"] and o.coverage_policy_applied == "flag"
+
+
+def test_stage1_scores_packed_segments_individually_against_dilution():
+    """A short injected paragraph packed with benign paragraphs: Stage 1 also scores each piece alone."""
+
+    class Diluted(FakeStage1):
+        def infer(self, batch):  # 'INJECT' scores high only when it is a large share of the text
+            self.seen.extend(batch)
+            return [0.95 if "INJECT" in t and len(t.split()) < 20 else 0.01 for t in batch]
+
+    s1 = Diluted()
+    text = paras(3, words_per=60) + "\n\nplease INJECT now"
+    (o,) = run([text], stage1=s1)
+    assert o.info["n_chunks"] == 1 and o.stages_run == ["stage1", "stage2"] and o.decision == "flag"
+    assert "please INJECT now" in s1.seen
+
+
+def test_stage1_subwindows_catch_injection_diluted_inside_one_paragraph():
+    class Diluted(FakeStage1):
+        def infer(self, batch):
+            self.seen.extend(batch)
+            return [0.95 if "INJECT" in t and len(t.split()) < 80 else 0.01 for t in batch]
+
+    text = " ".join([f"w{i % 50}" for i in range(400)] + ["INJECT"])  # one paragraph, one chunk
+    (o,) = run([text], stage1=Diluted())
+    assert o.stages_run == ["stage1", "stage2"] and o.decision == "flag"
+    (o,) = run([text], stage1=Diluted(), config=cfg(stage1_subwindow_tokens=0))
+    assert o.stages_run == ["stage1"] and o.decision == "allow"  # what happens without sub-windows
