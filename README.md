@@ -2,16 +2,16 @@
 
 A safety-classifier inference gateway prototype: DeBERTa prompt-injection detection behind a gateway with chunked scoring and an explicit coverage policy for unscored content, manifest-driven deployment with shadow and observe-only candidates, a release gate with confidence intervals, and an adaptive red-team harness used as acceptance testing.
 
-**Status:** milestones 1 (detector-baseline) and 2 (gateway-mvp) done and independently reviewed. Milestone 3 (cascade-and-shadow) is in review: its cost-saving cascade (cheap TF-IDF Stage 1 finalizing allows) **failed its kill criterion on the traffic replay set** and was turned off (D23); DeBERTa now decides every request and Stage 1 runs observe-only. Plan and rationale: [`docs/RFC.md`](docs/RFC.md).
+**Status:** milestones 1 (detector-baseline) and 2 (gateway-mvp) done and independently reviewed. Milestone 3 (cascade-and-shadow) is in review: its cost-saving cascade (cheap TF-IDF Stage 1 finalizing allows) **failed its kill criterion on the traffic replay set** and was turned off (D23); DeBERTa now decides every request and Stage 1 runs observe-only. Milestone 4 (policy-runtime) is in review: what a detector can do is now separated from how the gateway uses it, so **a routing change is a deployment, not a model version** — the gateway serves a *bundle* (one execution policy, the capability versions it pins, the engine version), every response and gate report is bound to its `bundle_sha256`, and a minimal release gate evaluates a bundle as served without ever promoting it. The refactor changed no decision: on all 2,000 replay items the policy engine and the pre-refactor service agree exactly. Plan and rationale: [`docs/RFC.md`](docs/RFC.md); design: [`docs/design/capability-policy.md`](docs/design/capability-policy.md).
 
 ## Layout
 
 | Path | Owner | Purpose |
 | --- | --- | --- |
-| `contracts/` | owner | Frozen shared schemas: `DetectorResult`, `ArtifactManifest`, `TraceEvent`, `ClassifyRequest`/`ClassifyResponse` (v1.2; readers accept 1.1) |
+| `contracts/` | owner | Frozen shared schemas: `DetectorResult`, `ClassifyRequest`/`ClassifyResponse` (v1.3; readers accept 1.1-1.3), `TraceEvent`, `CapabilityManifest` 2.0 (what a detector can do), `ExecutionPolicy` 1.0 (how the gateway uses detectors), `ArtifactManifest` (frozen, read-only) |
 | `tests/contract/` | owner | Contract tests every agent must keep green |
-| `serving/`, `web/` | Agent A | Gateway, registry, Stage 1 routing/observe modes, coverage policy, shadow, static UI |
-| `training/`, `artifacts/candidates/` | Agent B | Data splits, Stage 1, candidate manifests |
+| `serving/`, `web/` | Agent A | Gateway, policy engine and bundle registry, gate/decide/observe/shadow steps, coverage policy, static UI |
+| `training/`, `artifacts/candidates/` | Agent B | Data splits, Stage 1, candidate manifests, release gate (`training/gate.py`) |
 | `redteam/`, `fixtures/` | Agent C | Email sandbox, deterministic judge, adaptive attacker |
 | `reports/verify/` | Verifier | Independent checkpoint reports |
 | `benchmarks/` | owner | Measured results with hardware noted |
@@ -24,6 +24,12 @@ python scripts/fetch_models.py           # downloads the ONNX detector into arti
 pytest -q
 python -m benchmarks.detector_baseline.bench_deberta  # latency + truncation test on this machine
 ```
+
+## Policy-runtime findings (milestone 4)
+
+- **A policy change is a deployment, and the gate's unit is the bundle.** Same model bytes, different policy: on the replay set, letting TF-IDF Stage 1 finalize allows changed recall from 247/306 to 201/306 (paired -15.0 pt [-19.4, -10.7]) with no FPR benefit. `stage1-tfidf-v2` and `stage1-tfidf-v2.1` have the same model sha256 and the same threshold and differ only in their gray zone, so that routing change shipped as a model version. The split fixes it: a capability (immutable, pins every file by sha256, holds the calibrated threshold) versus an execution policy (bands, budgets, failure rules), with `bundle_sha256` = policy + pinned capabilities + engine version. A gate verdict is bound to that hash and never carries over.
+- **The refactor changed no decision, measured on every item.** The policy engine and the frozen pre-refactor service were run on all 2,000 replay items in one process with real models and timeouts disabled: identical `decision`, `decided_by`, `policy_applied`, `coverage_policy_applied`, `stages_run`, DeBERTa rows and scores, with 0 differences (`reports/policy-runtime/t3_d23_equivalence.json`). The converted route policy reproduces the committed cascade counterfactual item for item, including its headline 201/306 and 191/1,185 (`t4_cascade_equivalence.json`), and against the live D23 run 1,970 of 1,974 served responses are identical, the other 4 being Stage 2 timeouts that timing decided (`t5_live_comparison.json`).
+- **Gate dry run on val, served bundle `17fac609a8f2…`** (all 3,214 items, as served): recall 2,164/2,240 = 96.6% [95.8, 97.3], FPR 88/974 = 9.0% [7.4, 11.0], benign-hard FPR 33/92, 0 failed active results. Verdict `INSUFFICIENT_EVIDENCE` — val carries 92 benign-hard samples against the 100 the FPR check needs, and a bundle cannot be paired against itself. The frozen test stays unread until the owner releases it (`reports/policy-runtime/gate_val_d23.json`).
 
 ## Cascade-and-shadow findings (replay set, 2,000 requests; Wilson 95% intervals, Newcombe paired 95% for differences)
 

@@ -497,6 +497,30 @@ route-mode replay took 8.6 s for phase A and 331.5 s for phase B on 1,439 DeBERT
 scores more rows; its wall time is not measured and should be run under `/home/claude/measure.lock`. Unit and
 differential tests use fakes and need no model.
 
+## 11a. What was implemented (milestone policy-runtime)
+
+Everything in §3-§8 except the canary, in the order of §7's migration list. Differences from this document, all
+deliberate and all additive:
+
+| Change | Why |
+| --- | --- |
+| `ObserveStep` also carries `max_chunks`, `deadline_margin_ms` and an optional what-if `band` | D23's observe-only Stage 1 scores at most `STAGE1_MAX_CHUNKS` chunks under an anytime soft deadline and reports would-allow / would-escalate from the gray-zone low. Without these fields the conversion would not be faithful. The band of an observe step is never read by a decision |
+| `ScoringRule.subwindow_stride` is None iff `subwindow_tokens == 0`; `Calibration` gains `calibrated_with` and `notes`; `CapabilityManifest` gains `tokenizer_file` | one behaviour must have one hash (no meaningless stride); D25.6 needs somewhere to record the rule a threshold was chosen with; the loader should not guess which pinned file is the tokenizer |
+| Extra validators: a band that does not finalize `allow` has `clear_below == 0`; parallel members share `max_chunks`; a decide member's `FALLBACK` may not target a decide member; `coverage.deep_scan` needs a single decide stage; every `DetectorRef` of one detector pins the same `capability_sha256` | each rules out a policy the engine cannot serve meaningfully |
+| `Chunking.pack_overlap_tokens` is recorded but not read | `GatewayConfig.pack_overlap_tokens` was already read nowhere in the decision path; dropping it from the policy would have hidden that |
+| In a parallel stage, a chunk one member scored counts as covered even if the other member failed | coverage is about content scored by *no* step; the first implementation counted it as unscored and was fixed when T7 caught it |
+| A gate detector with no `validated_languages` may not clear chunks unless the policy states a `scope_languages` | the design's own rule, which drops the legacy `STAGE1_UNDECLARED_LANGUAGES` behaviour. One existing unit test asserted the dropped behaviour and now asserts the refusal |
+
+Not implemented: the canary (§6; the engine rejects a policy that sets it), a `bundle` label on metrics (§9),
+p99 and adaptive-ASR gate checks (reported `NOT_EVALUATED`), and shape B as a served configuration (§10; it is
+implemented and tested with fakes).
+
+Evidence: `reports/policy-runtime/` holds T3 (2,000 items, 0 differences), T4 (201/306 reproduced), T5
+(1,970/1,974 identical), the live registry-v2 smoke and the gate dry run on val. T1, T2, T6, T7, T8 and T9 are
+tests: `tests/serving/test_policy_runtime.py`, `test_differential.py`, `test_failure_matrix.py`,
+`test_shape_b.py`, `test_engine_version.py` and `tests/contract/test_policy_contracts.py`. T10 (canary) waits for
+the feature.
+
 ## 12. Open questions for the owner (resolved: D25, 2026-10-30)
 
 All seven are answered by owner decision D25 (`docs/RFC.md`, "Owner decisions").
