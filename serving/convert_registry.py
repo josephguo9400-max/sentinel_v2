@@ -63,6 +63,11 @@ CALIBRATION_RECORDS: dict[tuple[str, str], dict] = {
         "notes": "serving/bench_results/int8_compare.json measures its agreement with fp32."},
 }
 
+# Frozen: this text is part of the hashed content of the committed d23-deberta-decides/1 policy, so the converter must
+# keep emitting it for policy_version "1" (T1 golden, `--check`). "artifacts/registry.json (sentinel-registry-v1)"
+# was true when /1 was converted (before 764e160); the same v1 pointers are preserved in
+# reports/policy-runtime/registry_v1_d23.json, which SOURCES reads. A new version of this policy needs a new
+# policy_version with its own rationale (review r1 n4).
 D23_RATIONALE = ("D23 (docs/RFC.md, milestone 3): the cascade's kill criterion fired on the replay set; DeBERTa decides "
                  "every request and Stage 1 runs observe-only. Registry change pending the release gate "
                  "(serving/README.md 'Registry'). Converted from artifacts/registry.json (sentinel-registry-v1) by "
