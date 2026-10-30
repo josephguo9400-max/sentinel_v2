@@ -118,8 +118,11 @@ policy. To limit the damage:
    either cap is rejected at once, with the same `status="error"`, `reason="overloaded"` and failure policy as a
    full queue, and is never tokenized. Admitted requests tokenize in a pool of `TOKENIZE_WORKERS` threads. A test
    sends a burst of 20 large requests with `MAX_INFLIGHT=4`: 16 are rejected in under 40 ms without being
-   tokenized, and at most one tokenization runs at a time. Before this change all 20 were tokenized, up to 6 at
-   once. A tokenization that outlives its timeout keeps its thread until it returns, like an ONNX call.
+   tokenized, and at most one tokenization runs at a time. (A one-off comparison against the code before this
+   change was done with a scratch script that is not committed, so its numbers are not quoted here.) A
+   tokenization that outlives its timeout keeps its thread until it returns, like an ONNX call. Known gap: that
+   stuck thread returns its request slot, so later admitted requests queue behind it and each waits the full
+   timeout instead of failing fast, and no metric shows it yet; this is scheduled for serving-hardening.
 5. `busy_workers` and `queue_depth` are exported, so a hung detector shows up as a stuck `busy_workers`.
 
 I chose fail-fast under saturation over unbounded queueing because, once the backlog exceeds the timeout budget,

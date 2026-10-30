@@ -45,7 +45,7 @@ from typing import Callable, Iterable, Protocol
 
 from contracts import DetectorResult
 from training.common import ROOT, SPLITS_DIR, read_jsonl, sha256_file, write_json
-from training.metrics import summarize
+from training.metrics import rate, summarize
 
 MIN_POSITIVES_RECALL = 200  # RFC: cascade recall check -> insufficient evidence when positives < 200
 MIN_BENIGN_HARD_N = 100  # RFC: benign-hard FPR check -> insufficient evidence when samples < 100
@@ -228,6 +228,37 @@ def evidence(name: str, m: dict) -> dict:
     return out
 
 
+def as_served(m: dict, slice_name: str = "") -> dict:
+    """Metrics over every non-error item using the decision the gateway actually served.
+
+    Model predictions keep their own outcome; failure-policy decisions count as served
+    ("flag" -> predicted injection, "allow" -> predicted benign). This is what a user experiences:
+    under fail_open a timed-out injection is let through, so it is a miss here even though it is
+    excluded from the model-only metrics. Gate checks use this view.
+    """
+    c = dict(m["confusion"])
+    for key, v in m.get("policy_decisions", {}).get("by_decision_and_label", {}).items():
+        decision, label = key.split(":label=")
+        y = int(label)
+        if decision == "flag":
+            c["tp" if y else "fp"] += v
+        else:
+            c["fn" if y else "tn"] += v
+    out = {"n": sum(c.values()), "positives": c["tp"] + c["fn"], "negatives": c["fp"] + c["tn"], "confusion": c,
+           "precision": rate(c["tp"], c["tp"] + c["fp"]), "recall": rate(c["tp"], c["tp"] + c["fn"]),
+           "fpr": rate(c["fp"], c["fp"] + c["tn"])}
+    out["evidence"] = evidence(slice_name, out)
+    return out
+
+
+def add_as_served(result: dict) -> dict:
+    """Add the as-served view to every slice of an existing results dict (idempotent)."""
+    for name, m in result.get("slices", {}).items():
+        m["as_served"] = as_served(m, name)
+    result["gate_view"] = "as_served"
+    return result
+
+
 class _SliceAcc:
     def __init__(self):
         self.ys: list[int] = []
@@ -317,6 +348,7 @@ def _assemble(rows, n_done, acc, errors, lat, zones, complete, aborted) -> dict:
         m["n_items"] = len(a.ys) + sum(a.policy.values()) + a.errors
         m["n_errors"] = a.errors
         m["policy_decisions"] = _policy_block(a.policy)
+        m["as_served"] = as_served(m, name)
         if a.with_results:
             m["truncated"] = {"n_responses_with_results": a.with_results, "n_truncated": a.truncated,
                               "n_truncated_model_predictions": a.truncated_predictions}
@@ -324,6 +356,7 @@ def _assemble(rows, n_done, acc, errors, lat, zones, complete, aborted) -> dict:
     la = np.array(lat) if lat else np.zeros(1)
     overall = slices.get("overall")
     return {
+        "gate_view": "as_served",
         "complete": complete,
         "aborted": aborted,
         "n_items": len(rows),
@@ -365,7 +398,9 @@ def run(split: str, backend: Backend, splits_dir: Path = SPLITS_DIR, out: Path |
 
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--backend", choices=["local", "http"], required=True)
+    ap.add_argument("--backend", choices=["local", "http"])
+    ap.add_argument("--add-as-served", type=Path, metavar="RESULTS_JSON",
+                    help="add the as-served view to an existing results file in place and exit")
     ap.add_argument("--artifact", type=Path)
     ap.add_argument("--url")
     ap.add_argument("--timeout-s", type=float, default=30.0, help="http: client timeout per attempt")
@@ -377,6 +412,14 @@ def main(argv=None) -> int:
     ap.add_argument("--latency-conditions", default=LATENCY_CONDITIONS,
                     help="free-text description of the host load during this run, stored with the latency fields")
     a = ap.parse_args(argv)
+    if a.add_as_served:
+        res = add_as_served(json.loads(a.add_as_served.read_text()))
+        write_json(a.add_as_served, res)
+        o = res["slices"].get("overall", {}).get("as_served", {})
+        print(json.dumps({"as_served_recall": o.get("recall"), "as_served_fpr": o.get("fpr")}, indent=1))
+        return 0
+    if not a.backend:
+        ap.error("--backend is required unless --add-as-served is given")
     if a.backend == "local":
         if not a.artifact:
             ap.error("--artifact is required for --backend local")

@@ -197,6 +197,18 @@ def test_unusable_health_falls_back_to_default_timeout(health):
         assert c.timeout_source == "default" and c.timeout_s == DEFAULT_TIMEOUT_S
 
 
+def test_health_budget_is_capped_because_health_is_untrusted():
+    """Review round 2 (R1): a /health that reports a huge budget must not stall an attempt."""
+    from redteam.gateway_client import MAX_DERIVED_TIMEOUT_S
+
+    def handler(request):
+        if request.url.path == "/health":
+            return httpx.Response(200, json={"status": "ok", "config": {"timeout_ms": 3_599_999}})
+        return httpx.Response(500)
+    with client(handler) as c:
+        assert c.timeout_source == "health_capped" and c.timeout_s == MAX_DERIVED_TIMEOUT_S
+
+
 def test_explicit_timeout_skips_health_probe():
     seen = []
 

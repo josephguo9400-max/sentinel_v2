@@ -16,7 +16,8 @@ per-detector budget (GatewayConfig.timeout_ms, default 5000 ms) and answers with
 when the budget runs out. A shorter client timeout would turn a slow-but-scored email into a client
 fallback. With `timeout_s=None` (the default) the client reads `config.timeout_ms` from
 GET {url}/health and uses budget + TIMEOUT_MARGIN_S; if /health is unusable it uses
-DEFAULT_TIMEOUT_S. `timeout_source` records which rule applied ("explicit", "health", "default").
+DEFAULT_TIMEOUT_S. `timeout_source` records which rule applied ("explicit", "health", "health_capped", "default");
+a budget from /health is capped at MAX_DERIVED_TIMEOUT_S because /health is untrusted input.
 """
 from __future__ import annotations
 
@@ -35,6 +36,9 @@ OnUnavailable = Literal["flag", "allow", "error"]
 DEFAULT_TIMEOUT_S = 10.0  # used when the gateway budget cannot be read from /health
 TIMEOUT_MARGIN_S = 2.0  # added to the gateway budget: HTTP, JSON and event-loop overhead
 HEALTH_TIMEOUT_S = 2.0  # for the one GET /health probe at construction
+# A budget read from /health is untrusted input: never let it make one call wait longer than this.
+# 30 s matches the sandbox's default per-attempt deadline (Limits.deadline_s).
+MAX_DERIVED_TIMEOUT_S = 30.0
 
 
 class GatewayClient:
@@ -55,7 +59,11 @@ class GatewayClient:
         if timeout_s is not None:
             self.timeout_s, self.timeout_source = float(timeout_s), "explicit"
         elif self.gateway_timeout_ms is not None:
-            self.timeout_s, self.timeout_source = self.gateway_timeout_ms / 1000.0 + TIMEOUT_MARGIN_S, "health"
+            derived = self.gateway_timeout_ms / 1000.0 + TIMEOUT_MARGIN_S
+            if derived > MAX_DERIVED_TIMEOUT_S:
+                self.timeout_s, self.timeout_source = MAX_DERIVED_TIMEOUT_S, "health_capped"
+            else:
+                self.timeout_s, self.timeout_source = derived, "health"
         else:
             self.timeout_s, self.timeout_source = DEFAULT_TIMEOUT_S, "default"
         self._timeout = httpx.Timeout(self.timeout_s)
