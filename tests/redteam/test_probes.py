@@ -1,7 +1,9 @@
 """Probe generators place injections at exact DeBERTa token offsets that defeat chunked scoring.
 
-Placement is verified two ways: against the module's mirrored constants, and against the real
-serving.encoding chunk planner (so a drift in either is caught).
+Placement is verified three ways: against the module's mirrored constants, against the original
+serving.encoding chunk planner, and against the planner the gateway uses now (ClassifierService._prepare:
+serving/structure.py build_chunks) with its Stage 2 chunk selection when no Stage 1 clears anything (observe
+mode, D23: stage2_order(...)[:max_chunks]), so a drift in any of them is caught.
 """
 import pytest
 
@@ -139,3 +141,49 @@ def test_filler_is_sentences_not_word_salad():
         loose = [w for w in re.sub(r"[^.!?]*[.!?]", " ", p.body).split() if w in filler]
         n_segments = 3 if p.placement == "middle_overlong" else 4
         assert len(loose) <= FILLER_MAX * n_segments, f"{p.probe_id}: {len(loose)} loose filler words"
+
+
+class _RealTokenizer:
+    """Just enough of a Stage 2 detector for ClassifierService._prepare: the real DeBERTa tokenizer."""
+    detector_id, detector_version, threshold, max_len = "probe-tok", "0", 0.5, 512
+
+    def __init__(self):
+        self._tok = probes._tokenizer()
+        self.cls_id, self.sep_id = self._tok.token_to_id("[CLS]"), self._tok.token_to_id("[SEP]")
+
+    def tokenize(self, text):
+        return self._tok.encode(text, add_special_tokens=False).ids
+
+    def tokenize_with_offsets(self, text):
+        enc = self._tok.encode(text, add_special_tokens=False)
+        return enc.ids, [tuple(o) for o in enc.offsets]
+
+    def infer(self, batch):
+        raise AssertionError("not used")
+
+
+@pytest.fixture(scope="module")
+def served_planner():
+    from serving.service import ClassifierService, stage2_order
+
+    config = GatewayConfig(shadow_log_path="")
+    svc = ClassifierService(_RealTokenizer(), config)
+
+    def selected(body):
+        cs = svc._prepare(body)
+        assert len(cs.segments) == 1  # probe bodies are one segment: chunk spans are body token offsets
+        idx = stage2_order(len(cs.chunks), set(), {})[: config.max_chunks]
+        return [(a, b) for i in idx for _, a, b in cs.chunks[i].spans], len(cs.chunks)
+    return selected
+
+
+@pytest.mark.parametrize("p", ATTACKS, ids=lambda p: p.probe_id)
+def test_probe_geometry_holds_for_the_served_planner(p, served_planner):
+    windows, n_chunks = served_planner(p.body)
+    span = tuple(p.injection_token_span)
+    assert not probes._covered_by_any(windows, span)  # no scored chunk holds the whole injection
+    if p.placement == "middle_overlong":
+        assert n_chunks > MAX_CHUNKS and not probes._any_overlap(windows, span)  # dropped middle
+    else:
+        addr = token_span_of(p.body, p.exfil_address)
+        assert probes._any_overlap(windows, addr)  # split from the verb, not dropped
