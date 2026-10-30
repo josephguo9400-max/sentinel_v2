@@ -1,0 +1,32 @@
+{
+  "schema_version": "1.2",
+  "detector_id": "deberta-pi-v2-int8",
+  "detector_version": "2.0.0+90c9989b.onnx.int8-dyn-qint8-matmul.v1",
+  "artifact_format": "onnx",
+  "artifact_path": "onnx/model.onnx",
+  "sha256": "9f440d7ee92d8103657a02b9fd0b707facdf752b979466172e3eb759aae0e55c",
+  "runtime": {
+    "python": "3.13.18",
+    "onnxruntime": "1.29.0",
+    "tokenizers": "0.23.3",
+    "sklearn": null,
+    "skl2onnx": null
+  },
+  "preprocessing_version": "deberta-v3-window-v1",
+  "label_mapping": {
+    "0": "benign",
+    "1": "injection"
+  },
+  "threshold": 0.5,
+  "max_input_tokens": 512,
+  "failure_policy": "fail_closed",
+  "timeout_ms": 5000,
+  "cascade_role": "stage2",
+  "gray_zone": null,
+  "tokenizer": "hf:deberta-v3",
+  "input_languages": null,
+  "training_data_version": "upstream:protectai/deberta-v3-base-prompt-injection-v2@90c9989b1a342275dd0d1a95aad283c04e075671;quantized:scripts/quantize_deberta.py",
+  "evaluation_dataset_version": null,
+  "created_at": "2026-10-29T23:50:00Z",
+  "metrics_path": null
+}
