@@ -131,6 +131,21 @@
     "default": null,
     "title": "Gray Zone"
    },
+   "input_languages": {
+    "anyOf": [
+     {
+      "items": {
+       "type": "string"
+      },
+      "type": "array"
+     },
+     {
+      "type": "null"
+     }
+    ],
+    "default": null,
+    "title": "Input Languages"
+   },
    "label_mapping": {
     "additionalProperties": {
      "enum": [
@@ -173,8 +188,11 @@
     "$ref": "#/$defs/Runtime"
    },
    "schema_version": {
-    "const": "1.1",
-    "default": "1.1",
+    "default": "1.2",
+    "enum": [
+     "1.1",
+     "1.2"
+    ],
     "title": "Schema Version",
     "type": "string"
    },
@@ -193,6 +211,19 @@
     "exclusiveMinimum": 0,
     "title": "Timeout Ms",
     "type": "integer"
+   },
+   "tokenizer": {
+    "anyOf": [
+     {
+      "pattern": "^(hf|regex):.+$",
+      "type": "string"
+     },
+     {
+      "type": "null"
+     }
+    ],
+    "default": null,
+    "title": "Tokenizer"
    },
    "training_data_version": {
     "anyOf": [
@@ -226,6 +257,268 @@
   "title": "ArtifactManifest",
   "type": "object"
  },
+ "ClassifyRequest": {
+  "additionalProperties": false,
+  "properties": {
+   "request_id": {
+    "anyOf": [
+     {
+      "type": "string"
+     },
+     {
+      "type": "null"
+     }
+    ],
+    "default": null,
+    "title": "Request Id"
+   },
+   "text": {
+    "title": "Text",
+    "type": "string"
+   }
+  },
+  "required": [
+   "text"
+  ],
+  "title": "ClassifyRequest",
+  "type": "object"
+ },
+ "ClassifyResponse": {
+  "$defs": {
+   "DetectorResult": {
+    "additionalProperties": false,
+    "properties": {
+     "aggregation": {
+      "default": "max",
+      "enum": [
+       "max",
+       "mean",
+       "none"
+      ],
+      "title": "Aggregation",
+      "type": "string"
+     },
+     "detector_id": {
+      "title": "Detector Id",
+      "type": "string"
+     },
+     "detector_version": {
+      "title": "Detector Version",
+      "type": "string"
+     },
+     "failure_reason": {
+      "anyOf": [
+       {
+        "enum": [
+         "timeout",
+         "exception",
+         "overloaded"
+        ],
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Failure Reason"
+     },
+     "input_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Input Sha256",
+      "type": "string"
+     },
+     "input_tokens": {
+      "minimum": 0,
+      "title": "Input Tokens",
+      "type": "integer"
+     },
+     "latency_ms": {
+      "minimum": 0.0,
+      "title": "Latency Ms",
+      "type": "number"
+     },
+     "n_chunks": {
+      "default": 1,
+      "minimum": 1,
+      "title": "N Chunks",
+      "type": "integer"
+     },
+     "predicted_injection": {
+      "anyOf": [
+       {
+        "type": "boolean"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Predicted Injection"
+     },
+     "request_id": {
+      "title": "Request Id",
+      "type": "string"
+     },
+     "role": {
+      "default": "active",
+      "enum": [
+       "active",
+       "shadow"
+      ],
+      "title": "Role",
+      "type": "string"
+     },
+     "schema_version": {
+      "default": "1.2",
+      "enum": [
+       "1.1",
+       "1.2"
+      ],
+      "title": "Schema Version",
+      "type": "string"
+     },
+     "score": {
+      "anyOf": [
+       {
+        "maximum": 1.0,
+        "minimum": 0.0,
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Score"
+     },
+     "stage": {
+      "default": "single",
+      "enum": [
+       "stage1",
+       "stage2",
+       "single"
+      ],
+      "title": "Stage",
+      "type": "string"
+     },
+     "status": {
+      "enum": [
+       "ok",
+       "timeout",
+       "error",
+       "skipped"
+      ],
+      "title": "Status",
+      "type": "string"
+     },
+     "threshold": {
+      "maximum": 1.0,
+      "minimum": 0.0,
+      "title": "Threshold",
+      "type": "number"
+     },
+     "truncated": {
+      "default": false,
+      "title": "Truncated",
+      "type": "boolean"
+     }
+    },
+    "required": [
+     "request_id",
+     "detector_id",
+     "detector_version",
+     "status",
+     "threshold",
+     "latency_ms",
+     "input_sha256",
+     "input_tokens"
+    ],
+    "title": "DetectorResult",
+    "type": "object"
+   }
+  },
+  "additionalProperties": false,
+  "properties": {
+   "coverage_policy_applied": {
+    "anyOf": [
+     {
+      "enum": [
+       "flag",
+       "allow",
+       "quarantine",
+       "deep_scan"
+      ],
+      "type": "string"
+     },
+     {
+      "type": "null"
+     }
+    ],
+    "default": null,
+    "title": "Coverage Policy Applied"
+   },
+   "decided_by": {
+    "title": "Decided By",
+    "type": "string"
+   },
+   "decision": {
+    "enum": [
+     "allow",
+     "flag"
+    ],
+    "title": "Decision",
+    "type": "string"
+   },
+   "policy_applied": {
+    "anyOf": [
+     {
+      "enum": [
+       "fail_open",
+       "fail_closed"
+      ],
+      "type": "string"
+     },
+     {
+      "type": "null"
+     }
+    ],
+    "default": null,
+    "title": "Policy Applied"
+   },
+   "request_id": {
+    "title": "Request Id",
+    "type": "string"
+   },
+   "results": {
+    "items": {
+     "$ref": "#/$defs/DetectorResult"
+    },
+    "title": "Results",
+    "type": "array"
+   },
+   "stages_run": {
+    "items": {
+     "enum": [
+      "stage1",
+      "stage2",
+      "single"
+     ],
+     "type": "string"
+    },
+    "title": "Stages Run",
+    "type": "array"
+   }
+  },
+  "required": [
+   "request_id",
+   "decision",
+   "decided_by",
+   "results"
+  ],
+  "title": "ClassifyResponse",
+  "type": "object"
+ },
  "DetectorResult": {
   "additionalProperties": false,
   "properties": {
@@ -246,6 +539,23 @@
    "detector_version": {
     "title": "Detector Version",
     "type": "string"
+   },
+   "failure_reason": {
+    "anyOf": [
+     {
+      "enum": [
+       "timeout",
+       "exception",
+       "overloaded"
+      ],
+      "type": "string"
+     },
+     {
+      "type": "null"
+     }
+    ],
+    "default": null,
+    "title": "Failure Reason"
    },
    "input_sha256": {
     "pattern": "^[0-9a-f]{64}$",
@@ -294,8 +604,11 @@
     "type": "string"
    },
    "schema_version": {
-    "const": "1.1",
-    "default": "1.1",
+    "default": "1.2",
+    "enum": [
+     "1.1",
+     "1.2"
+    ],
     "title": "Schema Version",
     "type": "string"
    },
@@ -435,11 +748,39 @@
     "title": "Run Id",
     "type": "string"
    },
+   "scenario_id": {
+    "anyOf": [
+     {
+      "type": "string"
+     },
+     {
+      "type": "null"
+     }
+    ],
+    "default": null,
+    "title": "Scenario Id"
+   },
    "schema_version": {
-    "const": "1.1",
-    "default": "1.1",
+    "default": "1.2",
+    "enum": [
+     "1.1",
+     "1.2"
+    ],
     "title": "Schema Version",
     "type": "string"
+   },
+   "seq": {
+    "anyOf": [
+     {
+      "minimum": 0,
+      "type": "integer"
+     },
+     {
+      "type": "null"
+     }
+    ],
+    "default": null,
+    "title": "Seq"
    },
    "source": {
     "enum": [

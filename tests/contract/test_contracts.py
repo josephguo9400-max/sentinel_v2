@@ -23,6 +23,7 @@ def stage1(**kw):
                 sha256=SHA, runtime={"python": "3.13", "onnxruntime": "1.29.0", "sklearn": "1.5.2",
                                      "skl2onnx": "1.17.0"},
                 preprocessing_version="tfidf-v1", label_mapping={"0": "benign", "1": "injection"}, threshold=0.5,
+                tokenizer=r"regex:[\p{L}\p{N}_]{2,}",
                 max_input_tokens=512, failure_policy="fail_closed", timeout_ms=200, cascade_role="stage1",
                 gray_zone=(0.15, 0.85), created_at=TS)
     base.update(kw)
@@ -34,6 +35,7 @@ def stage2(**kw):
                 artifact_path="onnx/model.onnx", sha256=SHA,
                 runtime={"python": "3.13", "onnxruntime": "1.29.0", "tokenizers": "0.23.3"},
                 preprocessing_version="deberta-v3-tokenizer", label_mapping={"0": "benign", "1": "injection"},
+                tokenizer="hf:deberta-v3",
                 threshold=0.5, max_input_tokens=512, failure_policy="fail_closed", timeout_ms=1000,
                 cascade_role="stage2", created_at=TS)
     base.update(kw)
@@ -50,7 +52,7 @@ def event(**kw):
 # ---------- DetectorResult ----------
 
 def test_ok_result_valid():
-    assert result().schema_version == "1.1"
+    assert result().schema_version == "1.2"
 
 
 def test_prediction_must_match_threshold():
@@ -154,7 +156,9 @@ def test_detector_events_require_version():
 
 def test_schema_snapshot_unchanged():
     """Contracts are frozen: any schema change must update tests/contract/schema_snapshot.json deliberately."""
-    current = {m.__name__: m.model_json_schema() for m in (DetectorResult, ArtifactManifest, TraceEvent)}
+    from contracts import ClassifyRequest, ClassifyResponse
+    current = {m.__name__: m.model_json_schema()
+               for m in (DetectorResult, ArtifactManifest, TraceEvent, ClassifyRequest, ClassifyResponse)}
     snap = Path(__file__).with_name("schema_snapshot.json")
     assert json.loads(snap.read_text()) == json.loads(json.dumps(current))
 
@@ -207,3 +211,76 @@ def test_non_tool_events_need_no_tool_fields(etype):
 def test_content_quarantined_requires_policy_reason():
     with pytest.raises(ValidationError):
         event(event_type="content_quarantined", tool_name=None, policy_reason=None)
+
+
+# ---------- contracts v1.2 ----------
+
+from contracts import ClassifyRequest, ClassifyResponse, UNAVAILABLE_DETECTOR_VERSION  # noqa: E402
+
+
+def test_v11_documents_still_validate():
+    assert result(schema_version="1.1").schema_version == "1.1"
+    legacy = stage1(schema_version="1.1", tokenizer=None)
+    assert legacy.tokenizer is None
+    assert event(schema_version="1.1").schema_version == "1.1"
+
+
+def test_v12_manifest_requires_tokenizer_and_v11_forbids_new_fields():
+    with pytest.raises(ValidationError):
+        stage1(tokenizer=None)
+    with pytest.raises(ValidationError):
+        stage1(schema_version="1.1")  # carries a tokenizer
+    with pytest.raises(ValidationError):
+        stage1(schema_version="1.1", tokenizer=None, input_languages=["en"])
+    with pytest.raises(ValidationError):
+        stage1(tokenizer="sentencepiece")
+
+
+@pytest.mark.parametrize("langs,ok", [(["en"], True), (["en", "de"], True), ([], False), (["EN"], False),
+                                      (["en", "en"], False), (["english"], False)])
+def test_input_languages(langs, ok):
+    if ok:
+        assert stage1(input_languages=langs).input_languages == langs
+    else:
+        with pytest.raises(ValidationError):
+            stage1(input_languages=langs)
+
+
+def test_failure_reason_rules():
+    assert result(status="error", score=None, predicted_injection=None,
+                  failure_reason="overloaded").failure_reason == "overloaded"
+    assert result(status="timeout", score=None, predicted_injection=None,
+                  failure_reason="timeout").failure_reason == "timeout"
+    for bad in (dict(failure_reason="timeout"),  # status ok
+                dict(status="timeout", score=None, predicted_injection=None, failure_reason="exception"),
+                dict(schema_version="1.1", status="error", score=None, predicted_injection=None,
+                     failure_reason="exception"),
+                dict(status="error", score=None, predicted_injection=None, failure_reason="oops")):
+        with pytest.raises(ValidationError):
+            result(**bad)
+
+
+def test_trace_seq_and_scenario():
+    ev = event(seq=3, scenario_id="dev_daily_digest")
+    assert ev.seq == 3 and ev.scenario_id == "dev_daily_digest"
+    with pytest.raises(ValidationError):
+        event(seq=-1)
+    with pytest.raises(ValidationError):
+        event(schema_version="1.1", seq=1)
+    assert event(event_type="detector_prediction", detector_version=UNAVAILABLE_DETECTOR_VERSION,
+                 detail={"fallback": True}).detector_version == "unavailable"
+
+
+def test_classify_contract():
+    assert ClassifyRequest(text="hi").request_id is None
+    with pytest.raises(ValidationError):
+        ClassifyRequest(text="hi", extra=1)
+    r = result(request_id="r9")
+    resp = ClassifyResponse(request_id="r9", decision="flag", decided_by="pi", results=[r], stages_run=["single"])
+    assert resp.policy_applied is None and resp.coverage_policy_applied is None
+    with pytest.raises(ValidationError):
+        ClassifyResponse(request_id="r9", decision="flag", decided_by="pi", results=[])
+    with pytest.raises(ValidationError):
+        ClassifyResponse(request_id="other", decision="flag", decided_by="pi", results=[r])
+    with pytest.raises(ValidationError):
+        ClassifyResponse(request_id="r9", decision="block", decided_by="pi", results=[r])
