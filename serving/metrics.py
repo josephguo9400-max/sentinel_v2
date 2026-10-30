@@ -21,6 +21,7 @@ class GatewayMetrics:
                                  ["detector_id"], registry=r)
         self.batch_size = Histogram("sentinel_inference_batch_size", "Chunks per ONNX call",
                                     buckets=(1, 2, 4, 8, 16, 32, 64), registry=r)
+        self.inflight = Gauge("sentinel_inflight_requests", "Admitted requests not yet finished", registry=r)
         self.queue_depth = Gauge("sentinel_queue_depth", "Chunks waiting for a worker", registry=r)
         self.busy_workers = Gauge("sentinel_busy_workers", "Inference workers currently running (incl. abandoned)",
                                   registry=r)

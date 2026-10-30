@@ -7,12 +7,19 @@ max over one score), and for failed results it is the rule that would have appli
 - status ok      -> decision = "flag" if predicted_injection else "allow", policy_applied = None
 - status != ok   -> the detector's failure policy: fail_closed -> "flag", fail_open -> "allow",
                     policy_applied = the policy name
+
+Overload is fail-fast at two points, both with status "error", reason "overloaded" and the failure policy:
+1. Admission, before any work: at most `max_inflight` unfinished requests holding at most
+   `max_inflight_chars` characters in total. Tokenization runs in a pool of `tokenize_workers` threads,
+   so a burst of large bodies cannot fan out into an unbounded number of tokenizer threads.
+2. The chunk queue (`max_queue`), checked after tokenization.
 """
 import asyncio
 import hashlib
 import logging
 import time
 import uuid
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
 from typing import Any, Literal
 
@@ -50,15 +57,38 @@ class ClassifierService:
         self.batcher = MicroBatcher(detector.infer, max_batch=config.max_batch, max_wait_ms=config.max_wait_ms,
                                     workers=config.workers, max_queue=config.max_queue,
                                     on_batch=self.metrics.batch_size.observe)
+        self.inflight = 0
+        self.inflight_chars = 0
+        self._tokenizer_pool: ThreadPoolExecutor | None = None
         self.started = False
 
     async def start(self) -> None:
+        self._tokenizer_pool = ThreadPoolExecutor(max_workers=self.config.tokenize_workers,
+                                                  thread_name_prefix="sentinel-tokenize")
         await self.batcher.start()
         self.started = True
 
     async def stop(self) -> None:
         self.started = False
         await self.batcher.stop()
+        if self._tokenizer_pool is not None:
+            self._tokenizer_pool.shutdown(wait=False, cancel_futures=True)
+
+    def _admit(self, n_chars: int) -> bool:
+        """Reserve capacity for one request, or return False (overloaded). Runs on the event loop, so
+        check-and-reserve is atomic without a lock."""
+        c = self.config
+        if self.inflight >= c.max_inflight or self.inflight_chars + n_chars > c.max_inflight_chars:
+            return False
+        self.inflight += 1
+        self.inflight_chars += n_chars
+        self.metrics.inflight.set(self.inflight)
+        return True
+
+    def _release(self, n_chars: int) -> None:
+        self.inflight -= 1
+        self.inflight_chars -= n_chars
+        self.metrics.inflight.set(self.inflight)
 
     async def _score(self, text: str, progress: dict[str, Any]) -> tuple[float, int, int, bool]:
         """(max score, content tokens, chunks scored, truncated). Raises on detector error/overload.
@@ -67,7 +97,10 @@ class ClassifierService:
         request that later times out still reports them.
         """
         d, c = self.detector, self.config
-        content = await asyncio.to_thread(d.tokenize, text)
+        # Bounded pool: if this request times out while its tokenization is still queued, cancelling the
+        # asyncio future cancels the pool job too, so it never runs.
+        loop = asyncio.get_running_loop()
+        content = await loop.run_in_executor(self._tokenizer_pool, d.tokenize, text)
         progress["input_tokens"] = len(content)
         plan = plan_chunks(content, d.cls_id, d.sep_id, c.max_len, c.stride, c.max_chunks)
         progress["n_chunks"] = len(plan.chunks)
@@ -92,16 +125,21 @@ class ClassifierService:
         score = None
         n_tokens, n_chunks, truncated = 0, 1, False
         progress: dict[str, Any] = {}
-        try:
-            score, n_tokens, n_chunks, truncated = await asyncio.wait_for(self._score(text, progress),
-                                                                          c.timeout_ms / 1000)
-        except TimeoutError:
-            status, reason = "timeout", "timeout"
-        except Overloaded:
+        if not self._admit(len(text)):
             status, reason = "error", "overloaded"
-        except Exception:
-            log.exception("detector %s failed on request %s", d.detector_id, request_id)
-            status, reason = "error", "exception"
+        else:
+            try:
+                score, n_tokens, n_chunks, truncated = await asyncio.wait_for(self._score(text, progress),
+                                                                              c.timeout_ms / 1000)
+            except TimeoutError:
+                status, reason = "timeout", "timeout"
+            except Overloaded:
+                status, reason = "error", "overloaded"
+            except Exception:
+                log.exception("detector %s failed on request %s", d.detector_id, request_id)
+                status, reason = "error", "exception"
+            finally:
+                self._release(len(text))
         latency_ms = (time.perf_counter() - t0) * 1000
 
         if status != "ok":

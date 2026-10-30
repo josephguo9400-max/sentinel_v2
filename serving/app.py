@@ -100,8 +100,11 @@ def create_app(config: GatewayConfig | None = None, detector: Detector | None = 
                          "model_sha256": getattr(d, "model_sha256", None)},
             "config": {"stride": config.stride, "max_chunks": config.max_chunks, "timeout_ms": config.timeout_ms,
                        "failure_policy": config.failure_policy, "max_batch": config.max_batch,
-                       "max_wait_ms": config.max_wait_ms, "workers": config.workers, "max_queue": config.max_queue},
+                       "max_wait_ms": config.max_wait_ms, "workers": config.workers, "max_queue": config.max_queue,
+                       "max_inflight": config.max_inflight, "max_inflight_chars": config.max_inflight_chars,
+                       "tokenize_workers": config.tokenize_workers},
             "queue_depth": service.batcher.queue_depth, "busy_workers": service.batcher.busy_workers,
+            "inflight_requests": service.inflight,
         }
 
     @app.get("/metrics")
@@ -110,6 +113,7 @@ def create_app(config: GatewayConfig | None = None, detector: Detector | None = 
         if service is not None:
             metrics.queue_depth.set(service.batcher.queue_depth)
             metrics.busy_workers.set(service.batcher.busy_workers)
+            metrics.inflight.set(service.inflight)
         return Response(generate_latest(metrics.registry), media_type=CONTENT_TYPE_LATEST)
 
     return app
