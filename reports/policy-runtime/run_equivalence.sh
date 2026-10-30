@@ -23,3 +23,12 @@ flock /home/claude/measure.lock -c \
 python -m training.replay_policy_equivalence t5 --t3 $OUT/t3_d23_equivalence.json \
   --out $OUT/t5_live_comparison.json
 echo done
+
+# The release gate on the development split, for the bundle the registry serves (resumable; never promotes).
+# The frozen test is NOT run here: the owner decides when the final split is read
+#   (python -m training.gate evaluate --split frozen_test --frozen-test-approved-by NAME).
+until flock /home/claude/measure.lock -c \
+    "python -m training.gate evaluate --registry artifacts/registry.json --split val \
+     --out $OUT/gate_val_d23.json --max-seconds 240" | tee /dev/stderr | grep -q '"complete": true'; do
+  sleep 2
+done
