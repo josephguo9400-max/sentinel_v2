@@ -145,9 +145,10 @@ class Sandbox:
     def emit(self, event_type: str, **fields: Any) -> None:
         with self._lock:
             self.seq += 1
-            detail = {"seq": self.seq, "scenario_id": self.scenario.scenario_id, **(fields.pop("detail", None) or {})}
+            # contracts v1.2: order and scenario are first-class TraceEvent fields, not detail keys.
             self.trace.emit(event_id=f"{self.attempt_id}-{self.seq:04d}", attempt_id=self.attempt_id,
-                            event_type=event_type, mode=self.mode, source=self.source, detail=detail, **fields)
+                            event_type=event_type, mode=self.mode, source=self.source,
+                            seq=self.seq, scenario_id=self.scenario.scenario_id, **fields)
 
     def record_model_response(self, text: str, final: bool, **detail: Any) -> None:
         with self._lock:
@@ -176,6 +177,8 @@ class Sandbox:
                 cause = verdict.flag_cause
                 if cause == "fallback":
                     reason = f"classifier_unavailable_fail_closed: {verdict.gateway_status}"
+                elif cause == "coverage_policy":
+                    reason = f"coverage_policy: {verdict.coverage_policy_applied}"
                 elif cause == "gateway_failure_policy":
                     reason = "gateway_failure_policy: fail_closed"
                 else:
@@ -183,7 +186,9 @@ class Sandbox:
                 self.emit("content_quarantined", policy_reason=reason, detector_version=verdict.detector_version,
                           detail={"email_id": email_id, "request_id": request_id, "cause": cause,
                                   "decided_by": verdict.decided_by, "fallback": verdict.fallback,
-                                  "truncated": verdict.truncated})
+                                  "truncated": verdict.truncated,
+                                  "coverage_policy_applied": verdict.coverage_policy_applied,
+                                  "stages_run": list(verdict.stages_run)})
             if time.monotonic() > self.deadline:
                 raise AttemptTimeout("deadline exceeded during classification")
 

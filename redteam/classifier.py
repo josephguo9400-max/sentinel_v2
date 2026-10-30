@@ -9,7 +9,7 @@ import re
 from dataclasses import dataclass, field
 from typing import Literal, Protocol, runtime_checkable
 
-from contracts import DetectorResult
+from contracts import UNAVAILABLE_DETECTOR_VERSION, DetectorResult
 
 GatewayStatus = Literal["ok", "timeout", "unreachable", "bad_response"]
 
@@ -24,21 +24,38 @@ class ClassifierVerdict:
     fallback: bool = False  # True when the decision came from on_unavailable, not from the gateway
     error: str | None = None
     latency_ms: float | None = None
+    # contracts v1.2 ClassifyResponse fields (None / empty for fakes and client fallbacks).
+    request_id: str | None = None
+    stages_run: tuple[str, ...] = ()
+    coverage_policy_applied: str | None = None
 
     @property
     def detector_version(self) -> str:
-        """Value for TraceEvent.detector_version: which detectors produced this verdict."""
+        """Value for TraceEvent.detector_version: which detectors produced this verdict.
+
+        A client fallback (no detector answered) always uses contracts.UNAVAILABLE_DETECTOR_VERSION.
+        """
+        if self.fallback:
+            return UNAVAILABLE_DETECTOR_VERSION
         if self.results:
             return ",".join(f"{r.detector_id}@{r.detector_version}" for r in self.results)
         if self.decided_by:
             return self.decided_by
-        return "unavailable"
+        return UNAVAILABLE_DETECTOR_VERSION
+
+    @property
+    def failure_reasons(self) -> tuple[str | None, ...]:
+        """DetectorResult.failure_reason of every result, in result order (v1.2)."""
+        return tuple(r.failure_reason for r in self.results)
 
     @property
     def flag_cause(self) -> str | None:
         """Why decision == "flag", or None for allow.
 
         "classifier_flag"         a detector scored the text and the gateway flagged it;
+        "coverage_policy"         the gateway's coverage policy decided (v1.2 coverage_policy_applied is set):
+                                  some content was not scored, so this is never a classifier catch, even
+                                  when another part of the text scored positive;
         "gateway_failure_policy"  the gateway answered, but no detector produced a positive score and the
                                   gateway applied its failure policy (fail_closed after a timeout/error);
         "fallback"                the client could not use the gateway and applied on_unavailable="flag".
@@ -48,6 +65,8 @@ class ClassifierVerdict:
             return None
         if self.fallback:
             return "fallback"
+        if self.coverage_policy_applied is not None:
+            return "coverage_policy"
         positive = any(r.status == "ok" and r.predicted_injection for r in self.results)
         if self.policy_applied == "fail_closed" and not positive:
             return "gateway_failure_policy"
@@ -63,6 +82,9 @@ class ClassifierVerdict:
             "decision": self.decision,
             "decided_by": self.decided_by,
             "policy_applied": self.policy_applied,
+            "coverage_policy_applied": self.coverage_policy_applied,
+            "stages_run": list(self.stages_run),
+            "failure_reasons": list(self.failure_reasons),
             "gateway_status": self.gateway_status,
             "fallback": self.fallback,
             "flag_cause": self.flag_cause,
