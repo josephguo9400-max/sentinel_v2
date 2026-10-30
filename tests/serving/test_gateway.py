@@ -4,13 +4,14 @@ from pathlib import Path
 import pytest
 from fastapi.testclient import TestClient
 
-from contracts import DetectorResult
+from contracts import ClassifyResponse, DetectorResult
 from fakes import FakeDetector, words
 from serving.app import create_app
 from serving.config import GatewayConfig
 from serving.service import ClassifierService
 
-RESPONSE_KEYS = {"request_id", "decision", "decided_by", "policy_applied", "results"}
+RESPONSE_KEYS = {"request_id", "decision", "decided_by", "policy_applied", "coverage_policy_applied", "stages_run",
+                 "results"}
 
 
 def cfg(**kw) -> GatewayConfig:
@@ -20,6 +21,7 @@ def cfg(**kw) -> GatewayConfig:
 
 def check_response(body: dict) -> list[DetectorResult]:
     assert set(body) == RESPONSE_KEYS
+    ClassifyResponse.model_validate(body)
     assert body["decision"] in ("allow", "flag")
     assert body["policy_applied"] in (None, "fail_open", "fail_closed")
     results = [DetectorResult.model_validate(r) for r in body["results"]]

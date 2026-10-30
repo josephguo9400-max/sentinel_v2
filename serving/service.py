@@ -23,7 +23,7 @@ from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
 from typing import Any, Literal
 
-from contracts import DetectorResult
+from contracts import ClassifyResponse, DetectorResult
 
 from .batcher import MicroBatcher, Overloaded
 from .config import GatewayConfig
@@ -42,9 +42,18 @@ class ClassifyOutcome:
     policy_applied: Literal["fail_open", "fail_closed"] | None
     results: list[DetectorResult] = field(default_factory=list)
 
+    stages_run: list[str] = field(default_factory=list)
+    coverage_policy_applied: Literal["flag", "allow", "quarantine", "deep_scan"] | None = None
+
+    def to_response(self) -> ClassifyResponse:
+        """The validated wire object (contracts.ClassifyResponse v1.2). Raises if inconsistent."""
+        return ClassifyResponse(request_id=self.request_id, decision=self.decision, decided_by=self.decided_by,
+                                policy_applied=self.policy_applied,
+                                coverage_policy_applied=self.coverage_policy_applied,
+                                stages_run=list(self.stages_run), results=list(self.results))
+
     def as_response(self) -> dict[str, Any]:
-        return {"request_id": self.request_id, "decision": self.decision, "decided_by": self.decided_by,
-                "policy_applied": self.policy_applied, "results": [r.model_dump() for r in self.results]}
+        return self.to_response().model_dump(mode="json")
 
 
 class ClassifierService:
@@ -152,7 +161,8 @@ class ClassifierService:
             score=score, threshold=d.threshold,
             predicted_injection=None if score is None else bool(score >= d.threshold),
             latency_ms=latency_ms, input_sha256=sha, input_tokens=n_tokens, n_chunks=n_chunks,
-            truncated=truncated, aggregation="max", stage="single", role="active")
+            truncated=truncated, aggregation="max", stage="single", role="active",
+            failure_reason=None if status == "ok" else reason)
 
         if status == "ok":
             decision = "flag" if result.predicted_injection else "allow"
@@ -167,4 +177,4 @@ class ClassifierService:
         m.detector_latency.labels(d.detector_id, status).observe(latency_ms / 1000)
         m.requests.labels(decision, policy or "none").inc()
         return ClassifyOutcome(request_id=request_id, decision=decision, decided_by=d.detector_id,
-                               policy_applied=policy, results=[result])
+                               policy_applied=policy, results=[result], stages_run=["single"])

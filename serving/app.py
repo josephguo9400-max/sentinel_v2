@@ -4,13 +4,9 @@ Run: uvicorn serving.app:app --host 127.0.0.1 --port 8000   (config via SENTINEL
 """
 import logging
 from contextlib import asynccontextmanager
-from typing import Literal
-
 from fastapi import FastAPI, HTTPException, Response
 from prometheus_client import CONTENT_TYPE_LATEST, generate_latest
-from pydantic import BaseModel, ConfigDict, Field
-
-from contracts import SCHEMA_VERSION
+from contracts import SCHEMA_VERSION, ClassifyRequest, ClassifyResponse
 
 from .config import GatewayConfig
 from .detector import Detector, OnnxDebertaDetector
@@ -20,25 +16,7 @@ from .service import ClassifierService
 log = logging.getLogger("sentinel.serving")
 
 
-class ClassifyRequest(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-
-    text: str
-    request_id: str | None = Field(default=None, max_length=200)
-
-
-class ClassifyResponse(BaseModel):
-    """Cross-agent interface: Agent B's harness and Agent C's sandbox depend on exactly these keys.
-
-    Each `results` item is a contracts.DetectorResult v1.1 dumped to a dict (validated before it
-    gets here); it is typed as a plain dict so FastAPI does not re-serialize it differently.
-    """
-
-    request_id: str
-    decision: Literal["allow", "flag"]
-    decided_by: str
-    policy_applied: Literal["fail_open", "fail_closed"] | None
-    results: list[dict]
+MAX_REQUEST_ID_CHARS = 200
 
 
 def load_onnx_detector(config: GatewayConfig) -> OnnxDebertaDetector:
@@ -76,15 +54,17 @@ def create_app(config: GatewayConfig | None = None, detector: Detector | None = 
     app.state.metrics = metrics
 
     @app.post("/classify", response_model=ClassifyResponse)
-    async def classify(req: ClassifyRequest) -> dict:
+    async def classify(req: ClassifyRequest) -> ClassifyResponse:
         service: ClassifierService | None = state["service"]
         if service is None:
             # No detector at all is not a per-detector timeout/error; refuse rather than guess a decision.
             raise HTTPException(status_code=503, detail=f"detector not loaded: {state['load_error']}")
+        if req.request_id is not None and len(req.request_id) > MAX_REQUEST_ID_CHARS:
+            raise HTTPException(status_code=422, detail=f"request_id longer than {MAX_REQUEST_ID_CHARS} characters")
         if len(req.text) > config.max_text_chars:
             raise HTTPException(status_code=413, detail=f"text longer than {config.max_text_chars} characters")
         outcome = await service.classify(req.text, req.request_id)
-        return outcome.as_response()
+        return outcome.to_response()  # validated against contracts.ClassifyResponse before it leaves
 
     @app.get("/health")
     async def health(response: Response) -> dict:
