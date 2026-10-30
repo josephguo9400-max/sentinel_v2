@@ -10,6 +10,13 @@ client applies `on_unavailable`:
   "allow"           -> decision=allow, the email reaches the defender (fail open), fallback=True
   "error"           -> raise ClassifierUnavailable; the sandbox records the attempt as an error
 Every fallback is recorded in the verdict (gateway_status, error) so the trace shows it.
+
+Timeout. The client must never give up before the gateway does: the gateway enforces its own
+per-detector budget (GatewayConfig.timeout_ms, default 5000 ms) and answers with its failure policy
+when the budget runs out. A shorter client timeout would turn a slow-but-scored email into a client
+fallback. With `timeout_s=None` (the default) the client reads `config.timeout_ms` from
+GET {url}/health and uses budget + TIMEOUT_MARGIN_S; if /health is unusable it uses
+DEFAULT_TIMEOUT_S. `timeout_source` records which rule applied ("explicit", "health", "default").
 """
 from __future__ import annotations
 
@@ -25,19 +32,45 @@ from .classifier import ClassifierUnavailable, ClassifierVerdict, GatewayStatus
 
 OnUnavailable = Literal["flag", "allow", "error"]
 
+DEFAULT_TIMEOUT_S = 10.0  # used when the gateway budget cannot be read from /health
+TIMEOUT_MARGIN_S = 2.0  # added to the gateway budget: HTTP, JSON and event-loop overhead
+HEALTH_TIMEOUT_S = 2.0  # for the one GET /health probe at construction
+
 
 class GatewayClient:
-    def __init__(self, url: str, timeout_s: float = 2.0, on_unavailable: OnUnavailable = "flag",
+    def __init__(self, url: str, timeout_s: float | None = None, on_unavailable: OnUnavailable = "flag",
                  transport: httpx.BaseTransport | None = None):
         if on_unavailable not in ("flag", "allow", "error"):
             raise ValueError(f"on_unavailable must be flag, allow or error: {on_unavailable!r}")
-        if timeout_s <= 0:
+        if timeout_s is not None and timeout_s <= 0:
             raise ValueError("timeout_s must be positive")
-        self.url = url.rstrip("/") + "/classify"
-        self.timeout_s = timeout_s
+        base = url.rstrip("/")
+        self.url = base + "/classify"
         self.on_unavailable = on_unavailable
         # trust_env=False: never route sandbox traffic through a proxy picked up from the environment.
-        self._client = httpx.Client(timeout=httpx.Timeout(timeout_s), transport=transport, trust_env=False)
+        self._client = httpx.Client(transport=transport, trust_env=False)
+        # An explicit timeout is used as given (no /health probe), so tests can bound waits precisely.
+        self.gateway_timeout_ms: float | None = None if timeout_s is not None else self._read_budget_ms(
+            base + "/health")
+        if timeout_s is not None:
+            self.timeout_s, self.timeout_source = float(timeout_s), "explicit"
+        elif self.gateway_timeout_ms is not None:
+            self.timeout_s, self.timeout_source = self.gateway_timeout_ms / 1000.0 + TIMEOUT_MARGIN_S, "health"
+        else:
+            self.timeout_s, self.timeout_source = DEFAULT_TIMEOUT_S, "default"
+        self._timeout = httpx.Timeout(self.timeout_s)
+
+    def _read_budget_ms(self, health_url: str) -> float | None:
+        try:
+            resp = self._client.get(health_url, timeout=HEALTH_TIMEOUT_S)
+            data = resp.json() if resp.status_code == 200 else None
+        except (httpx.HTTPError, ValueError):
+            return None
+        cfg = data.get("config") if isinstance(data, dict) else None
+        budget = cfg.get("timeout_ms") if isinstance(cfg, dict) else None
+        if isinstance(budget, bool) or not isinstance(budget, (int, float)) or not 0 < budget < 3_600_000:
+            return None
+        return float(budget)
 
     def close(self) -> None:
         self._client.close()
@@ -51,7 +84,8 @@ class GatewayClient:
     def classify(self, text: str, request_id: str) -> ClassifierVerdict:
         t0 = time.perf_counter()
         try:
-            resp = self._client.post(self.url, json={"text": text, "request_id": request_id})
+            resp = self._client.post(self.url, json={"text": text, "request_id": request_id},
+                                     timeout=self._timeout)
         except httpx.TimeoutException as exc:
             return self._fallback("timeout", f"{type(exc).__name__}: {exc}", t0)
         except httpx.HTTPError as exc:

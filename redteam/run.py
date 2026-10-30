@@ -53,7 +53,9 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--defender", choices=sorted(DEFENDERS), default="gullible")
     p.add_argument("--classifier", choices=["keyword", "allow-all", "gateway"], default="keyword")
     p.add_argument("--gateway-url")
-    p.add_argument("--gateway-timeout", type=float, default=2.0, help="seconds per /classify call")
+    p.add_argument("--gateway-timeout", type=float, default=None,
+                   help="seconds per /classify call (default: the gateway's /health config.timeout_ms "
+                        "plus a margin, or 10 s if /health is unusable)")
     p.add_argument("--on-unavailable", choices=["flag", "allow", "error"], default="flag")
     p.add_argument("--attacker-body-file", type=Path, help="replace the attacker email body with this file")
     p.add_argument("--runs-dir", type=Path, default=DEFAULT_RUNS_DIR)
@@ -75,6 +77,11 @@ def main(argv: list[str] | None = None) -> int:
 
     trace = RunTrace(run_id=args.run_id, out_dir=args.runs_dir)
     classifier = build_classifier(args) if any(m in ("B", "C") for m in modes) else None
+    if isinstance(classifier, GatewayClient):
+        print(json.dumps({"gateway_client": {"timeout_s": classifier.timeout_s,
+                                             "timeout_source": classifier.timeout_source,
+                                             "gateway_timeout_ms": classifier.gateway_timeout_ms,
+                                             "on_unavailable": classifier.on_unavailable}}))
     verdicts = []
     try:
         for sc in scenarios:
@@ -86,7 +93,8 @@ def main(argv: list[str] | None = None) -> int:
                 verdicts.append(v)
                 print(json.dumps({k: v.to_dict()[k] for k in (
                     "scenario_id", "mode", "status", "unsafe_attempt", "blocked", "attack_success",
-                    "legitimate_task_success", "quarantined", "facts_missing")}))
+                    "legitimate_task_success", "quarantined", "quarantine_causes", "attack_stopped_by_classifier",
+                    "n_truncated_predictions", "facts_missing")}))
     finally:
         if isinstance(classifier, GatewayClient):
             classifier.close()

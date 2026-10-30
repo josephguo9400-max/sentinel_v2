@@ -34,6 +34,30 @@ class ClassifierVerdict:
             return self.decided_by
         return "unavailable"
 
+    @property
+    def flag_cause(self) -> str | None:
+        """Why decision == "flag", or None for allow.
+
+        "classifier_flag"         a detector scored the text and the gateway flagged it;
+        "gateway_failure_policy"  the gateway answered, but no detector produced a positive score and the
+                                  gateway applied its failure policy (fail_closed after a timeout/error);
+        "fallback"                the client could not use the gateway and applied on_unavailable="flag".
+        Only "classifier_flag" may be reported as the classifier stopping an attack.
+        """
+        if self.decision != "flag":
+            return None
+        if self.fallback:
+            return "fallback"
+        positive = any(r.status == "ok" and r.predicted_injection for r in self.results)
+        if self.policy_applied == "fail_closed" and not positive:
+            return "gateway_failure_policy"
+        return "classifier_flag"
+
+    @property
+    def truncated(self) -> bool:
+        """True when any detector result says part of the input was not scored."""
+        return any(r.truncated for r in self.results)
+
     def as_detail(self) -> dict:
         return {
             "decision": self.decision,
@@ -41,6 +65,8 @@ class ClassifierVerdict:
             "policy_applied": self.policy_applied,
             "gateway_status": self.gateway_status,
             "fallback": self.fallback,
+            "flag_cause": self.flag_cause,
+            "truncated": self.truncated,
             "error": self.error,
             "latency_ms": self.latency_ms,
             "results": [r.model_dump(mode="json") for r in self.results],

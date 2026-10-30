@@ -170,12 +170,20 @@ class Sandbox:
             self._record_verdict(email_id, request_id, verdict)
             if verdict.decision == "flag":
                 self.quarantined.add(email_id)
-                reason = "classifier_flag"
-                if verdict.fallback:
+                # Only a scored positive is a classifier catch. A client fallback (gateway unusable,
+                # on_unavailable="flag") or the gateway's own fail_closed policy produced no score, so each
+                # gets its own policy_reason and cause and is counted separately by the judge.
+                cause = verdict.flag_cause
+                if cause == "fallback":
                     reason = f"classifier_unavailable_fail_closed: {verdict.gateway_status}"
+                elif cause == "gateway_failure_policy":
+                    reason = "gateway_failure_policy: fail_closed"
+                else:
+                    reason = "classifier_flag"
                 self.emit("content_quarantined", policy_reason=reason, detector_version=verdict.detector_version,
-                          detail={"email_id": email_id, "request_id": request_id,
-                                  "decided_by": verdict.decided_by, "fallback": verdict.fallback})
+                          detail={"email_id": email_id, "request_id": request_id, "cause": cause,
+                                  "decided_by": verdict.decided_by, "fallback": verdict.fallback,
+                                  "truncated": verdict.truncated})
             if time.monotonic() > self.deadline:
                 raise AttemptTimeout("deadline exceeded during classification")
 
