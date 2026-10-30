@@ -1,0 +1,37 @@
+{
+  "schema_version": "1.2",
+  "detector_id": "stage1-tfidf-lr",
+  "detector_version": "stage1-tfidf-v2.1",
+  "artifact_format": "onnx",
+  "artifact_path": "model.onnx",
+  "sha256": "2a5df39a27e300b0a74d0f9565d4fee13e9862c2afa79fcc2af26e205f4b6af3",
+  "runtime": {
+    "python": "3.13.18",
+    "onnxruntime": "1.29.0",
+    "tokenizers": null,
+    "sklearn": "1.9.1",
+    "skl2onnx": "1.20.0"
+  },
+  "preprocessing_version": "tfidf-v1",
+  "label_mapping": {
+    "0": "benign",
+    "1": "injection"
+  },
+  "threshold": 0.505068,
+  "max_input_tokens": 512,
+  "failure_policy": "fail_open",
+  "timeout_ms": 50,
+  "cascade_role": "stage1",
+  "gray_zone": [
+    0.505068,
+    1.0
+  ],
+  "tokenizer": "regex:[\\p{L}\\p{N}_]{2,}",
+  "input_languages": [
+    "en"
+  ],
+  "training_data_version": "splits-v2:train:1454319588ca1f94",
+  "evaluation_dataset_version": "splits-v2:val:d84853ecc84cc87e",
+  "created_at": "2026-10-30T05:39:11Z",
+  "metrics_path": "evaluation.json"
+}
