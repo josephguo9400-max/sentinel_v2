@@ -7,3 +7,6 @@ __pycache__/
 data/raw/
 *.onnx
 !artifacts/candidates/**/*.onnx
+# Per-item progress of the resumable equivalence run (the committed report holds its results).
+reports/**/*.progress.jsonl
+reports/**/*.rowcache.jsonl
