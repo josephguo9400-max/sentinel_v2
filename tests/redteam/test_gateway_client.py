@@ -22,6 +22,8 @@ def detector_result(request_id, text, score):
 
 def fake_gateway(requests):
     def handler(request: httpx.Request) -> httpx.Response:
+        if request.method == "GET" and request.url.path == "/health":
+            return httpx.Response(404)  # a gateway without /health: the client uses its default timeout
         assert request.method == "POST" and request.url.path == "/classify"
         body = json.loads(request.content)
         assert set(body) == {"text", "request_id"}
@@ -163,3 +165,99 @@ def test_invalid_configuration():
         GatewayClient("http://x.invalid", on_unavailable="ignore")
     with pytest.raises(ValueError):
         GatewayClient("http://x.invalid", timeout_s=0)
+
+
+# ---------------------------------------------------------------- review B1: timeouts and flag causes
+
+def test_default_timeout_is_not_shorter_than_gateway_budget():
+    """Without /health the client must still outwait the gateway's default 5000 ms budget."""
+    from redteam.gateway_client import DEFAULT_TIMEOUT_S
+    with GatewayClient("http://127.0.0.1:9") as c:
+        assert c.timeout_s == DEFAULT_TIMEOUT_S and c.timeout_s * 1000 > 5000
+
+
+def test_health_budget_sets_timeout_with_margin():
+    from redteam.gateway_client import TIMEOUT_MARGIN_S
+
+    def handler(request):
+        if request.url.path == "/health":
+            return httpx.Response(200, json={"status": "ok", "config": {"timeout_ms": 7000}})
+        return httpx.Response(500)
+    with client(handler) as c:
+        assert c.timeout_source == "health" and c.timeout_s == pytest.approx(7.0 + TIMEOUT_MARGIN_S)
+
+
+@pytest.mark.parametrize("health", [httpx.Response(503, json={"status": "unavailable"}),
+                                    httpx.Response(200, json={"config": {"timeout_ms": "5000"}}),
+                                    httpx.Response(200, json={"config": {"timeout_ms": -1}}),
+                                    httpx.Response(200, content=b"not json")])
+def test_unusable_health_falls_back_to_default_timeout(health):
+    from redteam.gateway_client import DEFAULT_TIMEOUT_S
+    with client(lambda r: health) as c:
+        assert c.timeout_source == "default" and c.timeout_s == DEFAULT_TIMEOUT_S
+
+
+def test_explicit_timeout_skips_health_probe():
+    seen = []
+
+    def handler(request):
+        seen.append(request.url.path)
+        return httpx.Response(404)
+    with client(handler, timeout_s=3.0) as c:
+        assert c.timeout_source == "explicit" and c.timeout_s == 3.0
+    assert seen == []
+
+
+def test_fallback_quarantine_is_not_reported_as_classifier_stop(manager, trace):
+    """Gateway timeout under on_unavailable=flag quarantines the attacker email, but that is a fallback."""
+    from redteam.judge import summarize
+
+    def slow(request):
+        raise httpx.ReadTimeout("slow", request=request)
+    with client(slow, timeout_s=1.0) as c:
+        res = run_attempt(manager, "B", GullibleDefender(), trace, classifier=c)
+    v = judge_attempt(trace.attempt_events(res.attempt_id), manager)
+    assert manager.attacker_email_id in v.quarantined and not v.attack_success
+    assert v.attacker_email_quarantine_cause == "fallback" and not v.attack_stopped_by_classifier
+    assert set(v.quarantine_causes.values()) == {"fallback"}
+    s = summarize([v])
+    assert s["attack_stopped_by_classifier"] == 0
+    assert s["attacker_email_quarantined_by_cause"] == {"classifier_flag": 0, "fallback": 1,
+                                                       "gateway_failure_policy": 0, "unknown": 0}
+    assert s["quarantined_emails_by_cause"]["fallback"] == len(manager.emails)
+
+
+def test_real_flag_is_reported_as_classifier_stop(manager, trace):
+    from redteam.judge import summarize
+    with client(fake_gateway([])) as c:
+        res = run_attempt(manager, "B", GullibleDefender(), trace, classifier=c)
+    v = judge_attempt(trace.attempt_events(res.attempt_id), manager)
+    assert v.attacker_email_quarantine_cause == "classifier_flag" and v.attack_stopped_by_classifier
+    assert summarize([v])["attack_stopped_by_classifier"] == 1
+
+
+def test_truncated_flag_recorded_and_counted(manager, trace):
+    from redteam.judge import summarize
+
+    def handler(request):
+        if request.method == "GET":
+            return httpx.Response(404)
+        body = json.loads(request.content)
+        r = detector_result(body["request_id"], body["text"], 0.02)
+        r.update(n_chunks=4, truncated=True)
+        return httpx.Response(200, json={"decision": "allow", "decided_by": "stage1",
+                                         "policy_applied": None, "results": [r]})
+    with client(handler) as c:
+        res = run_attempt(manager, "B", GullibleDefender(), trace, classifier=c)
+    preds = [e for e in trace.attempt_events(res.attempt_id) if e.event_type == "detector_prediction"]
+    assert preds and all(e.detail["truncated"] is True for e in preds)
+    v = judge_attempt(trace.attempt_events(res.attempt_id), manager)
+    assert v.n_truncated_predictions == len(manager.emails)
+    assert summarize([v])["n_truncated_predictions"] == len(manager.emails)
+
+
+def test_untruncated_prediction_detail_says_false(manager, trace):
+    with client(fake_gateway([])) as c:
+        res = run_attempt(manager, "B", GullibleDefender(), trace, classifier=c)
+    preds = [e for e in trace.attempt_events(res.attempt_id) if e.event_type == "detector_prediction"]
+    assert preds and all(e.detail["truncated"] is False for e in preds)

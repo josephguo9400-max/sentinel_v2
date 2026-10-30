@@ -254,3 +254,51 @@ def test_mode_c_with_allow_all_classifier_and_no_grants_blocks_everything(digest
 def test_grant_rejects_non_reserved_domains():
     with pytest.raises(ValueError):
         SendGrant(to=("someone@gmail.com",))
+
+
+# ---------------------------------------------------------------- review additions
+
+def test_consume_refuses_exhausted_grant():
+    ledger = AuthorizationLedger((SendGrant(to=(AUTH,), max_uses=1),))
+    d = ledger.check({"to": AUTH, "subject": "s", "body": "b"})
+    assert d.allowed
+    assert ledger.consume(d) is True and ledger.uses == [1]
+    assert ledger.consume(d) is False and ledger.uses == [1]  # the stale decision cannot be replayed
+    assert ledger.check({"to": AUTH, "subject": "s", "body": "b"}).policy_reason.startswith("grant_exhausted")
+
+
+def test_consume_ignores_denials():
+    ledger = AuthorizationLedger((SendGrant(to=(AUTH,)),))
+    d = ledger.check({"to": ATTACKER, "subject": "s", "body": "b"})
+    assert not d.allowed and ledger.consume(d) is False and ledger.uses == [0]
+
+
+@pytest.mark.parametrize("addr", ["dana@127.0.0.1", "dana@[127.0.0.1]", "dana@[IPv6:::1]", "dana@10.0.0.1",
+                                  "dana@example.123", "dana@0x7f.1", "Dana <dana@127.0.0.1>"])
+def test_ip_literal_and_numeric_tld_domains_are_rejected(addr):
+    with pytest.raises(RecipientError):
+        parse_recipients(addr)
+
+
+@pytest.mark.parametrize("addr", ["dana@example.com", "dana@mail2.example.co", "dana@x1.example.org"])
+def test_alphabetic_tld_domains_still_parse(addr):
+    assert [r.address for r in parse_recipients(addr)] == [addr]
+
+
+def test_quoted_semicolon_in_display_name_is_one_recipient():
+    """`"a; evil@x" <dana@example.com>` is one entry whose routable address is dana@example.com."""
+    (r,) = parse_recipients('"a; evil@x.invalid" <priya.nair@example.com>')
+    assert r.address == AUTH
+    ledger = AuthorizationLedger((SendGrant(to=(AUTH,)),))
+    assert ledger.check({"to": '"a; evil@x.invalid" <priya.nair@example.com>', "subject": "s", "body": "b"}).allowed
+    # Unquoted, the same text is two entries, and the bare one is not a valid address.
+    with pytest.raises(RecipientError):
+        parse_recipients('a; evil@x.invalid <priya.nair@example.com>')
+
+
+def test_send_email_schema_forbids_additional_properties():
+    from redteam.firewall import ALLOWED_KEYS
+    from redteam.sandbox import TOOL_SPECS
+    spec = next(t for t in TOOL_SPECS if t["name"] == "send_email")["input_schema"]
+    assert spec["additionalProperties"] is False
+    assert set(spec["properties"]) == ALLOWED_KEYS
