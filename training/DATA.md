@@ -283,7 +283,9 @@ These numbers are not comparable one-to-one with the deleted v1 numbers: the fro
 - **Stage 1 does not generalize to non-English injections**: yanis recall is 22.5%. The train set has
   only deepset's German as non-English data. As a cascade Stage 1, the gray zone sends 563 / 951 yanis
   injections to "final benign" without Stage 2 ever seeing them. This argues for a language gate in the
-  router (escalate non-English) or multilingual Stage 1 training data. It is not fixed here.
+  router (escalate non-English) or multilingual Stage 1 training data. `stage1-tfidf-v2.1` declares
+  `input_languages: ["en"]` (contracts v1.2), so the router must escalate everything else; the training data
+  is unchanged.
 - **benign-hard FPR fails the RFC gate** (28.3% vs a 5% Wilson upper bound). Instruction-like benign mail
   is exactly what TF-IDF confuses with injections; most of those records land in the gray zone, so the
   cascade decision depends on Stage 2 for them.
@@ -294,6 +296,9 @@ These numbers are not comparable one-to-one with the deleted v1 numbers: the fro
   sources show the shift (97.9% -> 83.5% recall).
 - spml labels depend on a system prompt that we drop; some "injections" look benign out of context.
 - Language tags come from langdetect and are noisy on short texts.
+- **Cascade kill criterion triggered on val** (`training/CASCADE.md`): with Stage 1 allowed to finalize only
+  allow, it saves 23.6% of Stage 2 requests at strictly equal recall and 28.7% within the 2-point recall
+  margin, both under the RFC's 30%. Savings are bounded by the benign share, and val is 70% injections.
 - No Stage 2 (gateway) result on the current frozen test is committed; see the changelog. The HTTP backend
   is tested against a mock transport, a local fake server, and the real serving app with a fake detector
   (`test_http_backend_against_real_gateway_app_contract`), including the timeout -> fail_closed path.
