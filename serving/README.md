@@ -21,7 +21,8 @@ versions it pins by sha256, and the `engine_version` that interprets it; `bundle
 detector can do is separated from how the gateway uses it, so a routing change is a policy version instead of a
 model version, and a gate verdict is bound to a bundle hash. The decision path is the same code as before, proved
 by the equivalence runs: on all 2,000 replay items the policy engine and the pre-refactor service make identical
-decisions on the served D23 path (`reports/policy-runtime/t3_d23_equivalence.json`; DeBERTa scores are shared
+decisions on the served D23 path (`reports/policy-runtime/t3_d23_equivalence_engine110_2ebc7d9a.json` at engine
+1.1.0, the served bundle; `t3_d23_equivalence.json` is the earlier engine-1.0.0 run; DeBERTa scores are shared
 through a row cache there, so identical scores hold by construction; uncached subsets agree too, see "Release
 gate"), and the converted route policy reproduces the
 committed cascade counterfactual exactly, including its 201/306
@@ -790,13 +791,24 @@ frozen test (60/276 = 21.7%, gate FAIL). Val also shares Stage 1's training sour
 replay set, not val, exposed the cascade's loss (D23).
 
 That report is bound to `17fac609a8f2…`. Engine 1.1.0 makes the served bundle `2ebc7d9ae676…` (same policy
-file), so `promote` refuses the report for it and the gate has not been run on the current bundle. The D23 path
-is unchanged by 1.1.0: T4 was re-run at 1.1.0 (identical on all 2,000 items,
-`reports/policy-runtime/t4_cascade_equivalence.json`) and T3 was re-run uncached on its first 300 items (342
-DeBERTa rows per engine, 0 differences, every record equal to the committed T3 record,
-`reports/policy-runtime/t3_d23_first300_nocache_engine110.json`). The reviewer's uncached re-run of 193 T3 items
-at `bc49454` (459 rows per engine, 0 differences) is `reviews/policy-runtime-r1/t3_subset_nocache.json` on branch
-`verify/policy-runtime` (commit 3cacec5).
+file), so `promote` refuses the report for it. The val dry run for the current bundle is
+`reports/policy-runtime/gate_val_d23_engine110_2ebc7d9a.json` (all 3,214 items, `INSUFFICIENT_EVIDENCE`, every
+slice's confusion matrix identical to the 1.0.0 report); the frozen-test gate has not been run on it.
+
+The D23 path is unchanged by 1.1.0. The evidence (and the merge condition) is the full T3 at engine 1.1.0,
+`reports/policy-runtime/t3_d23_equivalence_engine110_2ebc7d9a.json`: 2,000/2,000 items in one invocation at
+`916eceb`, 0 differences, every item record equal to the engine-1.0.0 record.
+`reports/policy-runtime/t3_d23_equivalence.json` is the earlier engine-1.0.0 run (bundle `17fac609a8f2…`). Both
+share DeBERTa scores between the engines through a row cache, so their identical scores hold by construction.
+Uncached evidence: the reviewer's re-runs of 193 T3 items (459 rows per engine, 0 differences, maximum score gap
+0.0) at `bc49454` (`reviews/policy-runtime-r1/t3_subset_nocache.json` on branch `verify/policy-runtime`, commit
+3cacec5) and at engine 1.1.0 (`reviews/policy-runtime-r2/t3_subset_nocache_engine110.json` on branch
+`verify/policy-runtime-r2`, commit 7f29bd1). `reports/policy-runtime/t3_d23_first300_nocache_engine110.json`
+(first 300 items at 1.1.0, 342 rows per engine, 0 differences) was produced with `--no-cache` before review r2-m1
+was fixed, when that flag still shared an in-memory score cache between the engines: it supports row and decision
+equality only, not score agreement. T4 was also re-run at 1.1.0 (identical on all 2,000 items,
+`reports/policy-runtime/t4_cascade_equivalence.json`), but T4 tests the cascade route policy
+(`cascade-tfidf-allow-only`), not D23: it shows the gate, band and language code did not change.
 
 ## Not done in this milestone
 
