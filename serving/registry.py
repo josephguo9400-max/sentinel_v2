@@ -106,7 +106,8 @@ def major_minor(version: str) -> tuple[int, int]:
     return int(m.group(1)), int(m.group(2))
 
 
-def check_runtime(manifest: ArtifactManifest, installed: InstalledRuntime, kind: str) -> None:
+def check_runtime(manifest: Any, installed: InstalledRuntime, kind: str) -> None:
+    """`manifest`: anything with a contracts.Runtime `.runtime` (ArtifactManifest or CapabilityManifest)."""
     rt = manifest.runtime
     pairs = [("python", rt.python, installed.python), ("onnxruntime", rt.onnxruntime, installed.onnxruntime)]
     if kind == "token":
@@ -155,6 +156,8 @@ class DetectorSpec:
     manifest_schema: str | None = None
     artifact_dir: str | None = None
     sha256: str | None = None
+    manifest: Any = None  # the ArtifactManifest (v1 registry) it was loaded from
+    capability: Any = None  # the CapabilityManifest (v2 registry, or converted from a v1 manifest)
 
     def describe(self) -> dict:
         return {"detector_id": self.detector_id, "detector_version": self.detector_version,
@@ -312,7 +315,8 @@ def load_detector(artifacts_root: Path, pointer_name: str, rel_dir: str, *, intr
                         input_languages=list(manifest.input_languages) if manifest.input_languages else None,
                         max_input_tokens=manifest.max_input_tokens,
                         tokenizer=manifest.tokenizer or (TFIDF_TOKENIZER if kind == "text" else None),
-                        manifest_schema=manifest.schema_version, artifact_dir=rel_dir, sha256=digest)
+                        manifest_schema=manifest.schema_version, artifact_dir=rel_dir, sha256=digest,
+                        manifest=manifest)
 
 
 def load_registry(registry_path: Path, artifacts_root: Path, *, intra_op_threads: int = 0,
@@ -350,3 +354,261 @@ def load_registry(registry_path: Path, artifacts_root: Path, *, intra_op_threads
                  spec.detector_version, spec.sha256[:12])
         out.specs[name] = spec
     return out
+
+
+# ====================================================================== registry v2 (D25)
+#
+#   {"schema": "sentinel-registry-v2",
+#    "active": "policies/d23-deberta-decides/1/policy.json",
+#    "previous": null,                      # or another policy path: kept loaded, rollback is a pointer flip
+#    "capabilities_root": "capabilities",
+#    "status": "pending_gate",              # pending_gate | approved (written by training/gate.py promote)
+#    "comment": "..."}
+#
+# Paths are relative to artifacts/. A policy pins each detector by (detector_id, detector_version,
+# capability_sha256); the capability lives at <capabilities_root>/<detector_id>/<detector_version>/capability.json
+# and pins every file it loads by sha256 (paths relative to artifacts/). Additional reason codes:
+# - `policy_invalid`       the policy file is not a valid ExecutionPolicy, or its id/version disagree with its path
+# - `capability_invalid`   capability.json is not a valid CapabilityManifest 2.0
+# - PolicyError codes      (capability_sha256_mismatch, kind_mismatch, canary_unsupported, engine_version_incompatible, ...)
+# Unlike v1, a v2 bundle is all or nothing: the active policy is served exactly as written or not at all (a bundle
+# verdict would not mean anything for a partially loaded bundle).
+
+REGISTRY_SCHEMA_V2 = "sentinel-registry-v2"
+REGISTRY_V2_STATUS = ("pending_gate", "approved")
+
+
+def registry_schema(path: Path) -> str:
+    try:
+        raw = json.loads(Path(path).read_text())
+    except FileNotFoundError as exc:
+        raise RegistryError("missing_file", f"registry {path} not found") from exc
+    except (OSError, json.JSONDecodeError) as exc:
+        raise RegistryError("registry_invalid", f"cannot read {path}: {exc}") from exc
+    if not isinstance(raw, dict) or raw.get("schema") not in (REGISTRY_SCHEMA, REGISTRY_SCHEMA_V2):
+        raise RegistryError("registry_invalid", f"registry schema must be {REGISTRY_SCHEMA!r} or {REGISTRY_SCHEMA_V2!r}")
+    return raw["schema"]
+
+
+def read_registry_v2(path: Path) -> dict[str, Any]:
+    raw = json.loads(Path(path).read_text())
+    if raw.get("schema") != REGISTRY_SCHEMA_V2:
+        raise RegistryError("registry_invalid", f"registry must have schema {REGISTRY_SCHEMA_V2!r}")
+    extra = set(raw) - {"schema", "comment", "active", "previous", "capabilities_root", "status"}
+    if extra:
+        raise RegistryError("registry_invalid", f"unknown registry keys: {sorted(extra)}")
+    out = {"active": raw.get("active"), "previous": raw.get("previous"),
+           "capabilities_root": raw.get("capabilities_root", "capabilities"), "status": raw.get("status")}
+    for k in ("active", "previous", "capabilities_root"):
+        v = out[k]
+        if v is None and k != "previous":
+            raise RegistryError("registry_invalid", f"{k} is required")
+        if v is not None:
+            try:
+                relative_artifact_path(v)
+            except (ValueError, TypeError) as exc:
+                raise RegistryError("path_escape", f"{k} {v!r}: {exc}") from exc
+    if out["status"] is not None and out["status"] not in REGISTRY_V2_STATUS:
+        raise RegistryError("registry_invalid", f"status must be one of {list(REGISTRY_V2_STATUS)}")
+    return out
+
+
+def load_policy_file(artifacts_root: Path, rel: str):
+    from contracts.policy import ExecutionPolicy
+
+    path = resolve_inside(Path(artifacts_root), rel, "policy")
+    if not path.is_file():
+        raise RegistryError("missing_file", f"{path} not found")
+    try:
+        policy = ExecutionPolicy.model_validate_json(path.read_bytes())
+    except Exception as exc:
+        raise RegistryError("policy_invalid", str(exc).splitlines()[0] + f" ({rel})") from exc
+    parts = Path(rel).parts
+    if len(parts) >= 3 and parts[-1] == "policy.json" and (parts[-3], parts[-2]) != (policy.policy_id,
+                                                                                       policy.policy_version):
+        raise RegistryError("policy_invalid", f"{rel} holds {policy.policy_id}@{policy.policy_version}; the path must "
+                                              f"be policies/<policy_id>/<policy_version>/policy.json")
+    return policy
+
+
+def load_capability(artifacts_root: Path, capabilities_root: str, ref) -> Any:
+    from contracts.capability import CapabilityManifest, capability_sha256
+
+    rel = f"{capabilities_root}/{ref.detector_id}/{ref.detector_version}/capability.json"
+    path = resolve_inside(Path(artifacts_root), rel, "capability")
+    if not path.is_file():
+        raise RegistryError("missing_file", f"{path} not found")
+    try:
+        cap = CapabilityManifest.model_validate_json(path.read_bytes())
+    except Exception as exc:
+        raise RegistryError("capability_invalid", str(exc).splitlines()[0] + f" ({rel})") from exc
+    if cap.key != ref.key:
+        raise RegistryError("capability_invalid", f"{rel} declares {cap.detector_id}@{cap.detector_version}")
+    got = capability_sha256(cap)
+    if got != ref.capability_sha256:
+        raise RegistryError("capability_sha256_mismatch", f"{rel}: policy pins {ref.capability_sha256}, file is {got}")
+    return cap
+
+
+def load_capability_detector(artifacts_root: Path, cap, *, intra_op_threads: int = 0,
+                             installed: InstalledRuntime | None = None, cache: ModelCache | None = None,
+                             artifact_dir: str | None = None) -> DetectorSpec:
+    """Verify every file a CapabilityManifest pins (path inside artifacts/, exists, sha256) and build the detector."""
+    from contracts.capability import capability_sha256
+
+    from .detector import OnnxDebertaDetector, OnnxTfidfDetector
+
+    installed = installed or InstalledRuntime.current()
+    root = Path(artifacts_root)
+    kind = cap.input.kind
+    if kind == "text" and cap.input.tokenizer != TFIDF_TOKENIZER:
+        raise RegistryError("tokenizer_mismatch", f"tfidf-v1 counts {TFIDF_TOKENIZER}, capability declares "
+                                                  f"{cap.input.tokenizer!r}")
+    check_runtime(cap, installed, kind)
+    blobs: dict[str, bytes] = {}
+    for rel, want in sorted(cap.files.items()):
+        path = resolve_inside(root, rel, "file")
+        if not path.is_file():
+            raise RegistryError("missing_file", f"{path} not found (weights are not committed; see the script named "
+                                                f"in serving/README.md)")
+        data = path.read_bytes()
+        got = sha256_bytes(data)
+        if got != want:
+            code = "tokenizer_mismatch" if rel == cap.tokenizer_file else "sha256_mismatch"
+            raise RegistryError(code, f"{rel}: got {got}, capability {want}")
+        blobs[rel] = data
+    model_bytes = blobs[cap.model_file]
+
+    def build():
+        if kind == "text":
+            return OnnxTfidfDetector(model_bytes, detector_id=cap.detector_id, detector_version=cap.detector_version,
+                                     threshold=cap.calibration.threshold, injection_index=cap.injection_index,
+                                     max_input_tokens=cap.input.max_input_tokens)
+        return OnnxDebertaDetector(model_bytes, blobs[cap.tokenizer_file], detector_id=cap.detector_id,
+                                   detector_version=cap.detector_version, threshold=cap.calibration.threshold,
+                                   injection_index=cap.injection_index, max_len=cap.input.max_input_tokens,
+                                   intra_op_threads=intra_op_threads)
+
+    sha = capability_sha256(cap)
+    key = ("capability", sha, intra_op_threads)
+    try:
+        det = cache.get(key, build) if cache is not None else build()
+    except Exception as exc:
+        raise RegistryError("load_failed", f"{type(exc).__name__}: {exc}") from exc
+    return DetectorSpec(detector=det, detector_id=cap.detector_id, detector_version=cap.detector_version,
+                        threshold=cap.calibration.threshold, kind=kind, role="stage1" if kind == "text" else "stage2",
+                        failure_policy="fail_closed", timeout_ms=cap.limits.recommended_timeout_ms,
+                        input_languages=list(cap.input.validated_languages) if cap.input.validated_languages else None,
+                        max_input_tokens=cap.input.max_input_tokens, tokenizer=cap.input.tokenizer,
+                        manifest_schema=cap.schema_version, artifact_dir=artifact_dir,
+                        sha256=sha256_bytes(model_bytes), capability=cap)
+
+
+@dataclass
+class LoadedBundle:
+    """What one ClassifierService serves: a validated policy, its capabilities and loaded detectors."""
+
+    policy: Any  # contracts.policy.ExecutionPolicy
+    capabilities: dict[tuple[str, str], Any]
+    detectors: dict[tuple[str, str], DetectorSpec]  # every non-shadow DetectorRef of the policy
+    shadow: DetectorSpec | None
+    bundle_sha256: str
+    policy_source: Literal["registry_v2", "legacy_registry", "injected"]
+    policy_path: str | None = None
+    status: str | None = None  # registry v2 status (pending_gate | approved)
+    previous: dict | None = None  # {"path", "policy_id", "policy_version", "bundle_sha256"} or {"path", "error"}
+    rejections: list[Rejection] = field(default_factory=list)  # v1: per-pointer rejections (served degraded)
+    pointers: dict | None = None  # v1 pointers or the v2 registry state
+
+
+def _policy_detectors(policy, capabilities: dict, artifacts_root: Path, *, intra_op_threads: int,
+                      installed, cache) -> tuple[dict, DetectorSpec | None]:
+    from contracts.policy import iter_refs
+
+    detectors: dict[tuple[str, str], DetectorSpec] = {}
+    # The shadow gets its own session (its own intra-op thread setting), even if another step uses the same detector.
+    for ref in iter_refs(policy):
+        if ref.key in detectors or (policy.shadow is not None and ref is policy.shadow.detector):
+            continue
+        detectors[ref.key] = load_capability_detector(artifacts_root, capabilities[ref.key],
+                                                      intra_op_threads=intra_op_threads, installed=installed,
+                                                      cache=cache)
+    shadow = None
+    if policy.shadow is not None:
+        shadow = load_capability_detector(artifacts_root, capabilities[policy.shadow.detector.key],
+                                          intra_op_threads=policy.shadow.intra_op_threads, installed=installed,
+                                          cache=cache)
+    return detectors, shadow
+
+
+def load_policy_bundle(artifacts_root: Path, rel: str, capabilities_root: str, *, load_models: bool = True,
+                       intra_op_threads: int = 0, installed: InstalledRuntime | None = None,
+                       cache: ModelCache | None = None):
+    """(policy, capabilities, detectors, shadow) for one policy file. Raises RegistryError / PolicyError."""
+    from contracts.policy import PolicyError, iter_refs, validate_policy
+
+    from .policy import check_engine_compat
+
+    policy = load_policy_file(artifacts_root, rel)
+    try:
+        check_engine_compat(policy)
+        capabilities = {r.key: load_capability(artifacts_root, capabilities_root, r) for r in iter_refs(policy)}
+        validate_policy(policy, capabilities)
+    except PolicyError as exc:
+        raise RegistryError(exc.code, exc.detail) from exc
+    if not load_models:
+        return policy, capabilities, {}, None
+    detectors, shadow = _policy_detectors(policy, capabilities, artifacts_root, intra_op_threads=intra_op_threads,
+                                          installed=installed, cache=cache)
+    return policy, capabilities, detectors, shadow
+
+
+def load_bundle_v2(registry_path: Path, artifacts_root: Path, *, intra_op_threads: int = 0,
+                   installed: InstalledRuntime | None = None, cache: ModelCache | None = None) -> LoadedBundle:
+    """Load the active policy (all or nothing: raises RegistryError) and check the previous one (kept loaded so
+    rollback is a pointer flip; a broken previous is reported in `previous.error`, the active still serves)."""
+    from .policy import bundle_sha256
+
+    state = read_registry_v2(registry_path)
+    root = Path(artifacts_root)
+    policy, caps, detectors, shadow = load_policy_bundle(root, state["active"], state["capabilities_root"],
+                                                         intra_op_threads=intra_op_threads, installed=installed,
+                                                         cache=cache)
+    prev = None
+    if state["previous"] is not None:
+        try:
+            pp, _, _, _ = load_policy_bundle(root, state["previous"], state["capabilities_root"],
+                                             intra_op_threads=intra_op_threads, installed=installed, cache=cache)
+            prev = {"path": state["previous"], "policy_id": pp.policy_id, "policy_version": pp.policy_version,
+                    "bundle_sha256": bundle_sha256(pp)}
+        except RegistryError as exc:
+            log.error("registry v2: previous policy %s cannot be loaded: %s", state["previous"], exc)
+            prev = {"path": state["previous"], "error": f"{exc.code}: {exc.detail}"}
+    return LoadedBundle(policy=policy, capabilities=caps, detectors=detectors, shadow=shadow,
+                        bundle_sha256=bundle_sha256(policy), policy_source="registry_v2", policy_path=state["active"],
+                        status=state["status"], previous=prev, pointers=state)
+
+
+def bundle_from_v1(loaded: LoadedRegistry, config, *, registry_sha256: str | None = None) -> LoadedBundle:
+    """Convert a loaded v1 registry in memory (rejected pointers are absent, as the legacy gateway served them)."""
+    from .convert_registry import CALIBRATION_RECORDS
+    from .policy import bundle_sha256, legacy_to_v2
+
+    pointers = {"stage1_mode": loaded.pointers.get("stage1_mode") or "observe"}
+    pointers.update({name: spec.artifact_dir for name, spec in loaded.specs.items()})
+    manifests = {name: spec.manifest for name, spec in loaded.specs.items()}
+    policy, caps = legacy_to_v2(pointers, manifests, config, known_tokenizers=config.known_tokenizers,
+                                calibrations=CALIBRATION_RECORDS,
+                                policy_version=(registry_sha256 or "unknown")[:12])
+    detectors = {}
+    for name, spec in loaded.specs.items():
+        if name == "shadow":
+            continue
+        spec.capability = caps[(spec.detector_id, spec.detector_version)]
+        detectors[(spec.detector_id, spec.detector_version)] = spec
+    shadow = loaded.specs.get("shadow")
+    if shadow is not None:
+        shadow.capability = caps[(shadow.detector_id, shadow.detector_version)]
+    return LoadedBundle(policy=policy, capabilities=caps, detectors=detectors, shadow=shadow,
+                        bundle_sha256=bundle_sha256(policy), policy_source="legacy_registry",
+                        rejections=list(loaded.rejections), pointers=loaded.pointers)
