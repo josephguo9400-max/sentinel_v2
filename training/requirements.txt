@@ -1,11 +1,17 @@
-# Versions used to produce the committed splits, artifacts and results (2026-10-29).
+# Exact versions installed when the committed splits, artifacts and results were produced (2026-10-29),
+# read with importlib.metadata. Python 3.13.
 scikit-learn==1.9.1
 skl2onnx==1.20.0
 onnxruntime==1.29.0
-onnx
-numpy
-pandas
-pyarrow
+onnx==1.23.2
+numpy==2.5.3
+pandas==3.0.5
+pyarrow==26.0.0
 datasketch==2.0.0
-huggingface_hub
+huggingface_hub==2.4.0
 langdetect==1.0.9
+# eval harness (http backend) and the contract package
+httpx==0.28.1
+pydantic==2.13.5
+# tests
+pytest==9.1.1

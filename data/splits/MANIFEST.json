@@ -1,5 +1,5 @@
 {
-  "pipeline_version": "splits-v1",
+  "pipeline_version": "splits-v2",
   "seed": 20261029,
   "limit_per_source": null,
   "near_duplicate": {
@@ -41,12 +41,11 @@
       "stage2_overlap": "confirmed"
     }
   },
-  "benign_hard_generator": "benign-hard-v1",
+  "benign_hard_generator": "benign-hard-v2",
   "n_input_records": 21073,
   "n_exact_duplicate_links": 206,
-  "n_near_duplicate_pairs_among_unique": 379,
+  "n_near_duplicate_pairs_among_unique": 377,
   "removed_as_duplicate_by_source": {
-    "benign_hard": 2,
     "deepset": 21,
     "gandalf": 4,
     "jackhhao": 155,
@@ -89,22 +88,22 @@
         "spml:0": 552,
         "spml:1": 2080
       },
-      "sha256": "47263c60ea42b20b3c916e7d7afd9abc5891514556676f3c2e2c157791a10028",
-      "content_sha256": "592b6cf27bfebe5682c11594634f188c11e41ba17dcc98817384d186a6d5e7e5"
+      "sha256": "d84853ecc84cc87e50ef28ffa88a72ae7a7959049d9aec8f3a4ea01388ed7f05",
+      "content_sha256": "73271c079907cb890829feaaf6d10d8f02c55bd6405b3dd5cf591fb9bb4b09e6"
     },
     "frozen_test": {
-      "n": 6274,
+      "n": 6276,
       "positives": 5137,
-      "negatives": 1137,
+      "negatives": 1139,
       "by_source_label": {
-        "benign_hard:0": 274,
+        "benign_hard:0": 276,
         "gandalf:1": 996,
         "spml:0": 863,
         "spml:1": 3190,
         "yanis:1": 951
       },
-      "sha256": "6e98eff17f7482c5a67ff42da3e5e08debc2e9c9a1c76215a7c970f3d2f4a388",
-      "content_sha256": "200c8bc31e01385d76b55abdaea5bd8e52398e668992f6bf49228469983e191e"
+      "sha256": "2a4e011f13250ca65d335bb12939a63f682254a2c6d1566ee78fc7686bb845ba",
+      "content_sha256": "cc0fc49952f290a96e7204a81e32d55e91d90caf6344a8b9e800876e3c528147"
     }
   }
 }

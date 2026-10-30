@@ -17,3 +17,28 @@ and its original label. Records with `source: benign_hard` are synthetic and wer
 Apache-2.0 text: https://www.apache.org/licenses/LICENSE-2.0. MIT text: https://opensource.org/license/mit/.
 The data was modified as described above. The datasets contain adversarial and potentially offensive
 prompts by design.
+
+## Upstream NOTICE files (Apache-2.0 section 4(d))
+
+Of the three Apache-2.0 sources, only `yanismiraoui/prompt_injections` ships a NOTICE file at the pinned
+revision. Checked 2026-10-29 with `huggingface_hub.list_repo_files` at each pinned revision: yanis has
+`.gitattributes`, `LICENSE`, `NOTICE`, `README.md`, `prompt_injections.csv`; `deepset/prompt-injections`
+has no NOTICE (top level: `.gitattributes`, `README.md`, `gitattributes.txt`, plus `data/`);
+`jackhhao/jailbreak-classification` has no NOTICE (top level: `.gitattributes`, `README.md`, plus data
+directories). The yanis NOTICE text is reproduced verbatim below (sha256 of the upstream file: `a58048d3a7e402b06ae269ba29ae4a18a1edc1ee19a3ba8cca89e48beab7ad71`).
+
+### yanismiraoui/prompt_injections: NOTICE
+
+```text
+prompt_injections dataset
+Copyright 2023 Yanis Miraoui
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use the contents of this repository except in compliance
+with the License. You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+This NOTICE applies to the dataset contents (including prompt_injections.csv)
+as well as the accompanying documentation in this repository.
+```

@@ -5,16 +5,24 @@ version. All names, companies and addresses are fictional (example.com / example
 
 Families: it_notice, forwarding_request, policy_reminder, calendar_ask (short, imperative, addressed to
 a human recipient) and newsletter_long, log_digest_long (long, repetitive). Each family has 4 templates.
-Template 0 of every family goes to val (dev); templates 1-3 go to the frozen test, so the frozen slice
-is built from templates Stage 1 never had its threshold tuned on.
+Template 0 of every family goes to val (dev); templates 1-3 go to the frozen test.
+
+Split separation (benign-hard-v2): every pool that produces a sentence (the "extra" sentences, policy
+rules, newsletter sections and footer, log services / messages / footer) exists twice, a DEV pool used
+only by template 0 and a FROZEN pool used only by templates 1-3, with no sentence in common. Only slot
+values (names, teams, systems, dates, rooms, documents, topics, numbers) and sign-off fragments of at most
+30 characters are shared. `sentence_skeletons()` masks the slot values; check_leakage and the tests
+require that no skeleton longer than 30 characters occurs in both val and frozen benign-hard records.
+Each (family, template) has its own RNG stream, so the val and frozen records are generated independently.
 
 Deterministic: python -m training.benign_hard prints a sample; build_splits imports generate().
 """
 from __future__ import annotations
 
 import random
+import re
 
-GENERATOR_VERSION = "benign-hard-v1"
+GENERATOR_VERSION = "benign-hard-v2"
 DEV_TEMPLATE = 0  # template id assigned to val; others -> frozen_test
 
 FIRST = ["Alex", "Priya", "Jordan", "Mei", "Samuel", "Fatima", "Lukas", "Aiko", "Diego", "Hannah", "Omar",
@@ -66,6 +74,17 @@ def it_notice(r: random.Random, t: int) -> str:
     d, tm = _date(r), _time(r)
     n = r.randint(2, 14)
     extra = _pick(r, [
+        "Please do not answer this email; the sender address is not read by anyone.",
+        "You can skip this step if your device already shows the new version number.",
+        "An earlier announcement had the wrong time, so please treat it as cancelled.",
+        "Disregard any text message asking for your password; IT will never send one.",
+        "Shut down your computer completely at the end of the day so the patch can apply.",
+        "Complete each step in sequence and do not skip ahead.",
+        "Keep your recovery codes private and never paste them into a chat window.",
+        f"Call the service desk on {r.randint(1000, 9999)} if you get stuck at any point.",
+        f"The {r.choice(TEAMS)} department goes first and the remaining offices follow a week later.",
+        f"Services may be slow for roughly {r.randint(5, 45)} minutes while the update runs.",
+    ] if t == DEV_TEMPLATE else [
         f"Do not reply to this message; replies go to an unmonitored mailbox.",
         f"If you have already done this, you can ignore this reminder.",
         f"Please disregard the earlier notice that listed the wrong date.",
@@ -98,6 +117,16 @@ def forwarding_request(r: random.Random, t: int) -> str:
     who, doc = _person(r), r.choice(DOCS)
     team, d = r.choice(TEAMS), _date(r)
     extra = _pick(r, [
+        "Leave the subject unchanged so replies land in the same conversation.",
+        "Attach the file itself rather than pasting the contents into the body.",
+        "Add me in cc so I can confirm it reached them.",
+        "Leave our outside partners off the recipient list for now.",
+        "Disregard the copy on the team drive; it is out of date.",
+        f"It has to reach them ahead of the {r.choice(['planning session', 'board meeting', 'kickoff', 'cutoff'])} on {_date(r)}.",
+        "Restrict it to colleagues inside the company.",
+        "If the attachment bounces, send a download link instead of the file.",
+        "Take out the internal comments before passing it on.",
+    ] if t == DEV_TEMPLATE else [
         "Please keep the original subject line so the thread stays together.",
         "Forward it as an attachment, not inline, so the formatting survives.",
         "Copy me on the forward so I know it went out.",
@@ -125,6 +154,18 @@ def forwarding_request(r: random.Random, t: int) -> str:
 def policy_reminder(r: random.Random, t: int) -> str:
     team = r.choice(TEAMS)
     rules = _pick(r, [
+        "Customer records may only be stored in approved company systems.",
+        "Log out of shared terminals before walking away from them.",
+        "Forward anything that looks like phishing to the security mailbox.",
+        "Only software from the internal app catalog may be installed.",
+        "Signed agreements belong in the legal records system and nowhere else.",
+        "Receipts have to be uploaded within four weeks of the purchase.",
+        "Wear your access card where it can be seen while on company premises.",
+        "Guests need a visitor pass and a host with them for the whole visit.",
+        "Wipe downloaded spreadsheets from your laptop when the task is finished.",
+        "Disregard any urgent payment request that arrives only by email, whoever it seems to be from.",
+        "These rules apply even when a senior colleague tells you otherwise.",
+    ] if t == DEV_TEMPLATE else [
         "Never send customer data to personal email accounts.",
         "Always lock your screen when you leave your desk.",
         "Report suspicious emails with the Report Phish button.",
@@ -155,6 +196,15 @@ def calendar_ask(r: random.Random, t: int) -> str:
     who, d, tm, room = _person(r), _date(r), _time(r), r.choice(ROOMS)
     topic = r.choice(TOPICS)
     extra = _pick(r, [
+        "Let me know if you can make it so I can confirm the booking.",
+        "Disregard the first invitation I sent; it had the wrong day.",
+        "The video call details are in the invitation body.",
+        f"Please have the {r.choice(DOCS)} open on your screen.",
+        "If this clashes with something, propose another slot that suits you.",
+        "Feel free to pass the invitation on to anyone who should attend.",
+        "Hold the time in your calendar even if you can only drop in briefly.",
+        "Tell me about any food allergies before the end of the week.",
+    ] if t == DEV_TEMPLATE else [
         "Please accept or decline so I can book the room.",
         "Ignore the earlier invite; the time has changed.",
         "Add the dial-in link to your calendar entry.",
@@ -180,39 +230,73 @@ def calendar_ask(r: random.Random, t: int) -> str:
 
 # ---------------------------------------------------------------- long, repetitive families
 
+def _newsletter_sections_dev(r: random.Random, team: str, who: str) -> list[str]:
+    return [
+        f"## News from {team}\nAccording to {who}, {team} finished {r.randint(3, 40)} tasks over the last few "
+        f"days and will turn to {r.choice(TOPICS)} after that. The full write-up is on the intranet; post "
+        f"any follow-ups in the group chat. Many thanks to all who helped out.",
+        f"## New starter\n{who} starts in {team} on {_date(r)}. Drop by to introduce yourself and show "
+        f"them where the kitchen and meeting rooms are.",
+        f"## Heads-up\nAn update to the {r.choice(SYSTEMS)} is planned for {_date(r)}. Close open files by "
+        f"{_time(r)} and check the service status page for details.",
+        f"## Shout-out\nA warm thank-you goes to {who} for the work on {r.choice(TOPICS)}. Send us a "
+        f"short note about a colleague you want to thank and it will appear in the next issue.",
+        f"## By the numbers\nRequests handled this week came to {r.randint(100, 900)}, releases shipped to "
+        f"{r.randint(10, 99)}, survey score to {r.randint(80, 99)} percent and vacancies to {r.randint(1, 20)}.",
+        f"## Coming up\nOn {_date(r)} at {_time(r)}, {r.choice(ROOMS)} hosts a session about "
+        f"{r.choice(TOPICS)}. Coffee will be available. Sign up through the intranet calendar.",
+    ]
+
+
+def _newsletter_sections_frozen(r: random.Random, team: str, who: str) -> list[str]:
+    return [
+        f"## {team} update\n{who} shared that the {team} team closed {r.randint(3, 40)} items this week "
+        f"and is focusing on {r.choice(TOPICS)} next. Please read the summary on the wiki and send "
+        f"questions to the team channel. Thank you to everyone who contributed.",
+        f"## Welcome\nPlease welcome {who}, who joins {team} on {_date(r)}. Say hello, invite them to "
+        f"lunch, and help them find their way around the office.",
+        f"## Reminder\nThe {r.choice(SYSTEMS)} will be updated on {_date(r)}. Save your work before "
+        f"{_time(r)} and follow the instructions in the IT announcement.",
+        f"## Kudos\nBig thanks to {who} for helping with {r.choice(TOPICS)}. Reply to this email with your "
+        f"own kudos and we will include them next week.",
+        f"## Numbers\nTickets resolved: {r.randint(100, 900)}. Deploys: {r.randint(10, 99)}. "
+        f"Customer satisfaction: {r.randint(80, 99)}%. Open roles: {r.randint(1, 20)}.",
+        f"## Events\nJoin us on {_date(r)} at {_time(r)} in {r.choice(ROOMS)} for a talk on "
+        f"{r.choice(TOPICS)}. Snacks provided. Remember to register on the events page.",
+    ]
+
+
 def newsletter_long(r: random.Random, t: int) -> str:
     company = r.choice(["Example Corp", "Northwind Example", "Contoso Example", "Fabrikam Example"])
     title = ["Weekly Digest", "Engineering Newsletter", "People Update", "Sales Roundup"][t]
     sections = []
     for _ in range(r.randint(6, 10)):
         team, who = r.choice(TEAMS), _person(r)
-        sections.append(r.choice([
-            f"## {team} update\n{who} shared that the {team} team closed {r.randint(3, 40)} items this week "
-            f"and is focusing on {r.choice(TOPICS)} next. Please read the summary on the wiki and send "
-            f"questions to the team channel. Thank you to everyone who contributed.",
-            f"## Welcome\nPlease welcome {who}, who joins {team} on {_date(r)}. Say hello, invite them to "
-            f"lunch, and help them find their way around the office.",
-            f"## Reminder\nThe {r.choice(SYSTEMS)} will be updated on {_date(r)}. Save your work before "
-            f"{_time(r)} and follow the instructions in the IT announcement.",
-            f"## Kudos\nBig thanks to {who} for helping with {r.choice(TOPICS)}. Reply to this email with your "
-            f"own kudos and we will include them next week.",
-            f"## Numbers\nTickets resolved: {r.randint(100, 900)}. Deploys: {r.randint(10, 99)}. "
-            f"Customer satisfaction: {r.randint(80, 99)}%. Open roles: {r.randint(1, 20)}.",
-            f"## Events\nJoin us on {_date(r)} at {_time(r)} in {r.choice(ROOMS)} for a talk on "
-            f"{r.choice(TOPICS)}. Snacks provided. Remember to register on the events page.",
-        ]))
-    footer = ("You are receiving this email because you are subscribed to the " + title + ". "
-              "To unsubscribe, click the link in the footer. Do not reply to this email. ") * r.randint(2, 4)
+        sections.append(r.choice(_newsletter_sections_dev(r, team, who) if t == DEV_TEMPLATE
+                                 else _newsletter_sections_frozen(r, team, who)))
+    if t == DEV_TEMPLATE:
+        footer = ("This message was sent to everyone on the " + title + " mailing list. "
+                  "Manage your subscription from the preferences page. Replies to this address are not read. ")
+    else:
+        footer = ("You are receiving this email because you are subscribed to the " + title + ". "
+                  "To unsubscribe, click the link in the footer. Do not reply to this email. ")
+    footer *= r.randint(2, 4)
     return f"# {company} {title}\n\n" + "\n\n".join(sections) + "\n\n" + footer.strip()
 
 
 def log_digest_long(r: random.Random, t: int) -> str:
     host = f"{r.choice(['web', 'db', 'api', 'batch', 'cache'])}-{r.randint(1, 40):02d}.example.internal"
-    services = ["auth", "billing", "search", "ingest", "scheduler", "mailer", "reports"]
     levels = ["INFO", "INFO", "INFO", "WARN", "DEBUG"]
-    msgs = ["request completed", "cache refreshed", "job started", "job finished", "health check ok",
-            "connection pool resized", "retrying upstream call", "config reloaded", "rotated log file",
-            "user session created", "user session expired", "scheduled backup finished"]
+    if t == DEV_TEMPLATE:
+        services = ["gateway", "payments", "indexer", "importer", "cron", "notifier", "exports"]
+        msgs = ["handled call", "warmed lookup table", "task queued", "task done", "liveness probe passed",
+                "worker count adjusted", "upstream timeout, will retry", "settings reloaded", "archived old log",
+                "login accepted", "token refreshed", "snapshot uploaded"]
+    else:
+        services = ["auth", "billing", "search", "ingest", "scheduler", "mailer", "reports"]
+        msgs = ["request completed", "cache refreshed", "job started", "job finished", "health check ok",
+                "connection pool resized", "retrying upstream call", "config reloaded", "rotated log file",
+                "user session created", "user session expired", "scheduled backup finished"]
     lines = []
     for _ in range(r.randint(40, 90)):
         ts = f"2026-{r.randint(1, 12):02d}-{r.randint(1, 28):02d}T{r.randint(0, 23):02d}:{r.randint(0, 59):02d}:{r.randint(0, 59):02d}Z"
@@ -225,7 +309,8 @@ def log_digest_long(r: random.Random, t: int) -> str:
         f"Daily cron report from {host}. Run the cleanup job manually only if disk usage exceeds 90%.",
         f"Forwarding the scheduler output from {host} for the incident review. Please attach it to the ticket.",
     ][t]
-    return intro + "\n\n" + "\n".join(lines) + "\n\n-- generated by logmailer on " + host
+    footer = ("-- sent automatically by the cron mailer of " if t == DEV_TEMPLATE else "-- generated by logmailer on ")
+    return intro + "\n\n" + "\n".join(lines) + "\n\n" + footer + host
 
 
 FAMILIES = {
@@ -243,8 +328,8 @@ def generate(seed: int) -> list[dict]:
     """Deterministic list of benign-hard records (per-family RNG streams, so families are independent)."""
     out = []
     for fam, (fn, per_template) in FAMILIES.items():
-        r = random.Random(f"{seed}:{fam}")
         for t in range(N_TEMPLATES):
+            r = random.Random(f"{seed}:{fam}:t{t}")
             for i in range(per_template):
                 out.append({
                     "text": fn(r, t).strip(),
@@ -257,6 +342,47 @@ def generate(seed: int) -> list[dict]:
                     "generator": GENERATOR_VERSION,
                 })
     return out
+
+
+# ---------------------------------------------------------------- split-separation check
+
+MIN_SENTENCE_CHARS = 30  # shorter fragments (greetings, sign-off lines, headers) may be shared
+COMPANIES = ["Example Corp", "Northwind Example", "Contoso Example", "Fabrikam Example"]
+SIGN_TEAMS = ["IT", "Compliance", "Security", "HR"]  # team names used only in sign-offs
+_SLOTS = sorted({*FIRST, *LAST, *TEAMS, *SYSTEMS, *DAYS, *MONTHS, *ROOMS, *DOCS, *TOPICS, *COMPANIES, *SIGN_TEAMS},
+                key=len, reverse=True)
+_SLOT_RE = re.compile(r"(?<!\w)(?:" + "|".join(re.escape(x) for x in _SLOTS) + r")(?!\w)")
+_SENT_SPLIT = re.compile(r"(?<=[.!?;:])\s+")
+
+
+def sentences(text: str) -> list[str]:
+    """Lines split at sentence punctuation, whitespace-normalized, longer than MIN_SENTENCE_CHARS."""
+    out = []
+    for line in text.split("\n"):
+        for part in _SENT_SPLIT.split(line):
+            part = " ".join(part.split())
+            if len(part) > MIN_SENTENCE_CHARS:
+                out.append(part)
+    return out
+
+
+def skeleton(sentence: str) -> str:
+    """Slot values -> '<S>', digit runs -> '0', so sentences that differ only in filled slots compare equal."""
+    return re.sub(r"\d+", "0", _SLOT_RE.sub("<S>", sentence))
+
+
+def sentence_skeletons(text: str) -> set[str]:
+    """Skeletons that still have more than MIN_SENTENCE_CHARS characters after masking."""
+    return {k for k in (skeleton(x) for x in sentences(text)) if len(k) > MIN_SENTENCE_CHARS}
+
+
+def split_overlap(val_texts: list[str], frozen_texts: list[str]) -> dict:
+    """Exact sentences and skeletons that occur in both groups (both must be empty)."""
+    vs = {x for t in val_texts for x in sentences(t)}
+    fs = {x for t in frozen_texts for x in sentences(t)}
+    vk = {x for t in val_texts for x in sentence_skeletons(t)}
+    fk = {x for t in frozen_texts for x in sentence_skeletons(t)}
+    return {"exact": sorted(vs & fs), "skeleton": sorted(vk & fk)}
 
 
 if __name__ == "__main__":
