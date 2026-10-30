@@ -40,6 +40,14 @@ class GatewayMetrics:
         self.queue_depth = Gauge("sentinel_queue_depth", "Chunks waiting for a worker", registry=r)
         self.busy_workers = Gauge("sentinel_busy_workers", "Inference workers currently running (incl. abandoned)",
                                   registry=r)
+        # Stage 1 (registry stage1_mode, serving/service.py)
+        self.stage1_observed = Counter("sentinel_stage1_observed",
+                                       "Observe-only Stage 1: what routed Stage 1 would have done "
+                                       "(would_finalize_allow / would_escalate / not_scored)", ["outcome"],
+                                       registry=r)
+        self.stage1_deadline_hits = Counter("sentinel_stage1_deadline_hits",
+                                            "Stage 1 stopped at its soft deadline with chunks left unscored",
+                                            ["detector_id", "stage1_mode"], registry=r)
         # Registry
         self.registry_loads = Counter("sentinel_registry_loads", "Registry (re)loads by outcome", ["outcome"],
                                       registry=r)

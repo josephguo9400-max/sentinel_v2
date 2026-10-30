@@ -64,11 +64,11 @@ def _file_sha(path: Path) -> str | None:
 
 
 def create_app(config: GatewayConfig | None = None, detector: Any = None, *, stage1: Any = None,
-               shadow: Any = None, language: Any = None) -> FastAPI:
+               shadow: Any = None, language: Any = None, stage1_mode: str = "route") -> FastAPI:
     """Build the app. Without `detector`, detectors are loaded from the registry at startup.
 
     `detector` / `stage1` / `shadow` inject detector objects or DetectorSpecs (tests); `language` injects a
-    language identifier.
+    language identifier; `stage1_mode` applies to injected detectors only (the registry carries its own).
     """
     config = config or GatewayConfig.from_env()
     metrics = GatewayMetrics()
@@ -87,9 +87,9 @@ def create_app(config: GatewayConfig | None = None, detector: Any = None, *, sta
             metrics.registry_rejections.labels(rj.pointer, rj.code).inc()
         return loaded.specs, [r.as_dict() for r in loaded.rejections], loaded.pointers, sha
 
-    async def install(specs: dict[str, DetectorSpec]) -> None:
+    async def install(specs: dict[str, DetectorSpec], mode: str) -> None:
         service = ClassifierService(specs["stage2"], config, metrics, stage1=specs.get("stage1"),
-                                    shadow=specs.get("shadow"), language=language)
+                                    shadow=specs.get("shadow"), language=language, stage1_mode=mode)
         await service.start()
         old = state["service"]
         state["service"] = service
@@ -112,7 +112,7 @@ def create_app(config: GatewayConfig | None = None, detector: Any = None, *, sta
             if shadow is not None:
                 specs["shadow"] = spec_from_detector(shadow, config)
             state["source"] = "injected"
-            await install(specs)
+            await install(specs, stage1_mode)
             return
         state["source"] = "registry"
         try:
@@ -128,7 +128,7 @@ def create_app(config: GatewayConfig | None = None, detector: Any = None, *, sta
                 f"{r['code']}: {r['detail']}" for r in rejections if r["pointer"] == "stage2")
             metrics.registry_loads.labels("failed").inc()
             return
-        await install(specs)
+        await install(specs, pointers["stage1_mode"])
         metrics.registry_loads.labels("degraded" if rejections else "ok").inc()
 
     async def reload() -> dict:
@@ -152,10 +152,10 @@ def create_app(config: GatewayConfig | None = None, detector: Any = None, *, sta
                 log.error("registry reload rejected, keeping last good config: %s", rejections)
                 if state["service"] is None:  # nothing to keep: take what verified, like startup
                     if "stage2" in specs:
-                        await install(specs)
+                        await install(specs, pointers["stage1_mode"])
                         state["load_error"] = None
                 return rep
-            await install(specs)
+            await install(specs, pointers["stage1_mode"])
             state.update(rejections=[], pointers=pointers, registry_sha256=sha, load_error=None)
             rep = {"at": _now(), "applied": True, "registry_sha256": sha, "pointers": pointers, "rejections": []}
             state["last_reload"] = rep
@@ -228,12 +228,15 @@ def create_app(config: GatewayConfig | None = None, detector: Any = None, *, sta
             "status": "degraded" if degraded else "ok", "model_loaded": True, "schema_version": SCHEMA_VERSION,
             "detector": {**d.describe(), "max_len": d.detector.max_len},  # active Stage 2 (decides by default)
             "stage1": service.stage1.describe() if service.stage1 else None,
+            "stage1_mode": service.stage1_mode if service.stage1 else None,
             "stage1_languages": service.stage1_languages,
             "language_detector": service.language.describe() if service.language is not None else None,
             "shadow": service.shadow.describe() if service.shadow else None,
             "registry": registry_info,
             "config": {"timeout_ms": service.request_budget_ms, "stage2_timeout_ms": int(service.s2_timeout_s * 1000),
                        "stage1_timeout_ms": int(service.s1_timeout_s * 1000) if service.stage1 else None,
+                       "stage1_soft_deadline_ms": round(service.s1_soft_budget_s * 1000, 3) if service.stage1
+                       else None,
                        "stride": service.stride, "max_chunks": config.max_chunks,
                        "stage1_max_chunks": config.stage1_max_chunks,
                        "stage1_finalize_flag": config.stage1_finalize_flag,

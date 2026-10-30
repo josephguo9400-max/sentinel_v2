@@ -5,8 +5,14 @@ as a directory under `artifacts/` holding a `manifest.json` (contracts.ArtifactM
 
     {"schema": "sentinel-registry-v1",
      "stage1": "candidates/stage1-tfidf-v2",
+     "stage1_mode": "route",
      "stage2": "baseline/deberta-pi-v2",
      "shadow": "candidates/deberta-pi-v2-int8"}
+
+`stage1_mode` (optional, default "route") says what the Stage 1 pointer may do:
+- "route":   Stage 1 clears chunks and may finalize "allow" (the cascade, serving/service.py steps 3-5).
+- "observe": Stage 1 never routes or decides. Stage 2 scores the request exactly as if Stage 1 were absent; Stage 1
+             runs after the decision is fixed and its result is reported with role="shadow" (owner decision D23).
 
 Every detector is verified before it is loaded. A detector is rejected, with a reason code, when:
 
@@ -48,6 +54,7 @@ log = logging.getLogger("sentinel.registry")
 
 REGISTRY_SCHEMA = "sentinel-registry-v1"
 POINTERS = ("stage1", "stage2", "shadow")
+STAGE1_MODES = ("route", "observe")
 ROLES_FOR_POINTER = {"stage1": {"stage1"}, "stage2": {"stage2", "single"}, "shadow": {"stage1", "stage2", "single"}}
 
 # preprocessing_version -> model kind the gateway implements for it.
@@ -168,12 +175,17 @@ class Rejection:
 
 @dataclass
 class LoadedRegistry:
-    pointers: dict[str, str | None]
+    pointers: dict[str, str | None]  # the three POINTERS plus "stage1_mode"
     specs: dict[str, DetectorSpec] = field(default_factory=dict)
     rejections: list[Rejection] = field(default_factory=list)
 
+    @property
+    def stage1_mode(self) -> str:
+        return self.pointers.get("stage1_mode") or "route"
+
 
 def read_registry(path: Path) -> dict[str, str | None]:
+    """The three pointers plus "stage1_mode" ("route" when the file omits it)."""
     try:
         raw = json.loads(Path(path).read_text())
     except FileNotFoundError as exc:
@@ -182,7 +194,7 @@ def read_registry(path: Path) -> dict[str, str | None]:
         raise RegistryError("registry_invalid", f"cannot read {path}: {exc}") from exc
     if not isinstance(raw, dict) or raw.get("schema") != REGISTRY_SCHEMA:
         raise RegistryError("registry_invalid", f"registry must be an object with schema {REGISTRY_SCHEMA!r}")
-    extra = set(raw) - {"schema", "comment", *POINTERS}
+    extra = set(raw) - {"schema", "comment", "stage1_mode", *POINTERS}
     if extra:
         raise RegistryError("registry_invalid", f"unknown registry keys: {sorted(extra)}")
     out: dict[str, str | None] = {}
@@ -193,6 +205,10 @@ def read_registry(path: Path) -> dict[str, str | None]:
         out[p] = v
     if out["stage2"] is None:
         raise RegistryError("registry_invalid", "stage2 is required (it is the detector of last resort)")
+    mode = raw.get("stage1_mode", "route")
+    if mode not in STAGE1_MODES:
+        raise RegistryError("registry_invalid", f"stage1_mode must be one of {list(STAGE1_MODES)}, got {mode!r}")
+    out["stage1_mode"] = mode
     return out
 
 
