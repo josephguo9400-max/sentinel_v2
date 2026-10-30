@@ -40,9 +40,11 @@ def test_record_refuses_to_hide_a_change(tmp_path, monkeypatch):
     with pytest.raises(SystemExit) as exc:
         ev.record()
     assert "bump it first" in str(exc.value)
-    monkeypatch.setattr(ev, "ENGINE_VERSION", "1.1.0")
+    major, minor, patch = map(int, ev.ENGINE_VERSION.split("."))
+    bumped = f"{major}.{minor}.{patch + 1}"
+    monkeypatch.setattr(ev, "ENGINE_VERSION", bumped)
     out = ev.record()  # with a bump it records
-    assert out["engine_version"] == "1.1.0" and out["files"]["serving/service.py"] != "0" * 64
+    assert out["engine_version"] == bumped and out["files"]["serving/service.py"] != "0" * 64
 
 
 def test_version_is_semver_and_matches_the_record():

@@ -1,11 +1,16 @@
 #!/usr/bin/env bash
 # Equivalence runs of the policy engine (T3, T4, T5; docs/design/capability-policy.md §8).
 #   bash reports/policy-runtime/run_equivalence.sh
-# T3 is resumable: it keeps a per-item progress file next to its output and a row-score cache in a scratch
-# directory, and each invocation stops after --max-seconds, so it never holds /home/claude/measure.lock for long.
+# Run from the repository root. T3 is resumable: it keeps a per-item progress file and a row-score cache next to its
+# output (both gitignored: reports/**/*.progress.jsonl, reports/**/*.rowcache.jsonl; override the cache with
+# CACHE=...), and each invocation stops after --max-seconds, so it never holds /home/claude/measure.lock for long.
+# Every progress record carries the git commit and engine version of the invocation that wrote it.
+# T3 loads the D23 registry v1 state from reports/policy-runtime/registry_v1_d23.json (artifacts/registry.json is
+# registry v2 since 764e160).
 set -euo pipefail
+cd "$(git rev-parse --show-toplevel)"
 OUT=reports/policy-runtime
-CACHE="${CACHE:-${TMPDIR:-/tmp}/t3.rowcache.jsonl}"
+CACHE="${CACHE:-$OUT/t3_d23_equivalence.rowcache.jsonl}"
 mkdir -p "$OUT"
 
 # T3: all 2,000 replay items through the legacy service and the policy engine, real models, timeouts disabled.

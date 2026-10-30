@@ -291,3 +291,15 @@ def test_observe_mode_reports_role_observe_and_no_escalation_reason():
     assert [r.role for r in legacy[0].results] == ["active", "shadow"]
     assert [r.role for r in policy[0].results] == ["active", "observe"]
     assert policy[0].escalation_reason is None and policy[0].results[-1].stage == "stage1"
+
+
+def test_legacy_service_is_the_frozen_pre_refactor_file():
+    """review r1 n1: below its prepended header, serving/legacy_service.py is serving/service.py at 36ce683."""
+    import hashlib
+    from pathlib import Path
+
+    src = (Path(__file__).resolve().parents[2] / "serving" / "legacy_service.py").read_text(encoding="utf-8")
+    marker = "Original docstring follows.\n\n"
+    body = '"""' + src[src.index(marker) + len(marker):]
+    assert hashlib.sha256(body.encode("utf-8")).hexdigest() == \
+        "0e2f7384b0babb1fecb70bf45135f1cec852e8a853e3d8cbeb92c01657642b01"

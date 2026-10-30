@@ -3,14 +3,15 @@
   "complete": true,
   "n_items_total": 2000,
   "n_items_compared": 2000,
-  "n_items_this_run": 232,
+  "n_items_this_run": 0,
   "identical_on_every_item": true,
   "n_items_with_differences": 0,
   "differences": [],
   "inputs": {
     "replay": "data/replay/replay-v1.jsonl",
     "replay_sha256": "47ac4c845ab7604dc6940ff6fefa02049e383cb1b960818fa481da5fd1a07592",
-    "registry": "artifacts/registry.json (sentinel-registry-v1)",
+    "registry": "reports/policy-runtime/registry_v1_d23.json (sentinel-registry-v1)",
+    "registry_sha256": "45ec8790bea64c65b25d341fa6c2cc3a40231068aa3a63bfad1fb4a5f7455731",
     "stage1": "stage1-tfidf-lr@stage1-tfidf-v2.1",
     "stage1_model_sha256": "2a5df39a27e300b0a74d0f9565d4fee13e9862c2afa79fcc2af26e205f4b6af3",
     "stage2": "deberta-pi-v2@2.0.0+90c9989b.onnx.fp32",
@@ -49,6 +50,30 @@
     "allow": 1247,
     "flag": 753
   },
+  "compared_fields_constant_on_every_item": [
+    "policy_applied",
+    "stages_run"
+  ],
+  "compared_field_value_counts": {
+    "decision": {
+      "\"allow\"": 1247,
+      "\"flag\"": 753
+    },
+    "decided_by": {
+      "\"coverage_policy:flag\"": 6,
+      "\"deberta-pi-v2\"": 1994
+    },
+    "policy_applied": {
+      "null": 2000
+    },
+    "coverage_policy_applied": {
+      "\"flag\"": 6,
+      "null": 1994
+    },
+    "stages_run": {
+      "[\"stage2\"]": 2000
+    }
+  },
   "paths": {
     "coverage_flag": 6,
     "stage2_allow": 1247,
@@ -60,12 +85,31 @@
   },
   "deberta_rows": {
     "total_scored_per_engine": 2314,
-    "unique_rows_in_cache": 2285,
-    "cache_hits": 262,
-    "cache_misses": 258,
-    "cache_path": "/tmp/claude-0/-home-claude/0bf94ffb-f6d5-572e-8ecb-2ddad663ee8e/scratchpad/t3.rowcache.jsonl"
+    "unique_rows_in_cache": 0,
+    "cache_hits": 0,
+    "cache_misses": 0,
+    "cache_path": null
   },
-  "wall_s_this_run": 52.3,
+  "wall_s_this_run": 0.0,
+  "provenance": {
+    "this_run": {
+      "git_commit": "b8578ceb8b11fff1b7a87a42080b3e5f328449af",
+      "git_dirty": false,
+      "engine_version": "1.0.0",
+      "engine_record_sha256": "766bffb4fb8e8d8265a92665932d72e18b6be0176cc37fca8bd0a5991f5f8efc",
+      "started_utc": "2026-10-30T21:42:28Z",
+      "n_items": 0,
+      "wall_s": 0.0,
+      "no_cache": true
+    },
+    "items_by_code_version": [
+      {
+        "code": null,
+        "n_items": 2000
+      }
+    ],
+    "note": "Each per-item record carries the git commit, dirty flag and engine version of the invocation that produced it (resumed runs append records from several invocations). Records under code: null were written before this was recorded: they are the resumed invocations of the 2,000-item run committed in 9ac0e92, and nothing records which code version produced which of them. serving/ did not change between debbe1a and 9ac0e92; the reviewer's uncached re-run of 193 of these items at bc49454 (reviews/policy-runtime-r1/t3_subset_nocache.json on branch verify/policy-runtime, commit 3cacec5) found 0 engine differences and 0 differences from these records."
+  },
   "items": [
     {
       "id": "rp-0018f465dc4c27da4fd7",

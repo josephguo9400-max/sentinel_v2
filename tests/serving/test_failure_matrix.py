@@ -165,6 +165,49 @@ def test_t6_matrix_is_complete():
                            for m in ("FAIL_OPEN", "FAIL_CLOSED", "FALLBACK_ok", "FALLBACK_fails")}
 
 
+# ---------------------------------------------------------------- the same failures on a multi-chunk text
+
+# MATRIX uses a one-chunk text, where no content is ever left unscored; review r1 (M2) showed that this hides how a
+# failure interacts with the coverage rule. MANY_CHUNKS has more decide chunks than max_chunks (4), so content stays
+# unscored whatever happens, and the healthy outcome of every cell is a coverage flag.
+# (step, fault, mode) -> (decision, policy_applied, fallback_detector_ran, coverage_policy_applied)
+MULTI: dict[tuple[str, str, str], tuple[str, str | None, bool, str | None]] = {}
+for _f in ("timeout", "exception"):
+    # Single member: the failed member scored nothing, no step scored anything, and the failure policy alone
+    # decides (legacy semantics: FAIL_OPEN is the owner's explicit allow when no detector answered).
+    MULTI[("decide", _f, "FAIL_OPEN")] = ("allow", "fail_open", False, None)
+    MULTI[("decide", _f, "FAIL_CLOSED")] = ("flag", "fail_closed", False, None)
+    # The fallback scored the member's chunks; the rest is unscored, so coverage decides as it would have.
+    MULTI[("decide", _f, "FALLBACK_ok")] = ("flag", None, True, "flag")
+    MULTI[("decide", _f, "FALLBACK_fails")] = ("flag", "fail_closed", True, None)
+    # Parallel: the healthy member scored the chunks, content beyond the budget is unscored by any step, so the
+    # coverage rule applies although member 0's vote is a fail-open vote (before the M2 fix: allow, fail_open).
+    MULTI[("parallel", _f, "FAIL_OPEN")] = ("flag", None, False, "flag")
+    MULTI[("parallel", _f, "FAIL_CLOSED")] = ("flag", "fail_closed", False, None)
+    MULTI[("parallel", _f, "FALLBACK_ok")] = ("flag", None, True, "flag")
+    MULTI[("parallel", _f, "FALLBACK_fails")] = ("flag", "fail_closed", True, None)
+
+
+@pytest.mark.parametrize("mode", ["FAIL_OPEN", "FAIL_CLOSED", "FALLBACK_ok", "FALLBACK_fails"])
+@pytest.mark.parametrize("fault", ["timeout", "exception"])
+@pytest.mark.parametrize("step", ["decide", "parallel"])
+def test_t6_failure_matrix_multi_chunk(step, fault, mode):
+    svc, ran, _ = build(step, fault, mode)
+    out = asyncio.run(_run(svc, step, fault, MANY_CHUNKS))
+    got = (out.decision, out.policy_applied, ran["fallback"], out.coverage_policy_applied)
+    print(f"{step:9} {fault:11} {mode:15} multi-chunk -> {got}")
+    assert got == MULTI[(step, fault, mode)]
+    assert out.unscored_by_any_step is True  # more chunks than max_chunks: something is always unscored
+
+
+def test_t6_multi_chunk_healthy_reference_is_a_coverage_flag():
+    """The healthy outcome every MULTI cell is compared with in the comments above."""
+    for step in ("decide", "parallel"):
+        svc, _, _ = build(step, "none", "FAIL_OPEN")
+        out = asyncio.run(_run(svc, step, "none", MANY_CHUNKS))
+        assert (out.decision, out.policy_applied, out.coverage_policy_applied) == ("flag", None, "flag")
+
+
 # ---------------------------------------------------------------- ASYNC_ONLY steps never decide
 
 @pytest.mark.parametrize("fault", ["ok", "timeout", "exception", "flagging"])

@@ -1,5 +1,7 @@
-"""FROZEN REFERENCE, not served: the cascade service of milestone cascade-and-shadow, byte-identical to
-serving/service.py at `milestone/cascade-and-shadow` @ 36ce683 (sha256 0e2f7384b0babb1fec...).
+"""FROZEN REFERENCE, not served: the cascade service of milestone cascade-and-shadow. Below this header (which
+ends at "Original docstring follows." and the blank line after it) the file is byte-identical to serving/service.py
+at `milestone/cascade-and-shadow` @ 36ce683 (sha256 0e2f7384b0babb1fec...); tests/serving/test_differential.py
+checks that.
 
 serving/service.py is this file refactored to take an ExecutionPolicy (D25, docs/design/capability-policy.md §7
 migration 2). This copy is kept so the equivalence tests can run both engines on the same inputs in one process:

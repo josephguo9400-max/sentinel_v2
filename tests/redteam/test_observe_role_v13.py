@@ -121,6 +121,20 @@ def test_probe_runner_separates_observe_and_records_the_bundle(observe):
     assert o.scored_positive is True and o.bundle_sha256 == BUNDLE
 
 
+def test_probe_runner_keeps_two_active_results_of_one_stage():
+    """review r1 n7: two active stage2 results (shape B, or a decide member plus its fallback) used to overwrite
+    each other in stage_scores; the second is now keyed by its detector."""
+    from redteam.probe_runner import ProbeOutcome
+    from redteam.probes import load_probes
+
+    resp = response(result(detector="a", score=0.1), result(detector="b", score=0.9))
+    verdict = ClassifierVerdict(decision="flag", decided_by="a+b:any_flag", results=tuple(resp.results),
+                                request_id="r", stages_run=("stage2", "stage2"), bundle_sha256=BUNDLE)
+    o = ProbeOutcome.from_verdict(load_probes()[0], verdict)
+    assert o.stage_scores["stage2"]["score"] == 0.1 and o.stage_scores["stage2:b"]["score"] == 0.9
+    assert len(o.stage_scores) == 2
+
+
 # ---------------------------------------------------------------- training consumers
 
 @pytest.mark.parametrize("observe", [OBSERVE, SHADOW], ids=["v13_observe", "v12_shadow"])

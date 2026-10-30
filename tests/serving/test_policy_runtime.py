@@ -273,15 +273,18 @@ def test_committed_v1_registry_converts_to_the_d23_capabilities():
                            calibrations=CALIBRATION_RECORDS)
     d23, d23_caps = convert("d23-deberta-decides")
     assert caps == d23_caps
+    # An in-memory conversion is stamped with the running engine; the committed /1 policy records 1.0.0, the engine
+    # it was validated on (serving/convert_registry.py SOURCES).
     strip = lambda x: {k: v for k, v in x.model_dump(mode="json").items()  # noqa: E731
-                       if k not in ("policy_id", "policy_version", "rationale")}
+                       if k not in ("policy_id", "policy_version", "rationale", "engine_version")}
     assert strip(p) == strip(d23)
 
 
 # ---------------------------------------------------------------- the committed registry (step g)
 
 def test_committed_registry_is_a_loadable_v2_bundle():
-    """artifacts/registry.json serves the D23 bundle; its hash is the one T3 and the smoke run recorded."""
+    """artifacts/registry.json serves the D23 policy; under the engine version T3 ran on (1.0.0) its bundle hash is
+    the one T3 and the smoke run recorded. Engine 1.1.0 (review r1 fixes) gives the same policy a new bundle hash."""
     from serving.registry import REGISTRY_SCHEMA_V2, load_policy_file, read_registry_v2
 
     reg = ROOT / "artifacts" / "registry.json"
@@ -298,7 +301,11 @@ def test_committed_registry_is_a_loadable_v2_bundle():
     converted, _ = convert("d23-deberta-decides")
     assert policy == converted  # the committed policy is exactly what the converter derives
     t3 = json.loads((ROOT / "reports/policy-runtime/t3_d23_equivalence.json").read_text())
-    assert bundle_sha256(policy) == t3["bundle"]["committed_bundle_sha256"]
+    assert t3["inputs"]["engine_version"] == "1.0.0"
+    assert bundle_sha256(policy, t3["inputs"]["engine_version"]) == t3["bundle"]["committed_bundle_sha256"]
+    from serving.engine_version import ENGINE_VERSION
+    if ENGINE_VERSION != t3["inputs"]["engine_version"]:
+        assert bundle_sha256(policy) != t3["bundle"]["committed_bundle_sha256"]  # a new engine is a new bundle
 
 
 def test_committed_capabilities_are_pinned_by_the_committed_policies():
@@ -322,6 +329,83 @@ def test_t3_and_t4_reports_record_a_pass():
     assert t3["bundle"]["only_timeout_fields_differ"] is True
     t4 = json.loads((ROOT / "reports/policy-runtime/t4_cascade_equivalence.json").read_text())
     assert t4["identical_on_every_item"] and t4["headline_201_306_reproduced"]
+    # review r1 m9: T4's in-memory policy is the committed route policy except for the raised budgets.
+    assert t4["bundle"]["only_timeout_fields_differ"] is True
+    assert set(t4["bundle"]["differences_from_committed_policy"]) == {
+        "gate.timeout_ms", "gate.on_failure.fallback.timeout_ms", "decide.members[0].timeout_ms"}
+    from serving.registry import load_policy_file
+    cascade = load_policy_file(ROOT / "artifacts", "policies/cascade-tfidf-allow-only/1/policy.json")
+    assert bundle_sha256(cascade, t4["bundle"]["engine_version"]) == t4["bundle"]["committed_bundle_sha256"]
     assert t4["recall"]["as_fraction"] == "201/306" and t4["fpr"]["as_fraction"] == "191/1185"
     t5 = json.loads((ROOT / "reports/policy-runtime/t5_live_comparison.json").read_text())
     assert t5["identical_on_every_comparable_item"] and t5["n_different"] == 0
+
+
+# ---------------------------------------------------------------- band language scope (review r1 m1, n9)
+
+def _gate_doc_without_scope():
+    from tests.policy_factory import default_caps, policy
+    caps = default_caps()
+    doc = policy(caps, gate=True)
+    doc["gate"]["band"]["scope_languages"] = None
+    doc["language_detector"] = None
+    return caps, doc
+
+
+def test_band_without_scope_over_a_declared_capability_is_refused():
+    """The gate capability declares validated_languages ["en"]; a band that clears chunks without a scope would
+    clear chunks in any language (review r1 m1, probe test_r2_...). Refused with its own code."""
+    from contracts.policy import validate_policy
+    from tests.policy_factory import caps_by_key
+    caps, doc = _gate_doc_without_scope()
+    with pytest.raises(PolicyError) as exc:
+        validate_policy(ExecutionPolicy.model_validate(doc), caps_by_key(caps))
+    assert exc.value.code == "scope_languages_required"
+    assert "validated_languages ['en']" in str(exc.value)
+
+
+def test_observe_band_without_scope_over_a_declared_capability_is_refused():
+    from contracts.policy import validate_policy
+    from tests.policy_factory import caps_by_key, default_caps, policy
+    caps = default_caps()
+    doc = policy(caps, observe=True)
+    doc["observe"][0]["band"] = {"clear_below": 0.3, "flag_at_or_above": None, "finalize": ["allow"],
+                                 "scope_languages": None}
+    doc["language_detector"] = None
+    with pytest.raises(PolicyError) as exc:
+        validate_policy(ExecutionPolicy.model_validate(doc), caps_by_key(caps))
+    assert exc.value.code == "scope_languages_required"
+
+
+def test_band_that_clears_nothing_needs_no_scope():
+    """A flag-only band (clear_below 0) clears no chunk, so the language of a chunk cannot let it through."""
+    from contracts.policy import validate_policy
+    from tests.policy_factory import caps_by_key
+    caps, doc = _gate_doc_without_scope()
+    doc["gate"]["band"].update(clear_below=0.0, finalize=["flag"], flag_at_or_above=0.9)
+    validate_policy(ExecutionPolicy.model_validate(doc), caps_by_key(caps))
+
+
+def test_every_committed_policy_passes_the_scope_rule():
+    from contracts.policy import validate_policy
+    from serving.registry import load_capability, load_policy_file
+    from contracts.policy import iter_refs
+    for path in sorted((ROOT / "artifacts").glob("policies/*/*/policy.json")):
+        policy = load_policy_file(ROOT / "artifacts", str(path.relative_to(ROOT / "artifacts")))
+        caps = {r.key: load_capability(ROOT / "artifacts", "capabilities", r) for r in iter_refs(policy)}
+        validate_policy(policy, caps)
+
+
+def test_scope_languages_order_does_not_change_the_hash():
+    """review r1 n9: scope_languages is a set in meaning; it is stored sorted."""
+    from contracts.policy import policy_sha256
+    from tests.policy_factory import default_caps, policy
+    caps = default_caps()
+    docs = []
+    for scope in (["en", "de"], ["de", "en"]):
+        doc = policy(caps, gate=True)
+        doc["gate"]["band"]["scope_languages"] = scope
+        docs.append(ExecutionPolicy.model_validate(doc))
+    assert docs[0].gate.band.scope_languages == ["de", "en"]
+    assert policy_sha256(docs[0]) == policy_sha256(docs[1])
+    assert bundle_sha256(docs[0]) == bundle_sha256(docs[1])

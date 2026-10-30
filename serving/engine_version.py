@@ -16,7 +16,7 @@ import json
 import sys
 from pathlib import Path
 
-ENGINE_VERSION = "1.0.0"
+ENGINE_VERSION = "1.1.0"
 ROOT = Path(__file__).resolve().parents[1]
 RECORD = Path(__file__).with_name("engine_version.json")
 

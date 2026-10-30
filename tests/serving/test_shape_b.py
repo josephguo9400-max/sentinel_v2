@@ -175,6 +175,96 @@ def test_t7_both_members_fail():
     assert (o.decision, o.policy_applied) == ("flag", "fail_closed")
 
 
+# ---------------------------------------------------------------- a failure is never more permissive (review r1 M2)
+
+SEVERITY = {"allow": 0, "flag": 1}
+TEXTS = {"one_chunk": "w1 w2 w3", "multi_chunk": words(3000)}  # words(3000): more chunks than max_chunks (4)
+
+
+@pytest.mark.parametrize("text", sorted(TEXTS))
+@pytest.mark.parametrize("other", [0.1, 0.9])
+@pytest.mark.parametrize("mode", ["FAIL_OPEN", "FAIL_CLOSED"])
+@pytest.mark.parametrize("coverage", ["flag", "quarantine", "allow"])
+@pytest.mark.parametrize("aggregate", ["any_flag", "all_flag"])
+def test_t7_a_failed_member_is_never_more_permissive_than_the_same_vote_succeeding(aggregate, coverage, mode,
+                                                                                    other, text):
+    """Member A fails and votes by its on_failure (FAIL_OPEN = allow, FAIL_CLOSED = flag); the reference is A
+    succeeding with that same vote (score 0.1 / 0.9) on the same text, member B unchanged. B scores the same chunks
+    either way, so the content no step scored is the same, and the failed outcome must be at least as strict, with
+    the same coverage outcome when coverage decides the reference."""
+    vote_score = 0.1 if mode == "FAIL_OPEN" else 0.9
+    svc, _, _ = build(aggregate, vote_score, other, coverage=coverage)
+    (healthy,) = run(svc, [TEXTS[text]])
+    svc, _, _ = build(aggregate, 0.1, other, coverage=coverage, a_kwargs={"fail": RuntimeError("boom")},
+                      a_failure={"mode": mode, "fallback": None})
+    (failed,) = run(svc, [TEXTS[text]])
+    assert SEVERITY[failed.decision] >= SEVERITY[healthy.decision], (healthy, failed)
+    assert failed.unscored_by_any_step == healthy.unscored_by_any_step
+    if healthy.coverage_policy_applied is not None:
+        assert failed.coverage_policy_applied == healthy.coverage_policy_applied
+        assert failed.decided_by == healthy.decided_by == f"coverage_policy:{coverage}"
+
+
+@pytest.mark.parametrize("fault", [{"fail": RuntimeError("boom")}, {"delay_s": 0.5}], ids=["exception", "timeout"])
+def test_t7_fail_open_member_does_not_skip_the_coverage_rule(fault):
+    """Review r1 M2 (probe test_r1_...): any_flag, coverage flag, more chunks than max_chunks, both members vote
+    allow. Healthy: coverage flag. Member A failing with FAIL_OPEN used to return allow (policy_applied fail_open)
+    with unscored_by_any_step True; the coverage rule now applies to the content no member scored."""
+    text = words(3000)
+    svc, _, _ = build("any_flag", 0.1, 0.1, coverage="flag")
+    (healthy,) = run(svc, [text])
+    assert (healthy.decision, healthy.coverage_policy_applied) == ("flag", "flag")
+    svc, _, db = build("any_flag", 0.1, 0.1, coverage="flag", a_kwargs=fault,
+                       a_failure={"mode": "FAIL_OPEN", "fallback": None})
+    (failed,) = run(svc, [text])
+    assert (failed.decision, failed.coverage_policy_applied, failed.policy_applied) == ("flag", "flag", None)
+    assert failed.decided_by == "coverage_policy:flag" and failed.info["path"] == "coverage_flag"
+    assert failed.unscored_by_any_step is True and len(db.rows) == 4
+    a = next(m for m in failed.info["members"] if m["detector"] == "fake")
+    assert a["status"] in ("timeout", "error")  # the failure stays visible
+
+
+def test_t7_fail_open_member_with_everything_scored_still_allows():
+    """Nothing unscored (one chunk, scored by B): the fail-open vote decides as before."""
+    svc, _, _ = build("any_flag", 0.1, 0.1, coverage="flag", a_kwargs={"fail": RuntimeError("boom")},
+                      a_failure={"mode": "FAIL_OPEN", "fallback": None})
+    (o,) = run(svc, ["w1 w2 w3"])
+    assert (o.decision, o.policy_applied, o.coverage_policy_applied) == ("allow", "fail_open", None)
+    assert o.unscored_by_any_step is False
+
+
+def test_t7_all_members_fail_open_on_a_multi_chunk_text_is_a_fail_open_allow():
+    """No member scored anything: the failure policy alone decides, as for a single decide member (documented in
+    design §11a). Coverage is not applied to content that no detector was able to score at all."""
+    svc, _, _ = build("any_flag", 0.1, 0.1, coverage="flag", a_kwargs={"fail": RuntimeError("a")},
+                      b_kwargs={"fail": RuntimeError("b")}, a_failure={"mode": "FAIL_OPEN", "fallback": None},
+                      b_failure={"mode": "FAIL_OPEN", "fallback": None})
+    (o,) = run(svc, [words(3000)])
+    assert (o.decision, o.policy_applied, o.coverage_policy_applied) == ("allow", "fail_open", None)
+    assert o.unscored_by_any_step is True
+
+
+def test_t7_after_a_gate_failure_members_run_under_the_gate_fallback_budget():
+    """Review r1 m10: after a gate failure the decide stage is the gate's FALLBACK and runs within the fallback's
+    timeout_ms from request start, as the single-member path does; each member's own timeout_ms (here 2 s) does
+    not extend it. A slow member (0.5 s) therefore times out under a 150 ms fallback budget and the fallback's
+    terminal decides."""
+    svc, _, _ = build("any_flag", 0.1, 0.1, gate=True, a_kwargs={"delay_s": 0.5})
+    doc = svc.policy.model_dump(mode="json")
+    doc["gate"]["on_failure"] = {"mode": "FALLBACK", "fallback": {"detector": ref(CAPS["decide"]),
+                                                                  "timeout_ms": 150, "terminal": "FAIL_CLOSED"}}
+    for m in doc["decide"]["members"]:
+        m["timeout_ms"] = 2000
+    specs = dict(svc._specs)
+    specs[GATE_KEY] = spec(FakeStage1(fail=RuntimeError("gate boom")), kind="text", timeout_ms=2000)
+    svc = service(doc, specs, config=cfg())
+    (o,) = run(svc, ["w1 GRAY w3"])
+    assert o.escalation_reason == "gate_failed"
+    a = next(m for m in o.info["members"] if m["detector"] == "fake")
+    assert a["status"] == "timeout"
+    assert (o.decision, o.policy_applied) == ("flag", "fail_closed")
+
+
 # ---------------------------------------------------------------- coverage and the gate
 
 @pytest.mark.parametrize("coverage,expect", [("flag", "flag"), ("quarantine", "flag"), ("allow", "allow")])
