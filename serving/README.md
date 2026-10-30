@@ -771,12 +771,16 @@ need work that is not in this milestone. Any FAIL is a FAIL; anything unevaluate
 Promotion needs an explicit `--approved-by`, refuses a report bound to another bundle, a report whose run is
 incomplete (or ran with `--limit`), a report on a split other than val or frozen_test, and a candidate that is
 already the active bundle (which would overwrite `previous`); it refuses a non-PASS verdict unless the owner passes
-`--allow-not-pass` (recorded; it overrides only the verdict), writes `active`/`previous` and appends to
-`artifacts/audit_log.jsonl`. Rollback is the pointer flip back to `previous`, audited the same way.
+`--allow-not-pass` (recorded; it overrides only the verdict), then appends to `artifacts/audit_log.jsonl` and only
+after that writes `active`/`previous` (record before acting). The registry is replaced atomically (temporary file,
+validated, renamed), and a failed pointer move adds a `"status": "failed"` line; a kill between the two writes
+leaves an audit line for a move the registry does not show, never a move without one. Rollback is the pointer flip
+back to `previous`, audited the same way.
 
 **The frozen test** (`data/splits/frozen_test.jsonl`) is read for a verdict by this script only, and only with
 `--split frozen_test --frozen-test-approved-by NAME`, which is itself written to the audit log: a `started` entry
-before the split is opened, then `completed` or `failed`, so a crashed or killed run is still visible. It was not
+before the split is opened, then `completed`, or `failed` on any exception up to and including writing the report,
+so a crashed run is visible as `failed` and only a killed run leaves `started` alone. It was not
 run in this milestone: the owner decides when the final split is read.
 
 Committed dry run, the D23 bundle as it was under engine 1.0.0 (`17fac609a8f2…`) on val (all 3,214 items,

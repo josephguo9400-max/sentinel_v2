@@ -36,8 +36,16 @@ candidate *is* the active bundle there is nothing to pair with, so the check rep
 it for a verdict, and only when the owner passes `--split frozen_test --frozen-test-approved-by NAME`. Every other
 use of it in the repository predates this gate and is training-side analysis, not a release decision. Each run of
 the gate on the frozen test is recorded in the audit log, so repeated looks at it are visible: a "started" entry is
-written before the split is opened, then "completed" (or "failed" on an exception; a killed process leaves only
-"started").
+written before the split is opened, then "completed", or "failed" on any exception from then until the report and
+the "completed" entry are written (scoring, reading --active-report, building or writing the report). Only a
+killed process (or a failure of the audit write itself) leaves "started" alone.
+
+**Promote and rollback record before they act.** The audit line is appended first, then the registry pointer is
+moved (written to a temporary file next to the registry, validated, and renamed over it, so the registry is never
+left half-written or invalid). If moving the pointer raises, a second line with `"status": "failed"` follows. So
+every pointer move has an audit line before it; the one crash-window left is a kill between the two writes, which
+leaves an audit line for a move the registry does not show (the registry is the source of truth for what is
+served, and the audit log over-reports rather than under-reports).
 
 As served: the bundle runs in-process through serving/service.py with its own budgets, and every response is read
 with training/eval_harness.py's rules (`as_served`: a failure-policy or coverage-policy decision counts as the
@@ -49,6 +57,7 @@ from __future__ import annotations
 import argparse
 import asyncio
 import json
+import os
 import platform
 import sys
 import time
@@ -337,12 +346,33 @@ def read_registry_v2_state(registry: Path) -> dict:
 
 
 def write_registry_pointers(registry: Path, **changes) -> dict:
-    """Change pointers in place, keeping every other key of the file (schema, comment) as it is."""
+    """Change pointers, keeping every other key of the file (schema, comment) as it is. Crash-safe: the new state is
+    written to a temporary file in the same directory, validated, and renamed over the registry, so the registry is
+    either the old state or the new one, never a partial or invalid file."""
     raw = json.loads(registry.read_text())
     raw.update(changes)
-    registry.write_text(json.dumps(raw, indent=2) + "\n")
-    read_registry_v2_state(registry)  # the file must still validate after the change
+    tmp = registry.with_name(f".{registry.name}.tmp")
+    try:
+        tmp.write_text(json.dumps(raw, indent=2) + "\n")
+        read_registry_v2_state(tmp)  # the new state must validate before it replaces the registry
+        os.replace(tmp, registry)
+    finally:
+        tmp.unlink(missing_ok=True)
     return raw
+
+
+def _audited_pointer_move(registry: Path, entry: dict, log: Path, **changes) -> dict:
+    """Record first, then act (review r2-n5): append the audit line, then move the pointer. If the move raises, a
+    "failed" line for the same action follows and the exception propagates; the registry is unchanged."""
+    append_audit(entry, log)
+    try:
+        write_registry_pointers(registry, **changes)
+    except BaseException as exc:
+        append_audit({"action": entry["action"], "status": "failed", "at": _now(), "actor": entry["actor"],
+                      "bundle_sha256": entry["bundle_sha256"], "registry": entry["registry"],
+                      "error": type(exc).__name__}, log)
+        raise
+    return entry
 
 
 def promote(registry: Path, gate_report: Path, approved_by: str, candidate_policy: str | None = None,
@@ -380,8 +410,7 @@ def promote(registry: Path, gate_report: Path, approved_by: str, candidate_polic
     if candidate == previous_active or candidate_bundle.bundle_sha256 == bundle.bundle_sha256:
         raise SystemExit(f"{candidate} (bundle {candidate_bundle.bundle_sha256}) is already the active bundle: "
                          f"nothing to promote, and `previous` ({state['previous']}) is kept as it is")
-    write_registry_pointers(registry, active=candidate, previous=previous_active, status="approved")
-    return append_audit({
+    return _audited_pointer_move(registry, {
         "action": "promote", "at": _now(), "actor": approved_by,
         "bundle_sha256": candidate_bundle.bundle_sha256,
         "previous_bundle_sha256": bundle.bundle_sha256,
@@ -390,7 +419,7 @@ def promote(registry: Path, gate_report: Path, approved_by: str, candidate_polic
         else str(gate_report),
         "gate_verdict": rep["verdict"], "gate_split": rep["run"]["split"],
         "override_not_pass": bool(rep["verdict"] != PASS), "registry": str(registry),
-    }, log)
+    }, log, active=candidate, previous=previous_active, status="approved")
 
 
 def _bundle_of_policy(registry: Path, rel: str):
@@ -423,10 +452,10 @@ def rollback(registry: Path, approved_by: str, log: Path = AUDIT_LOG) -> dict:
     was_active, target = state["active"], state["previous"]
     before = _bundle_of_policy(registry, was_active)
     after = _bundle_of_policy(registry, target)
-    write_registry_pointers(registry, active=target, previous=was_active)
-    return append_audit({"action": "rollback", "at": _now(), "actor": approved_by,
-                         "bundle_sha256": after.bundle_sha256, "previous_bundle_sha256": before.bundle_sha256,
-                         "active": target, "previous": was_active, "registry": str(registry)}, log)
+    return _audited_pointer_move(registry, {
+        "action": "rollback", "at": _now(), "actor": approved_by,
+        "bundle_sha256": after.bundle_sha256, "previous_bundle_sha256": before.bundle_sha256,
+        "active": target, "previous": was_active, "registry": str(registry)}, log, active=target, previous=was_active)
 
 
 # ---------------------------------------------------------------------- CLI
@@ -443,15 +472,29 @@ def evaluate(args) -> dict:
         append_audit({"action": "gate_on_frozen_test", "status": "started", "at": _now(),
                       "actor": args.frozen_test_approved_by, "registry": str(args.registry),
                       "gate_report_path": str(args.out), "limit": args.limit}, audit_log)
+    # Any exception after "started" (scoring, --active-report, building or writing the report) records "failed",
+    # so "started" alone means a killed process (review r2-n1).
     try:
-        records, meta, bundle, wall, n_new = run_bundle(args.registry, args.split, args.out, args.max_seconds,
-                                                         args.limit, args.splits_dir)
+        rep = _evaluate_after_audit(args)
     except BaseException as exc:
         if frozen:
             append_audit({"action": "gate_on_frozen_test", "status": "failed", "at": _now(),
                           "actor": args.frozen_test_approved_by, "gate_report_path": str(args.out),
                           "error": type(exc).__name__}, audit_log)
         raise
+    if frozen:
+        append_audit({"action": "gate_on_frozen_test", "status": "completed", "at": _now(),
+                      "actor": args.frozen_test_approved_by, "bundle_sha256": rep["bundle"]["bundle_sha256"],
+                      "verdict": rep["verdict"], "run_complete": rep["run"]["complete"],
+                      "n_items_evaluated": rep["run"]["n_items_evaluated"], "gate_report_path": str(args.out)},
+                     audit_log)
+    return rep
+
+
+def _evaluate_after_audit(args) -> dict:
+    """Score the split, compare with --active-report, build and write the report."""
+    records, meta, bundle, wall, n_new = run_bundle(args.registry, args.split, args.out, args.max_seconds,
+                                                     args.limit, args.splits_dir)
     active_records = active_bundle = None
     if args.active_report:
         other = json.loads(args.active_report.read_text())
@@ -464,12 +507,6 @@ def evaluate(args) -> dict:
     rep = build_report(records, meta, bundle, wall, n_new, args.registry, active_records, active_bundle,
                        args.frozen_test_approved_by)
     write_json(args.out, rep)
-    if frozen:
-        append_audit({"action": "gate_on_frozen_test", "status": "completed", "at": _now(),
-                      "actor": args.frozen_test_approved_by, "bundle_sha256": rep["bundle"]["bundle_sha256"],
-                      "verdict": rep["verdict"], "run_complete": rep["run"]["complete"],
-                      "n_items_evaluated": rep["run"]["n_items_evaluated"], "gate_report_path": str(args.out)},
-                     audit_log)
     return rep
 
 
