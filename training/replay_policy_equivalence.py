@@ -489,9 +489,13 @@ def t4(out_path: Path, limit: int | None, intra_op_threads: int) -> dict:
     specs = load_specs(pointers, intra_op_threads)
     stub = _StubStage2(specs["stage2"].detector)
     manifests = {name: spec.manifest for name, spec in specs.items()}
+    # Same id, version, rationale and validated-on engine version as the committed route policy, so the run's
+    # policy differs from it only in the raised budgets (checked in the report, review r1 m9).
+    committed = committed_policy("cascade-tfidf-allow-only")
     policy, caps = legacy_to_v2(pointers, manifests, config, known_tokenizers=KNOWN_TOKENIZERS,
                                 calibrations=CALIBRATION_RECORDS, policy_id="cascade-tfidf-allow-only",
-                                policy_version="1")
+                                policy_version="1", rationale=committed.rationale,
+                                engine_version=committed.engine_version)
     detectors = {(s.detector_id, s.detector_version): (_spec_with(s, stub) if n == "stage2" else s)
                  for n, s in specs.items() if n != "shadow"}
     bundle = LoadedBundle(policy=policy, capabilities=caps, detectors=detectors, shadow=None,
@@ -544,11 +548,22 @@ def t4(out_path: Path, limit: int | None, intra_op_threads: int) -> dict:
         finally:
             await svc.stop()
 
+    code = code_version()
     asyncio.run(scenario())
-    return t4_report(out_path, recorded, chunks_by_item, committed_items, items, faithful, policy, bundle, specs)
+    return t4_report(out_path, recorded, chunks_by_item, committed_items, items, faithful, policy, bundle, specs,
+                     code)
 
 
-def t4_report(out_path, recorded, chunks_by_item, committed_items, items, faithful, policy, bundle, specs) -> dict:
+T4_TIMEOUT_FIELDS = {"gate.timeout_ms", "gate.on_failure.fallback.timeout_ms", "decide.members[0].timeout_ms"}
+
+
+def t4_report(out_path, recorded, chunks_by_item, committed_items, items, faithful, policy, bundle, specs,
+              code: dict | None = None) -> dict:
+    from serving import engine_version as ev
+    from serving.policy import bundle_sha256
+
+    committed = committed_policy("cascade-tfidf-allow-only")
+    diff = timeout_only_diff(committed, policy)
     truth = {it["id"]: it for it in items}
     cmp_fields = ("escalated", "stub_decision", "stub_policy_applied", "stub_coverage_policy_applied", "path",
                   "n_chunks", "stage1_status", "s1_langs", "stages_run")
@@ -605,8 +620,16 @@ def t4_report(out_path, recorded, chunks_by_item, committed_items, items, faithf
                              f"phase A; the committed per-chunk scores decide, as in the reference)",
                    "timeouts_disabled_ms": NO_TIMEOUT_MS},
         "bundle": {"policy_id": policy.policy_id, "policy_version": policy.policy_version,
-                   "bundle_sha256": bundle.bundle_sha256,
-                   "committed_policy": "artifacts/policies/cascade-tfidf-allow-only/1/policy.json"},
+                   "run_policy_bundle_sha256": bundle.bundle_sha256,
+                   "committed_policy": "artifacts/policies/cascade-tfidf-allow-only/1/policy.json",
+                   "committed_bundle_sha256": bundle_sha256(committed),
+                   "engine_version": ev.ENGINE_VERSION,
+                   "differences_from_committed_policy": diff,
+                   "only_timeout_fields_differ": set(diff) <= T4_TIMEOUT_FIELDS,
+                   "note": "the run raises the budgets to 600 s so no decision is made by a deadline; everything "
+                           "else, including every capability pin, is the committed route policy. The two bundle "
+                           "hashes differ by those budgets only."},
+        "provenance": {"this_run": code},
     }
     write_json(out_path, rep)
     return rep
