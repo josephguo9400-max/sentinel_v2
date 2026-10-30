@@ -21,7 +21,9 @@ versions it pins by sha256, and the `engine_version` that interprets it; `bundle
 detector can do is separated from how the gateway uses it, so a routing change is a policy version instead of a
 model version, and a gate verdict is bound to a bundle hash. The decision path is the same code as before, proved
 by the equivalence runs: on all 2,000 replay items the policy engine and the pre-refactor service make identical
-decisions (`reports/policy-runtime/t3_d23_equivalence.json`), and the converted route policy reproduces the
+decisions on the served D23 path (`reports/policy-runtime/t3_d23_equivalence.json`; DeBERTa scores are shared
+through a row cache there, so identical scores hold by construction; uncached subsets agree too, see "Release
+gate"), and the converted route policy reproduces the
 committed cascade counterfactual exactly, including its 201/306
 (`reports/policy-runtime/t4_cascade_equivalence.json`). Design: `docs/design/capability-policy.md`; decisions: D25
 in `docs/RFC.md`. See "Bundles, policies and capabilities" below.
@@ -55,11 +57,16 @@ at most 200 characters). Every response is built as a `contracts.ClassifyRespons
 ```json
 {"request_id": "demo-1", "decision": "flag", "decided_by": "deberta-pi-v2", "policy_applied": null,
  "coverage_policy_applied": null, "stages_run": ["stage1", "stage2"],
- "policy_id": "d23-deberta-decides", "policy_version": "1", "bundle_sha256": "17fac609a8f2…",
+ "policy_id": "d23-deberta-decides", "policy_version": "1", "bundle_sha256": "2ebc7d9ae676…",
  "unscored_by_any_step": false, "escalation_reason": "band",
  "results": [{"stage": "stage1", "...": "DetectorResult v1.3"}, {"stage": "stage2", "...": "..."}]}
 ```
 
+- **Compatibility:** v1.3 is a breaking change for a client pinned to the v1.2 models. `ClassifyResponse` and
+  `DetectorResult` keep `extra="forbid"`, every `DetectorResult` now carries `schema_version: "1.3"` and the
+  response has five new fields, so a v1.2 reader rejects every response (also D23 responses without an observe
+  result). There is no response-level version and no 1.2 mode: upgrade the reader to the 1.3 models (they accept
+  1.1-1.3) or parse without `extra="forbid"`. In-tree consumers already use 1.3.
 - `results` holds one active `DetectorResult` per step that decided, in order. An observe step's result follows
   them with `role="observe"` (v1.3; a v1.2 gateway reported it as `"shadow"`), `stage="stage1"`, and `stages_run`
   does not list it. The shadow *mirror* is never in the response. Consumers that count catches, truncations or
@@ -137,8 +144,11 @@ with a new calibration, model or scoring rule, which is a new `detector_version`
 policy change as a model version (`stage1-tfidf-v2` and `v2.1` have the same model bytes and threshold and differ
 only in their gray zone). Both are printed in the gate report.
 
-**`engine_version`** (`serving/engine_version.py`, 1.0.0) is the version of the interpreter a policy was validated
-on. A policy validated on another major version, or on a newer minor, is refused. `serving/engine_version.json`
+**`engine_version`** (`serving/engine_version.py`, 1.1.0) is the version of the interpreter a policy was validated
+on. 1.0.0 was the refactor; 1.1.0 holds the review r1 fixes (shape B: coverage after a failed member, the gate
+FALLBACK budget after a gate failure; validation: `scope_languages_required`, sorted `scope_languages`). The
+committed policies record 1.0.0, the engine they were validated on, and are accepted by 1.1.0; their bundle hashes
+changed with the engine (D23: `17fac609a8f2…` → `2ebc7d9ae676…`). A policy validated on another major version, or on a newer minor, is refused. `serving/engine_version.json`
 records the sha256 of every decision-path file, and `tests/serving/test_engine_version.py` fails when one of them
 changes without a bump, so a behaviour change cannot keep an old bundle hash (D25.2).
 
@@ -151,7 +161,11 @@ field to change instead (`serving/policy.py` `DECISION_FIELDS`; the list is also
 decisions only through overload and timeouts, which the gate measures.
 
 **Shape B (a parallel decide stage)** is implemented and tested with fake detectors only and is served by no
-committed policy (D25.5): on 2 cores two DeBERTa-class members compete for CPU and turn into timeouts. A canary
+committed policy (D25.5): on 2 cores two DeBERTa-class members compete for CPU and turn into timeouts. Its
+coverage rule: an aggregated allow with content that no member scored goes to the coverage policy whenever some
+member (or its fallback) scored chunks, also when the allow rests on a failed member's FAIL_OPEN vote, so a failure
+is never more permissive than the same vote succeeding (engine 1.1.0, review r1 M2); only when no member scored
+anything does the failure policy alone decide, as for a single member. A canary
 field is designed but not implemented, and the engine rejects a policy that sets it (D25.4).
 
 **Converting and the v1 path.** `serving/policy.py` `legacy_to_v2` is a pure function from a v1 registry state,
@@ -268,7 +282,9 @@ step, and "Stage 2" is the **decide** member. The numbers in brackets are the va
 
 **Failure rules** (`on_failure`, one per step; `tests/serving/test_failure_matrix.py` documents all 36 cells of
 {gate, decide single, decide parallel member} x {timeout, exception, overloaded} x {FAIL_OPEN, FAIL_CLOSED,
-FALLBACK that works, FALLBACK that fails}):
+FALLBACK that works, FALLBACK that fails} on a one-chunk text, and 16 more on a text with more chunks than
+`max_chunks`, where the coverage rule interacts with the failure; budgets and the remaining interactions are in
+design §11a):
 
 | Mode | Effect |
 | --- | --- |
@@ -751,20 +767,36 @@ step: without one every request reaches a decider by design, so there is nothing
 need work that is not in this milestone. Any FAIL is a FAIL; anything unevaluated makes the verdict
 `INSUFFICIENT_EVIDENCE`.
 
-Promotion needs an explicit `--approved-by`, refuses a report bound to another bundle, refuses a non-PASS verdict
-unless the owner passes `--allow-not-pass` (recorded), writes `active`/`previous` and appends to
+Promotion needs an explicit `--approved-by`, refuses a report bound to another bundle, a report whose run is
+incomplete (or ran with `--limit`), a report on a split other than val or frozen_test, and a candidate that is
+already the active bundle (which would overwrite `previous`); it refuses a non-PASS verdict unless the owner passes
+`--allow-not-pass` (recorded; it overrides only the verdict), writes `active`/`previous` and appends to
 `artifacts/audit_log.jsonl`. Rollback is the pointer flip back to `previous`, audited the same way.
 
 **The frozen test** (`data/splits/frozen_test.jsonl`) is read for a verdict by this script only, and only with
-`--split frozen_test --frozen-test-approved-by NAME`, which is itself written to the audit log. It was not run in
-this milestone: the owner decides when the final split is read.
+`--split frozen_test --frozen-test-approved-by NAME`, which is itself written to the audit log: a `started` entry
+before the split is opened, then `completed` or `failed`, so a crashed or killed run is still visible. It was not
+run in this milestone: the owner decides when the final split is read.
 
-Committed dry run, the served bundle `17fac609a8f2…` on val (all 3,214 items,
+Committed dry run, the D23 bundle as it was under engine 1.0.0 (`17fac609a8f2…`) on val (all 3,214 items,
 `reports/policy-runtime/gate_val_d23.json`): recall 2,164/2,240 = 96.6% [95.8, 97.3], FPR 88/974 = 9.0%
-[7.4, 11.0], benign-hard FPR 33/92, 0 failed active results, 1 request decided by the coverage policy. Verdict
-`INSUFFICIENT_EVIDENCE`, for two structural reasons rather than a defect: val has 92 benign-hard samples (below
-the 100 the FPR check needs), and a bundle cannot be paired against itself. Val also shares Stage 1's training
-sources, which is exactly why the replay set, not val, exposed the cascade's loss (D23).
+[7.4, 11.0], benign-hard FPR 33/92 = 35.9% [26.8, 46.1], 0 failed active results, 1 request decided by the coverage
+policy. Verdict `INSUFFICIENT_EVIDENCE`: val has 92 benign-hard samples (below the 100 the FPR check needs), and a
+bundle cannot be paired against itself. The gate rule is applied correctly, but the benign-hard result is **a real
+weakness of the served model, not just missing evidence**: at n = 100 the FPR would be at least 33/100 = 33%, so the
+≤ 5% check will FAIL as soon as it can be evaluated (the point estimate stays above 5% until more than 660 samples
+with no further false positive). DeBERTa flags instruction-like benign emails; gateway-mvp measured the same on the
+frozen test (60/276 = 21.7%, gate FAIL). Val also shares Stage 1's training sources, which is exactly why the
+replay set, not val, exposed the cascade's loss (D23).
+
+That report is bound to `17fac609a8f2…`. Engine 1.1.0 makes the served bundle `2ebc7d9ae676…` (same policy
+file), so `promote` refuses the report for it and the gate has not been run on the current bundle. The D23 path
+is unchanged by 1.1.0: T4 was re-run at 1.1.0 (identical on all 2,000 items,
+`reports/policy-runtime/t4_cascade_equivalence.json`) and T3 was re-run uncached on its first 300 items (342
+DeBERTa rows per engine, 0 differences, every record equal to the committed T3 record,
+`reports/policy-runtime/t3_d23_first300_nocache_engine110.json`). The reviewer's uncached re-run of 193 T3 items
+at `bc49454` (459 rows per engine, 0 differences) is `reviews/policy-runtime-r1/t3_subset_nocache.json` on branch
+`verify/policy-runtime` (commit 3cacec5).
 
 ## Not done in this milestone
 
