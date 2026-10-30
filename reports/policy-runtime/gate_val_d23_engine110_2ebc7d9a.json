@@ -1,0 +1,861 @@
+{
+  "report": "release gate (training/gate.py)",
+  "generated_at": "2026-10-30T22:26:29Z",
+  "verdict": "INSUFFICIENT_EVIDENCE",
+  "promotes": false,
+  "bundle": {
+    "policy_id": "d23-deberta-decides",
+    "policy_version": "1",
+    "policy_sha256": "481d90dc1af63fd157f8ca1e50d07d6dc08967f136b136e2631abbd291f1417e",
+    "engine_version": "1.1.0",
+    "policy_engine_version": "1.0.0",
+    "bundle_sha256": "2ebc7d9ae676e800c12c90075db5ba509fa7aa5263572dec0298519415500240",
+    "capabilities": [
+      "deberta-pi-v2@2.0.0+90c9989b.onnx.fp32:ad7d51c0aa4d",
+      "stage1-tfidf-lr@stage1-tfidf-v2.1:31d8fd4e44c1"
+    ],
+    "policy_source": "registry_v2",
+    "policy_path": "policies/d23-deberta-decides/1/policy.json",
+    "registry": "artifacts/registry.json",
+    "status": "pending_gate",
+    "previous": null
+  },
+  "compared_with_active_bundle": null,
+  "run": {
+    "split": "val",
+    "split_path": "data/splits/val.jsonl",
+    "split_sha256": "d84853ecc84cc87e50ef28ffa88a72ae7a7959049d9aec8f3a4ea01388ed7f05",
+    "n_items_in_split": 3214,
+    "n_items_evaluated": 3214,
+    "complete": true,
+    "limit": null,
+    "wall_s_this_run": 563.1,
+    "n_items_this_run": 3214,
+    "gate_view": "as_served",
+    "mode": "in-process, sequential (no queueing, no load profile)",
+    "environment": {
+      "python": "3.13.18",
+      "machine": "x86_64"
+    },
+    "frozen_test_approved_by": null
+  },
+  "gate_minimums": {
+    "recall_min_positives": 200,
+    "benign_hard_min_n": 100,
+    "benign_hard_fpr_max_wilson_upper": 0.05,
+    "max_escalation_share": 0.5,
+    "max_error_rate": 0.01
+  },
+  "checks": {
+    "recall": {
+      "name": "recall",
+      "rule": "paired vs the active bundle: 95% CI lower bound >= -2 pt",
+      "positives": 2240,
+      "min_positives": 200,
+      "recall": {
+        "value": 0.9660714285714286,
+        "numerator": 2164,
+        "denominator": 2240,
+        "ci95": [
+          0.957740144739582,
+          0.9728068828999731
+        ],
+        "ci_method": "wilson"
+      },
+      "comparison": null,
+      "paired": null,
+      "verdict": "INSUFFICIENT_EVIDENCE",
+      "why": "no active bundle to pair with (the candidate is the active bundle); the rate is reported, the paired check needs two bundles"
+    },
+    "benign_hard_fpr": {
+      "name": "benign_hard_fpr",
+      "rule": "Wilson 95% upper bound <= 0.05",
+      "negatives": 92,
+      "min_n": 100,
+      "fpr": {
+        "value": 0.358695652173913,
+        "numerator": 33,
+        "denominator": 92,
+        "ci95": [
+          0.2681713717356563,
+          0.4605472817581062
+        ],
+        "ci_method": "wilson"
+      },
+      "verdict": "INSUFFICIENT_EVIDENCE",
+      "why": "92 benign-hard samples < 100"
+    },
+    "compute_saved": {
+      "name": "compute_saved",
+      "rule": "share escalated to a decide member <= 0.5",
+      "escalated": 3214,
+      "n": 3214,
+      "escalation_share": {
+        "value": 1.0,
+        "numerator": 3214,
+        "denominator": 3214,
+        "ci95": [
+          0.9988062000972222,
+          0.9999999999999998
+        ],
+        "ci_method": "wilson"
+      },
+      "verdict": "NOT_EVALUATED",
+      "why": "the policy has no gate step: every request reaches a decide member by design, so there is no cascade saving to measure (D23). The escalation share is reported above."
+    },
+    "error_rate": {
+      "name": "error_rate",
+      "rule": "timeouts + exceptions of active steps < 0.01 (load shedding counted apart)",
+      "failures": {},
+      "n": 3214,
+      "error_rate": {
+        "value": 0.0,
+        "numerator": 0,
+        "denominator": 3214,
+        "ci95": [
+          0.0,
+          0.0011937999027776776
+        ],
+        "ci_method": "wilson"
+      },
+      "shed": 0,
+      "verdict": "PASS",
+      "why": "0/3214 active results failed (excluding 0 shed)"
+    },
+    "p99_latency": {
+      "name": "p99_latency",
+      "rule": "no worse than the active bundle under a fixed load profile",
+      "verdict": "NOT_EVALUATED",
+      "why": "needs a load profile and >= 1,000 requests on a host that is not shared with the load generator (RFC serving-hardening); this run is sequential and in-process"
+    },
+    "adaptive_asr": {
+      "name": "adaptive_asr",
+      "rule": "mode B ASR no worse than the active bundle",
+      "verdict": "NOT_EVALUATED",
+      "why": "the adaptive attacker is RFC adaptive-eval"
+    }
+  },
+  "slices": {
+    "benign_hard": {
+      "n": 92,
+      "positives": 0,
+      "negatives": 92,
+      "confusion": {
+        "tp": 0,
+        "fp": 33,
+        "fn": 0,
+        "tn": 59
+      },
+      "precision": {
+        "value": 0.0,
+        "numerator": 0,
+        "denominator": 33,
+        "ci95": [
+          0.0,
+          0.10426999754245206
+        ],
+        "ci_method": "wilson"
+      },
+      "recall": {
+        "value": null,
+        "numerator": 0,
+        "denominator": 0,
+        "ci95": null,
+        "ci_method": "wilson"
+      },
+      "fpr": {
+        "value": 0.358695652173913,
+        "numerator": 33,
+        "denominator": 92,
+        "ci95": [
+          0.2681713717356563,
+          0.4605472817581062
+        ],
+        "ci_method": "wilson"
+      }
+    },
+    "benign_hard_family=calendar_ask": {
+      "n": 18,
+      "positives": 0,
+      "negatives": 18,
+      "confusion": {
+        "tp": 0,
+        "fp": 5,
+        "fn": 0,
+        "tn": 13
+      },
+      "precision": {
+        "value": 0.0,
+        "numerator": 0,
+        "denominator": 5,
+        "ci95": [
+          0.0,
+          0.43448246478317476
+        ],
+        "ci_method": "wilson"
+      },
+      "recall": {
+        "value": null,
+        "numerator": 0,
+        "denominator": 0,
+        "ci95": null,
+        "ci_method": "wilson"
+      },
+      "fpr": {
+        "value": 0.2777777777777778,
+        "numerator": 5,
+        "denominator": 18,
+        "ci95": [
+          0.12499753379553993,
+          0.5087265656029746
+        ],
+        "ci_method": "wilson"
+      }
+    },
+    "benign_hard_family=forwarding_request": {
+      "n": 18,
+      "positives": 0,
+      "negatives": 18,
+      "confusion": {
+        "tp": 0,
+        "fp": 3,
+        "fn": 0,
+        "tn": 15
+      },
+      "precision": {
+        "value": 0.0,
+        "numerator": 0,
+        "denominator": 3,
+        "ci95": [
+          5.551115123125783e-17,
+          0.5614970317550454
+        ],
+        "ci_method": "wilson"
+      },
+      "recall": {
+        "value": null,
+        "numerator": 0,
+        "denominator": 0,
+        "ci95": null,
+        "ci_method": "wilson"
+      },
+      "fpr": {
+        "value": 0.16666666666666666,
+        "numerator": 3,
+        "denominator": 18,
+        "ci95": [
+          0.05836576805861446,
+          0.39222038103915724
+        ],
+        "ci_method": "wilson"
+      }
+    },
+    "benign_hard_family=it_notice": {
+      "n": 18,
+      "positives": 0,
+      "negatives": 18,
+      "confusion": {
+        "tp": 0,
+        "fp": 9,
+        "fn": 0,
+        "tn": 9
+      },
+      "precision": {
+        "value": 0.0,
+        "numerator": 0,
+        "denominator": 9,
+        "ci95": [
+          0.0,
+          0.2991450484195441
+        ],
+        "ci_method": "wilson"
+      },
+      "recall": {
+        "value": null,
+        "numerator": 0,
+        "denominator": 0,
+        "ci95": null,
+        "ci_method": "wilson"
+      },
+      "fpr": {
+        "value": 0.5,
+        "numerator": 9,
+        "denominator": 18,
+        "ci95": [
+          0.29031021505169974,
+          0.7096897849483003
+        ],
+        "ci_method": "wilson"
+      }
+    },
+    "benign_hard_family=log_digest_long": {
+      "n": 10,
+      "positives": 0,
+      "negatives": 10,
+      "confusion": {
+        "tp": 0,
+        "fp": 10,
+        "fn": 0,
+        "tn": 0
+      },
+      "precision": {
+        "value": 0.0,
+        "numerator": 0,
+        "denominator": 10,
+        "ci95": [
+          0.0,
+          0.2775327998628892
+        ],
+        "ci_method": "wilson"
+      },
+      "recall": {
+        "value": null,
+        "numerator": 0,
+        "denominator": 0,
+        "ci95": null,
+        "ci_method": "wilson"
+      },
+      "fpr": {
+        "value": 1.0,
+        "numerator": 10,
+        "denominator": 10,
+        "ci95": [
+          0.7224672001371107,
+          0.9999999999999999
+        ],
+        "ci_method": "wilson"
+      }
+    },
+    "benign_hard_family=newsletter_long": {
+      "n": 10,
+      "positives": 0,
+      "negatives": 10,
+      "confusion": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 0,
+        "tn": 10
+      },
+      "precision": {
+        "value": null,
+        "numerator": 0,
+        "denominator": 0,
+        "ci95": null,
+        "ci_method": "wilson"
+      },
+      "recall": {
+        "value": null,
+        "numerator": 0,
+        "denominator": 0,
+        "ci95": null,
+        "ci_method": "wilson"
+      },
+      "fpr": {
+        "value": 0.0,
+        "numerator": 0,
+        "denominator": 10,
+        "ci95": [
+          0.0,
+          0.2775327998628892
+        ],
+        "ci_method": "wilson"
+      }
+    },
+    "benign_hard_family=policy_reminder": {
+      "n": 18,
+      "positives": 0,
+      "negatives": 18,
+      "confusion": {
+        "tp": 0,
+        "fp": 6,
+        "fn": 0,
+        "tn": 12
+      },
+      "precision": {
+        "value": 0.0,
+        "numerator": 0,
+        "denominator": 6,
+        "ci95": [
+          2.7755575615628914e-17,
+          0.3903342879021653
+        ],
+        "ci_method": "wilson"
+      },
+      "recall": {
+        "value": null,
+        "numerator": 0,
+        "denominator": 0,
+        "ci95": null,
+        "ci_method": "wilson"
+      },
+      "fpr": {
+        "value": 0.3333333333333333,
+        "numerator": 6,
+        "denominator": 18,
+        "ci95": [
+          0.1627877475083369,
+          0.5625053270405489
+        ],
+        "ci_method": "wilson"
+      }
+    },
+    "lang=en": {
+      "n": 3150,
+      "positives": 2216,
+      "negatives": 934,
+      "confusion": {
+        "tp": 2152,
+        "fp": 88,
+        "fn": 64,
+        "tn": 846
+      },
+      "precision": {
+        "value": 0.9607142857142857,
+        "numerator": 2152,
+        "denominator": 2240,
+        "ci95": [
+          0.9518485967045394,
+          0.9680024880885842
+        ],
+        "ci_method": "wilson"
+      },
+      "recall": {
+        "value": 0.9711191335740073,
+        "numerator": 2152,
+        "denominator": 2216,
+        "ci95": [
+          0.9632895936456108,
+          0.9773181203436864
+        ],
+        "ci_method": "wilson"
+      },
+      "fpr": {
+        "value": 0.09421841541755889,
+        "numerator": 88,
+        "denominator": 934,
+        "ci95": [
+          0.07711017208386736,
+          0.11465087359099438
+        ],
+        "ci_method": "wilson"
+      }
+    },
+    "lang=non_en": {
+      "n": 64,
+      "positives": 24,
+      "negatives": 40,
+      "confusion": {
+        "tp": 12,
+        "fp": 0,
+        "fn": 12,
+        "tn": 40
+      },
+      "precision": {
+        "value": 1.0,
+        "numerator": 12,
+        "denominator": 12,
+        "ci95": [
+          0.7575059933447592,
+          1.0
+        ],
+        "ci_method": "wilson"
+      },
+      "recall": {
+        "value": 0.5,
+        "numerator": 12,
+        "denominator": 24,
+        "ci95": [
+          0.3142742581957335,
+          0.6857257418042665
+        ],
+        "ci_method": "wilson"
+      },
+      "fpr": {
+        "value": 0.0,
+        "numerator": 0,
+        "denominator": 40,
+        "ci95": [
+          0.0,
+          0.08762160119728664
+        ],
+        "ci_method": "wilson"
+      }
+    },
+    "overall": {
+      "n": 3214,
+      "positives": 2240,
+      "negatives": 974,
+      "confusion": {
+        "tp": 2164,
+        "fp": 88,
+        "fn": 76,
+        "tn": 886
+      },
+      "precision": {
+        "value": 0.9609236234458259,
+        "numerator": 2164,
+        "denominator": 2252,
+        "ci95": [
+          0.952103873774343,
+          0.9681735649980114
+        ],
+        "ci_method": "wilson"
+      },
+      "recall": {
+        "value": 0.9660714285714286,
+        "numerator": 2164,
+        "denominator": 2240,
+        "ci95": [
+          0.957740144739582,
+          0.9728068828999731
+        ],
+        "ci_method": "wilson"
+      },
+      "fpr": {
+        "value": 0.09034907597535935,
+        "numerator": 88,
+        "denominator": 974,
+        "ci95": [
+          0.07391791645130127,
+          0.1099988700567982
+        ],
+        "ci_method": "wilson"
+      }
+    },
+    "source=benign_hard": {
+      "n": 92,
+      "positives": 0,
+      "negatives": 92,
+      "confusion": {
+        "tp": 0,
+        "fp": 33,
+        "fn": 0,
+        "tn": 59
+      },
+      "precision": {
+        "value": 0.0,
+        "numerator": 0,
+        "denominator": 33,
+        "ci95": [
+          0.0,
+          0.10426999754245206
+        ],
+        "ci_method": "wilson"
+      },
+      "recall": {
+        "value": null,
+        "numerator": 0,
+        "denominator": 0,
+        "ci95": null,
+        "ci_method": "wilson"
+      },
+      "fpr": {
+        "value": 0.358695652173913,
+        "numerator": 33,
+        "denominator": 92,
+        "ci95": [
+          0.2681713717356563,
+          0.4605472817581062
+        ],
+        "ci_method": "wilson"
+      }
+    },
+    "source=deepset": {
+      "n": 112,
+      "positives": 58,
+      "negatives": 54,
+      "confusion": {
+        "tp": 22,
+        "fp": 0,
+        "fn": 36,
+        "tn": 54
+      },
+      "precision": {
+        "value": 1.0,
+        "numerator": 22,
+        "denominator": 22,
+        "ci95": [
+          0.8513451253913791,
+          1.0
+        ],
+        "ci_method": "wilson"
+      },
+      "recall": {
+        "value": 0.3793103448275862,
+        "numerator": 22,
+        "denominator": 58,
+        "ci95": [
+          0.2656427267728758,
+          0.5079719280723111
+        ],
+        "ci_method": "wilson"
+      },
+      "fpr": {
+        "value": 0.0,
+        "numerator": 0,
+        "denominator": 54,
+        "ci95": [
+          0.0,
+          0.0664135880908964
+        ],
+        "ci_method": "wilson"
+      }
+    },
+    "source=jackhhao": {
+      "n": 378,
+      "positives": 102,
+      "negatives": 276,
+      "confusion": {
+        "tp": 86,
+        "fp": 2,
+        "fn": 16,
+        "tn": 274
+      },
+      "precision": {
+        "value": 0.9772727272727273,
+        "numerator": 86,
+        "denominator": 88,
+        "ci95": [
+          0.9208745464473241,
+          0.9937450717361879
+        ],
+        "ci_method": "wilson"
+      },
+      "recall": {
+        "value": 0.8431372549019608,
+        "numerator": 86,
+        "denominator": 102,
+        "ci95": [
+          0.76028943802391,
+          0.9010771075618504
+        ],
+        "ci_method": "wilson"
+      },
+      "fpr": {
+        "value": 0.007246376811594203,
+        "numerator": 2,
+        "denominator": 276,
+        "ci95": [
+          0.0019894724502566904,
+          0.026031603675273615
+        ],
+        "ci_method": "wilson"
+      }
+    },
+    "source=spml": {
+      "n": 2632,
+      "positives": 2080,
+      "negatives": 552,
+      "confusion": {
+        "tp": 2056,
+        "fp": 53,
+        "fn": 24,
+        "tn": 499
+      },
+      "precision": {
+        "value": 0.9748696064485538,
+        "numerator": 2056,
+        "denominator": 2109,
+        "ci95": [
+          0.9672765885051696,
+          0.9807358577850488
+        ],
+        "ci_method": "wilson"
+      },
+      "recall": {
+        "value": 0.9884615384615385,
+        "numerator": 2056,
+        "denominator": 2080,
+        "ci95": [
+          0.9828881860366553,
+          0.9922339814385842
+        ],
+        "ci_method": "wilson"
+      },
+      "fpr": {
+        "value": 0.09601449275362318,
+        "numerator": 53,
+        "denominator": 552,
+        "ci95": [
+          0.07415598243640151,
+          0.12345694671382815
+        ],
+        "ci_method": "wilson"
+      }
+    },
+    "stage2_overlap=confirmed": {
+      "n": 378,
+      "positives": 102,
+      "negatives": 276,
+      "confusion": {
+        "tp": 86,
+        "fp": 2,
+        "fn": 16,
+        "tn": 274
+      },
+      "precision": {
+        "value": 0.9772727272727273,
+        "numerator": 86,
+        "denominator": 88,
+        "ci95": [
+          0.9208745464473241,
+          0.9937450717361879
+        ],
+        "ci_method": "wilson"
+      },
+      "recall": {
+        "value": 0.8431372549019608,
+        "numerator": 86,
+        "denominator": 102,
+        "ci95": [
+          0.76028943802391,
+          0.9010771075618504
+        ],
+        "ci_method": "wilson"
+      },
+      "fpr": {
+        "value": 0.007246376811594203,
+        "numerator": 2,
+        "denominator": 276,
+        "ci95": [
+          0.0019894724502566904,
+          0.026031603675273615
+        ],
+        "ci_method": "wilson"
+      }
+    },
+    "stage2_overlap=none_known": {
+      "n": 2632,
+      "positives": 2080,
+      "negatives": 552,
+      "confusion": {
+        "tp": 2056,
+        "fp": 53,
+        "fn": 24,
+        "tn": 499
+      },
+      "precision": {
+        "value": 0.9748696064485538,
+        "numerator": 2056,
+        "denominator": 2109,
+        "ci95": [
+          0.9672765885051696,
+          0.9807358577850488
+        ],
+        "ci_method": "wilson"
+      },
+      "recall": {
+        "value": 0.9884615384615385,
+        "numerator": 2056,
+        "denominator": 2080,
+        "ci95": [
+          0.9828881860366553,
+          0.9922339814385842
+        ],
+        "ci_method": "wilson"
+      },
+      "fpr": {
+        "value": 0.09601449275362318,
+        "numerator": 53,
+        "denominator": 552,
+        "ci95": [
+          0.07415598243640151,
+          0.12345694671382815
+        ],
+        "ci_method": "wilson"
+      }
+    },
+    "stage2_overlap=none_synthetic": {
+      "n": 92,
+      "positives": 0,
+      "negatives": 92,
+      "confusion": {
+        "tp": 0,
+        "fp": 33,
+        "fn": 0,
+        "tn": 59
+      },
+      "precision": {
+        "value": 0.0,
+        "numerator": 0,
+        "denominator": 33,
+        "ci95": [
+          0.0,
+          0.10426999754245206
+        ],
+        "ci_method": "wilson"
+      },
+      "recall": {
+        "value": null,
+        "numerator": 0,
+        "denominator": 0,
+        "ci95": null,
+        "ci_method": "wilson"
+      },
+      "fpr": {
+        "value": 0.358695652173913,
+        "numerator": 33,
+        "denominator": 92,
+        "ci95": [
+          0.2681713717356563,
+          0.4605472817581062
+        ],
+        "ci_method": "wilson"
+      }
+    },
+    "stage2_overlap=suspected": {
+      "n": 112,
+      "positives": 58,
+      "negatives": 54,
+      "confusion": {
+        "tp": 22,
+        "fp": 0,
+        "fn": 36,
+        "tn": 54
+      },
+      "precision": {
+        "value": 1.0,
+        "numerator": 22,
+        "denominator": 22,
+        "ci95": [
+          0.8513451253913791,
+          1.0
+        ],
+        "ci_method": "wilson"
+      },
+      "recall": {
+        "value": 0.3793103448275862,
+        "numerator": 22,
+        "denominator": 58,
+        "ci95": [
+          0.2656427267728758,
+          0.5079719280723111
+        ],
+        "ci_method": "wilson"
+      },
+      "fpr": {
+        "value": 0.0,
+        "numerator": 0,
+        "denominator": 54,
+        "ci95": [
+          0.0,
+          0.0664135880908964
+        ],
+        "ci_method": "wilson"
+      }
+    }
+  },
+  "decisions": {
+    "allow": 962,
+    "flag": 2252
+  },
+  "policy_decisions": {
+    "None": 3214
+  },
+  "coverage_decisions": {
+    "None": 3213,
+    "flag": 1
+  },
+  "errors": {},
+  "note": "A gate verdict is bound to this bundle_sha256. Any change to the policy, a pinned capability or the engine version produces a new hash and this verdict does not carry over. This script never promotes: `python -m training.gate promote --approved-by ...` does, and appends to artifacts/audit_log.jsonl."
+}
