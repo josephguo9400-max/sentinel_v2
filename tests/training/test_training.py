@@ -429,7 +429,7 @@ def test_eval_reports_truncated_overall_and_per_slice():
             {"id": "c", "text": "trunc lunch", "label": 0, "source": "y"}]
     res = evaluate(rows, be)
     assert res["slices"]["overall"]["truncated"] == {"n_responses_with_results": 3, "n_truncated": 2,
-                                                     "n_truncated_model_predictions": 2}
+                                                     "n_truncated_model_predictions": 2, "n_shadow_truncated": 0}
     assert res["slices"]["source=x"]["truncated"]["n_truncated"] == 1
     assert res["slices"]["source=y"]["truncated"]["n_truncated"] == 1
 

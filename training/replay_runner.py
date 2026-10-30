@@ -22,8 +22,15 @@ have finished, so the file grows during the run and drift is visible while it ru
   n_sent, n_responses, errors (by kind), flag_rate, escalation_rate (stages_run contains stage2), stages_run
   counts, decided_by counts, policy_applied counts, coverage_policy_applied counts, failure_reason counts of
   failed active results (overloaded separate from timeout / exception), shadow: n_ok, agreement with the served
-  decision, shadow failure reasons; client latency (n, p50, p95, p99, max); non_en_share (replay metadata, not
-  seen by the gateway).
+  decision, shadow failure reasons (shadow detectors other than the observe-only Stage 1); observe_stage1: the
+  observe-only Stage 1 of D23 (role="shadow", stage="stage1"), which can only ever clear (allow), so agreement
+  with the decision means nothing for it. Reported instead: n_ok, n_partial (anytime deadline, some chunks
+  unscored -> could not clear), below_low_share (fully scored and every chunk below gray-zone low = the Stage 1
+  threshold: the share Stage 1 would allow if the per-chunk language gate passes, an upper bound on its
+  would-finalize-allow share; the language is not in the response), below_low_but_served_flag (of those, how
+  many the active path flagged: injections or failure / coverage-policy flags Stage 1 would have let through,
+  split by the policy that applied, "None" = a Stage 2 score), and failure reasons; client latency (n, p50, p95,
+  p99, max); non_en_share (replay metadata, not seen by the gateway).
 Delayed labels: an item's label may be used only from send_time + label_available_after_s * label_delay_scale
 (default scale nominal_rps / rps). Window w reports metrics over labels revealed in (end_{w-1}, end_w] and
 cumulatively up to end_w. Labels never revealed (null delay or null label) are never used. Labels revealed after
@@ -82,6 +89,39 @@ def _shadow(payload: dict) -> list[dict]:
     return [r for r in payload.get("results", []) if isinstance(r, dict) and r.get("role") == "shadow"]
 
 
+def _is_observe_stage1(s: dict) -> bool:
+    """An observe-only Stage 1 (D23): role="shadow", stage="stage1". Older rows without `stage` are not."""
+    return s.get("stage") == "stage1"
+
+
+def _observe_stage1_block(ok: list[Rec]) -> dict:
+    """Observe-only Stage 1 (D23) over responded records; see the module docstring."""
+    n_ok = n_partial = n_below = below_flag = 0
+    by_policy: Counter = Counter()
+    reasons: Counter = Counter()
+    for r in ok:
+        p = r.parsed
+        for s in p.get("shadow", []):
+            if not _is_observe_stage1(s):
+                continue
+            if s["status"] != "ok":
+                reasons[s.get("failure_reason") or s["status"]] += 1
+            elif s.get("truncated"):
+                n_ok += 1
+                n_partial += 1  # anytime deadline: unscored chunks stay uncleared
+            else:
+                n_ok += 1
+                if s.get("predicted_injection") is False:
+                    n_below += 1
+                    if p["decision"] == "flag":
+                        below_flag += 1
+                        by_policy[str(p["policy_applied"] or p["coverage_policy_applied"])] += 1
+    return {"n_ok": n_ok, "n_partial": n_partial, "below_low_share": rate(n_below, n_ok),
+            "below_low_but_served_flag": below_flag,
+            "below_low_and_served_flag_by_policy": dict(sorted(by_policy.items())),
+            "failure_reason": dict(sorted(reasons.items()))}
+
+
 def _latency(xs: list[float]) -> dict:
     if not xs:
         return {"n": 0}
@@ -116,6 +156,8 @@ def summarize_window(w: int, t0: float, t1: float, recs: list[Rec], all_recs: li
         for fr in p["failure_reasons"]:
             reasons[fr] += 1
         for s in p.get("shadow", []):
+            if _is_observe_stage1(s):
+                continue  # reported by _observe_stage1_block
             if s["status"] == "ok":
                 sh_ok += 1
                 sh_agree += int(bool(s["predicted_injection"]) == (p["decision"] == "flag"))
@@ -138,6 +180,7 @@ def summarize_window(w: int, t0: float, t1: float, recs: list[Rec], all_recs: li
                      "timeout_or_exception": sum(v for k, v in reasons.items() if k != "overloaded")},
         "shadow": {"n_ok": sh_ok, "agreement_with_served_decision": rate(sh_agree, sh_ok),
                    "failure_reason": dict(sorted(sh_reasons.items()))},
+        "observe_stage1": _observe_stage1_block(ok),
         "client_latency_ms": _latency([r.latency_ms for r in mine if r.latency_ms is not None]),
         "non_en_share": rate(sum(r.item.get("lang") != "en" for r in mine), len(mine)),
         "delayed_labels": {"revealed_in_window": _labeled(revealed_now), "cumulative": _labeled(revealed_cum)},
@@ -209,7 +252,8 @@ class Runner:
                     payload = resp.json()
                     p = parse_gateway_response(payload, rid)
                     p["shadow"] = [{"status": s.get("status"), "predicted_injection": s.get("predicted_injection"),
-                                    "failure_reason": s.get("failure_reason"), "detector_id": s.get("detector_id")}
+                                    "failure_reason": s.get("failure_reason"), "detector_id": s.get("detector_id"),
+                                    "stage": s.get("stage"), "truncated": s.get("truncated")}
                                    for s in _shadow(payload)]
                     rec.parsed = p
                 except (GatewayResponseError, ValueError):
@@ -329,6 +373,7 @@ class Runner:
             "flag_rate": rate(sum(r.parsed["decision"] == "flag" for r in ok), len(ok)),
             "escalation_rate": rate(sum("stage2" in r.parsed["stages"] for r in ok), len(ok)),
             "failure_reason": dict(sorted(reasons.items())),
+            "observe_stage1": _observe_stage1_block(ok),
             "client_latency_ms": _latency([r.latency_ms for r in self.recs if r.latency_ms is not None]),
             "latency_conditions": LATENCY_CONDITIONS,
             "labels": {"used": _labeled(used), "pending_at_end": len(pending),

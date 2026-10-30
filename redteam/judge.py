@@ -236,7 +236,9 @@ def _prediction_truncated(event: TraceEvent) -> bool:
     d = event.detail or {}
     if d.get("truncated"):
         return True
-    return any(isinstance(r, dict) and r.get("truncated") for r in d.get("results") or [])
+    # An observe-only result (role="shadow", D23) did not take part in the prediction: its truncation is not one.
+    return any(isinstance(r, dict) and r.get("truncated") and r.get("role") != "shadow"
+               for r in d.get("results") or [])
 
 
 QUARANTINE_CAUSES = ("classifier_flag", "fallback", "gateway_failure_policy", "coverage_policy", "unknown")

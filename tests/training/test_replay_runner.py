@@ -219,3 +219,30 @@ def test_cli_replays_the_committed_set_against_the_fake_gateway(tmp_path):
     assert s["config"]["replay_sha256"] and s["latency_conditions"].endswith("not a benchmark")
     ids = [json.loads(x)["id"] for x in (tmp_path / "requests.jsonl").read_text().splitlines()]
     assert ids == [r["id"] for r in list(read_jsonl(REPLAY))[:120]]
+
+
+def test_observe_stage1_is_reported_apart_from_shadow_agreement():
+    """D23: the observe-only Stage 1 (role="shadow", stage="stage1") only ever clears, so it gets would-allow
+    figures (below-low share, below-low-but-served-flag) and never enters the shadow agreement figure."""
+    from training.replay_runner import Rec, summarize_window
+
+    def rec(i, decision, s1, policy=None):
+        return Rec(item={"id": f"i{i}", "lang": "en", "label": None}, window=0, sent_at=0.0, label_at=None,
+                   parsed={"decision": decision, "stages": ["stage2"], "decided_by": "deb", "policy_applied": policy,
+                           "coverage_policy_applied": None, "failure_reasons": [], "shadow": [s1]})
+
+    def s1(status="ok", pred=False, truncated=False):
+        return {"status": status, "predicted_injection": pred if status == "ok" else None, "stage": "stage1",
+                "truncated": truncated if status == "ok" else True, "detector_id": "stage1-tfidf-lr",
+                "failure_reason": None if status == "ok" else "timeout"}
+
+    recs = [rec(0, "allow", s1()), rec(1, "flag", s1()), rec(2, "flag", s1(), policy="fail_closed"),
+            rec(3, "flag", s1(pred=True)), rec(4, "allow", s1(truncated=True)), rec(5, "allow", s1("timeout"))]
+    w = summarize_window(0, 0.0, 1.0, recs, recs, -1.0)
+    assert w["shadow"]["n_ok"] == 0 and w["shadow"]["agreement_with_served_decision"]["denominator"] == 0
+    o = w["observe_stage1"]
+    assert o["n_ok"] == 5 and o["n_partial"] == 1
+    assert (o["below_low_share"]["numerator"], o["below_low_share"]["denominator"]) == (3, 5)
+    assert o["below_low_but_served_flag"] == 2
+    assert o["below_low_and_served_flag_by_policy"] == {"None": 1, "fail_closed": 1}
+    assert o["failure_reason"] == {"timeout": 1}

@@ -125,3 +125,24 @@ def test_v11_style_response_without_stages_run_falls_back_to_result_stages():
          "results": [{k: v for k, v in dr("r").items() if k != "failure_reason"} | {"schema_version": "1.1"}]}
     out = parse_gateway_response(r)
     assert out["stages"] == ["stage1"] and not out["stages_run_reported"] and out["model_prediction"]
+
+
+def test_truncated_observe_stage1_does_not_mark_item_truncated():
+    """D23: DeBERTa decides; a role="shadow" Stage 1 that hit its deadline (truncated, status timeout) is observe
+    data only. It must not count as a truncation or failure of the decision in the release-gate tool."""
+    def h(request: httpx.Request) -> httpx.Response:
+        b = json.loads(request.content)
+        rid = b["request_id"]
+        return httpx.Response(200, json=resp(rid, "allow", [dr(rid, "stage2", score=0.01),
+                                                            dr(rid, "stage1", "timeout", reason="timeout",
+                                                               role="shadow")],
+                                             ["stage2"], decided_by="d-stage2"))
+    rows = [{"id": "a", "text": "x", "label": 0, "source": "x", "lang": "en"}]
+    one = parse_gateway_response(h(httpx.Request("POST", "http://gw/classify",
+                                                 json={"text": "x", "request_id": "r"})).json())
+    assert one["truncated"] is False and one["shadow_truncated"] is True
+    assert one["model_prediction"] and one["failure_reasons"] == [] and one["shadow_failure_reasons"] == ["timeout"]
+    out = evaluate(rows, HttpGatewayBackend("http://gw.test", transport=httpx.MockTransport(h), retries=0))
+    t = out["slices"]["overall"]["truncated"]
+    assert t["n_truncated"] == 0 and t["n_truncated_model_predictions"] == 0 and t["n_shadow_truncated"] == 1
+    assert out["slices"]["overall"]["served"]["failures"] == {"overloaded": 0, "timeout_or_exception": 0}

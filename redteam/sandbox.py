@@ -198,7 +198,9 @@ class Sandbox:
             self.emit("detector_timeout", detector_version=verdict.detector_version, detail=detail)
         else:
             self.emit("detector_prediction", detector_version=verdict.detector_version, detail=detail)
-        for r in verdict.results:
+        # Only the active path can time out as a detector. An observe-only Stage 1 timeout (role="shadow", D23) is
+        # kept in the prediction event's detail (observe_failure_reasons, results) and is not a detector_timeout.
+        for r in verdict.active_results:
             if r.status == "timeout":
                 self.emit("detector_timeout", detector_version=f"{r.detector_id}@{r.detector_version}",
                           detail={"email_id": email_id, "request_id": request_id, "inner_result": True,
