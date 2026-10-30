@@ -5,8 +5,9 @@
 Inputs: training/results/window_scores_{val,replay,probes}.jsonl (training/window_scores.py) and, when present,
 training/results/window_timing_{val,replay}.json (training/window_timing.py, measured under the CPU lock).
 
-Single-pass views, one per W in WINDOWS: flag iff max over all W-token windows >= 0.5 (W = 510 is DeBERTa as the
-gateway runs it, minus the chunk cap). Per set: recall, FPR, per-source and per-family rates, rates by length
+Single-pass views, one per W in WINDOWS: flag iff max over all W-token windows >= 0.5 (W = 510 is DeBERTa with the
+original sliding-window planner of serving/encoding.py, minus the chunk cap; the served structure-aware planner is
+compared in training/planner_fidelity.py). Per set: recall, FPR, per-source and per-family rates, rates by length
 bucket, paired differences vs W = 510 (Newcombe hybrid score 95%), and cost (windows and model tokens incl.
 [CLS]/[SEP]; measured ms per request from the timing sample).
 
@@ -200,6 +201,25 @@ def select(g: list[dict]) -> dict | None:
     return min(ok, key=lambda x: (-x["recall"]["numerator"], x["pass2_model_tokens"], -x["t2"]))
 
 
+def ties_on_val(rows: list[dict], g: list[dict], chosen: dict) -> dict:
+    """Admissible settings that tie with `chosen` on every criterion of the rule before the t2 tie-break, and
+    whether their val flags are identical item by item (then val cannot tell them apart)."""
+    w2, n_gate = chosen["W2"], chosen["N"]
+    tied = [x for x in g if x["admissible"] and x["recall"]["numerator"] == chosen["recall"]["numerator"]
+            and x["pass2_model_tokens"] == chosen["pass2_model_tokens"]]
+    apply_two_pass(rows, w2, n_gate, chosen["t2"], key="tp_chosen")
+    out = []
+    for x in tied:
+        apply_two_pass(rows, x["W2"], x["N"], x["t2"], key="tp_tie")
+        out.append({"W2": x["W2"], "N": x["N"], "t2": x["t2"], "recall_numerator": x["recall"]["numerator"],
+                    "fpr_numerator": x["fpr"]["numerator"], "benign_hard_fp": x["benign_hard_fp"],
+                    "val_flags_identical_to_chosen": all(r["tp_tie"] == r["tp_chosen"] for r in rows)})
+    return {"note": "settings equal to the chosen one on val recall and pass-2 tokens; the chosen t2 is the "
+                    "largest of them by the rule's last tie-break (prefer the larger t2)",
+            "settings": out,
+            "all_val_flags_identical": all(x["val_flags_identical_to_chosen"] for x in out)}
+
+
 def two_pass_ms(t: dict | None, w2: int, n_gate: int) -> dict | None:
     """ms per request on the timing sample: measured 510 time plus measured W2 time for requests with n > N."""
     if t is None:
@@ -249,6 +269,7 @@ def build() -> dict:
             desc[name] = {"rates": {k: v for k, v in rates(name, rows, "tp05", f"f{BASE}").items()
                                     if k in ("overall", "benign_hard", "replay_email_long", "replay_email_short")}}
         res["two_pass"]["descriptive_t2_0.5"] = desc
+        res["two_pass"]["tied_on_val"] = ties_on_val(data["val"], g, chosen)
     return res
 
 

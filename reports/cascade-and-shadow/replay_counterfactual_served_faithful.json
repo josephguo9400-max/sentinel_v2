@@ -122,6 +122,49 @@
       }
     }
   },
+  "paired": {
+    "note": "diff = cascade view - deberta_only_offline over the same labeled items; only_first = flagged by the cascade view only, only_second = flagged by offline DeBERTa-only only",
+    "chunk_level_minus_deberta_recall": {
+      "diff": -0.15032679738562094,
+      "ci95": [
+        -0.19405907384042187,
+        -0.10687590987085867
+      ],
+      "only_first": 3,
+      "only_second": 49,
+      "n": 306
+    },
+    "chunk_level_minus_deberta_fpr": {
+      "diff": -0.002531645569620239,
+      "ci95": [
+        -0.009123893304131343,
+        0.003977459316699545
+      ],
+      "only_first": 5,
+      "only_second": 8,
+      "n": 1185
+    },
+    "request_level_minus_deberta_recall": {
+      "diff": -0.1568627450980392,
+      "ci95": [
+        -0.19848538273328814,
+        -0.11573073074009818
+      ],
+      "only_first": 0,
+      "only_second": 48,
+      "n": 306
+    },
+    "request_level_minus_deberta_fpr": {
+      "diff": -0.005907172995780585,
+      "ci95": [
+        -0.011182048542944235,
+        -0.0008881955011417128
+      ],
+      "only_first": 0,
+      "only_second": 7,
+      "n": 1185
+    }
+  },
   "lost_injections": {
     "reference": "offline DeBERTa-only (every window scored) flags it; Stage 1 finalized allow",
     "n": 48,

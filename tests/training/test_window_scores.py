@@ -4,6 +4,7 @@ import json
 import pytest
 
 from training import dilution_curve as dc
+from training import planner_fidelity as pf
 from training import window_eval as we
 from training import window_scores as ws
 from training.common import ROOT, read_jsonl, sha256_file
@@ -36,11 +37,47 @@ def test_window_rows_cover_every_token_and_end_at_the_tail(n, w):
         assert all(len(r) == w + 2 for r in rows)  # equal lengths: batching a request needs no padding
 
 
-def test_510_windows_are_the_gateway_chunks():
+def test_510_windows_are_the_original_sliding_window_chunks():
+    """W = 510 is the original planner (serving/encoding.py chunk_ids), not the served structure-aware one."""
     from serving.encoding import chunk_ids
 
     ids = list(range(5, 1500))
     assert ws.window_rows(ids, 510, 384, 1, 2) == chunk_ids(ids, 1, 2, 512, 384)
+
+
+def _planner_windows(n: int) -> list[tuple[int, int]]:
+    """Token ranges of the served planner (serving/structure.py build_chunks) on one plain paragraph of n tokens."""
+    from serving.structure import Segment, build_chunks
+
+    text = " ".join(f"w{i}" for i in range(n))
+
+    def tok(t):
+        spans, pos = [], 0
+        for w in t.split(" "):
+            spans.append((pos, pos + len(w)))
+            pos += len(w) + 1
+        return [int(w[1:]) for w in t.split(" ")], spans
+
+    cs = build_chunks([Segment("body", text)], tok, window=510, stride=384)
+    return [(c.ids[0], c.ids[-1] + 1) for c in cs.chunks]
+
+
+@pytest.mark.parametrize("n", [1, 300, 510, 894, 1278])
+def test_510_windows_equal_the_served_planner_on_one_paragraph_when_the_tail_is_aligned(n):
+    # n <= 510 (one window) or n - 510 a multiple of 384: both planners produce the same windows
+    starts = ws.window_starts(n, 510, 384)
+    assert [(s, min(s + 510, n)) for s in starts] == _planner_windows(n)
+
+
+def test_510_windows_differ_from_the_served_planner_only_in_the_tail_window_otherwise():
+    # The proxy's last window is a full 510 tokens ending at n; the served planner's last window starts at the next
+    # stride and is shorter. Paragraph boundaries move the served windows further (not modelled by the proxy);
+    # training/planner_fidelity.py measures the effect on the replay set.
+    n = 1495
+    proxy = [(s, s + 510) for s in ws.window_starts(n, 510, 384)]
+    served = _planner_windows(n)
+    assert proxy[:-1] == served[:-1] == [(0, 510), (384, 894), (768, 1278)]
+    assert proxy[-1] == (985, 1495) and served[-1] == (1152, 1495)
 
 
 def test_cascade_cache_reuse_rule():
@@ -163,6 +200,17 @@ def test_committed_window_eval_is_reproducible():
         assert d["sha256"] == sha256_file(ROOT / d["file"])
     assert json.loads(json.dumps(we.build())) == committed
     assert committed["two_pass"]["chosen_on"] == "val"
+    tied = committed["two_pass"]["tied_on_val"]
+    assert tied["all_val_flags_identical"] and committed["two_pass"]["chosen"]["t2"] == max(
+        x["t2"] for x in tied["settings"])
+
+
+@pytest.mark.skipif(not pf.OUT.exists() or not pf.SERVED.exists(), reason="planner fidelity not run")
+def test_committed_planner_fidelity_is_reproducible():
+    committed = json.loads(pf.OUT.read_text())
+    assert json.loads(json.dumps(pf.build())) == committed
+    c = committed["w510_proxy_vs_served_planner"]
+    assert c["identical_max_score_6dp"] <= c["identical_max_score"] <= c["n_fully_scored"]
 
 
 @pytest.mark.skipif(not dc.OUT.exists(), reason="dilution curve not summarized")
@@ -189,4 +237,30 @@ def test_cached_window_scores_match_a_fresh_computation_on_a_sample():
     for d in model + copied:
         ids = deb.tok.encode(texts[d["id"]], add_special_tokens=False).ids
         got = [deb.infer_one(x) for x in ws.window_rows(ids, d["W"], d["stride"], deb.cls_id, deb.sep_id)]
+        assert got == pytest.approx(d["scores"], abs=1e-5)
+
+
+@pytest.mark.skipif(not DEBERTA.exists(), reason="DeBERTa model not fetched")
+@pytest.mark.skipif(not ws.out_path("replay").exists() or not dc.CACHE.exists(), reason="caches not computed")
+def test_cached_replay_and_dilution_scores_match_a_fresh_computation_on_a_sample():
+    """Replay model records (multi-window) and dilution records, incl. the headline middle placement."""
+    from training.cascade_scores import DebertaScorer
+
+    deb = DebertaScorer(threads=1)
+    texts = {r["id"]: r["text"] for r in ws.load_set("replay")}
+    recs = [d for d in read_jsonl(ws.out_path("replay")) if d["from"] == "model" and 128 < d["n_tokens"] < 300]
+    sample = [d for d in recs if d["W"] == 128][:1] + [d for d in recs if d["W"] == 64][:1]
+    assert len(sample) == 2
+    for d in sample:
+        ids = deb.tok.encode(texts[d["id"]], add_special_tokens=False).ids
+        assert len(ids) == d["n_tokens"]
+        got = [deb.infer_one(x) for x in ws.window_rows(ids, d["W"], d["stride"], deb.cls_id, deb.sep_id)]
+        assert got == pytest.approx(d["scores"], abs=1e-5)
+    injections, contexts, _ = dc.build_inputs()
+    by_key = {x["key"]: x for x in dc.items(injections, contexts)}
+    cached = {(d["key"], d["W"]): d for d in read_jsonl(dc.CACHE)}
+    ctx64 = next(k for k in cached if k[1] == 64 and k[0].startswith("ctx|") and "|val_benign|128" in k[0])
+    for key, w in (("probe:ignore_previous_forward|newsletter|128|middle", 510), ctx64):
+        d, x = cached[(key, w)], by_key[key]
+        got = [deb.infer_one(r) for r in ws.window_rows(x["ids"], w, ws.stride_for(w), deb.cls_id, deb.sep_id)]
         assert got == pytest.approx(d["scores"], abs=1e-5)
