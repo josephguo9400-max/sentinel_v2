@@ -430,6 +430,84 @@ def test_a_completed_frozen_test_run_has_a_started_and_a_completed_entry(tmp_pat
     assert entries[1]["bundle_sha256"] == BUNDLE and entries[1]["verdict"] == gate.INSUFFICIENT
 
 
+@pytest.mark.parametrize("stage", ["active_report", "build_report", "write_json"])
+def test_an_error_after_the_split_was_scored_records_failed(tmp_path, monkeypatch, stage):
+    """Review r2-n1: an exception after scoring finished (a bad --active-report, build_report, write_json) must add
+    "failed", not leave "started" alone (which reads as a killed process)."""
+    args = _frozen_args(tmp_path)
+    meta = {"split": "frozen_test", "complete": True, "n_items_evaluated": 0, "n_items_in_split": 0}
+    monkeypatch.setattr(gate, "run_bundle", lambda *a, **k: ([], meta, object(), 0.0, 0))
+    monkeypatch.setattr(gate, "build_report", lambda *a, **k: {"verdict": gate.INSUFFICIENT, "run": meta,
+                                                               "bundle": {"bundle_sha256": BUNDLE}})
+    if stage == "active_report":
+        args.active_report = tmp_path / "missing_active_report.json"
+        expected = FileNotFoundError
+    elif stage == "build_report":
+        def boom(*a, **k):
+            raise ValueError("bad report")
+        monkeypatch.setattr(gate, "build_report", boom)
+        expected = ValueError
+    else:
+        def full_disk(*a, **k):
+            raise OSError("disk full")
+        monkeypatch.setattr(gate, "write_json", full_disk)
+        expected = OSError
+    with pytest.raises(expected):
+        gate.evaluate(args)
+    entries = [json.loads(line) for line in args.audit_log.read_text().splitlines()]
+    assert [e["status"] for e in entries] == ["started", "failed"]
+    assert entries[1]["error"] == expected.__name__
+
+
+def test_promote_and_rollback_write_the_audit_line_before_moving_the_pointer(tmp_path, monkeypatch):
+    """Review r2-n5: record before acting. When the pointer moves, its audit line is already in the log."""
+    reg = tmp_registry(tmp_path, ACTIVE)
+    log = tmp_path / "audit.jsonl"
+    seen = []
+    real_write = gate.write_registry_pointers
+
+    def spy(registry, **changes):
+        seen.append([json.loads(line)["action"] for line in log.read_text().splitlines()])
+        return real_write(registry, **changes)
+
+    monkeypatch.setattr(gate, "write_registry_pointers", spy)
+    gate.promote(reg, fake_report(tmp_path, bundle_sha(CANDIDATE), CANDIDATE), "owner", log=log)
+    gate.rollback(reg, "owner", log=log)
+    assert seen == [["promote"], ["promote", "rollback"]]
+    assert json.loads(reg.read_text())["active"] == ACTIVE
+
+
+@pytest.mark.parametrize("action", ["promote", "rollback"])
+def test_a_failed_pointer_move_is_audited_and_leaves_the_registry_unchanged(tmp_path, monkeypatch, action):
+    reg = tmp_registry(tmp_path, ACTIVE) if action == "promote" else tmp_registry(tmp_path, CANDIDATE, ACTIVE,
+                                                                                   status="approved")
+    before = reg.read_bytes()
+    log = tmp_path / "audit.jsonl"
+
+    def failing_replace(src, dst):
+        raise OSError("simulated rename failure")
+
+    monkeypatch.setattr(gate.os, "replace", failing_replace)
+    with pytest.raises(OSError):
+        if action == "promote":
+            gate.promote(reg, fake_report(tmp_path, bundle_sha(CANDIDATE), CANDIDATE), "owner", log=log)
+        else:
+            gate.rollback(reg, "owner", log=log)
+    assert reg.read_bytes() == before
+    assert not list(tmp_path.glob(".*.tmp"))  # no temporary file left behind
+    entries = [json.loads(line) for line in log.read_text().splitlines()]
+    assert [(e["action"], e.get("status")) for e in entries] == [(action, None), (action, "failed")]
+    assert entries[1]["error"] == "OSError"
+
+
+def test_an_invalid_pointer_state_never_replaces_the_registry(tmp_path):
+    reg = tmp_registry(tmp_path, ACTIVE)
+    before = reg.read_bytes()
+    with pytest.raises(Exception):
+        gate.write_registry_pointers(reg, active="../escape.json")
+    assert reg.read_bytes() == before
+
+
 def test_a_val_run_writes_no_audit_entry(tmp_path, monkeypatch):
     args = _frozen_args(tmp_path)
     args.split, args.frozen_test_approved_by = "val", None

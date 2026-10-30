@@ -32,12 +32,16 @@ T3, both engines in one process on the same input, one item at a time:
   deadline), so those two fields are compared but cannot differ; T3 says nothing about the gate, band, language,
   FALLBACK or deep-scan logic, which T4 (real Stage 1) and the fake-detector tests T2, T6 and T7 cover.
 
-  DeBERTa inference is memoized by row content, shared by both engines and persisted (--cache), so a row is scored
-  once instead of twice and a resumed run does not rescore. Identical rows therefore get bit-identical scores BY
-  CONSTRUCTION: with the cache, "identical scores" is not evidence; the test is about which rows each engine
-  selects and what it decides from them (rows are compared exactly before scores matter). --no-cache scores every
-  row again in each engine and compares with THRESHOLD_TOLERANCE instead (slower; the design's answer to
-  thread-count nondeterminism). The default cache is reports/policy-runtime/<out>.rowcache.jsonl (gitignored).
+  By default DeBERTa inference is memoized by row content, shared by both engines and persisted (--cache), so a row
+  is scored once instead of twice and a resumed run does not rescore. Identical rows therefore get bit-identical
+  scores BY CONSTRUCTION: with the cache, "identical scores" is not evidence; the test is about which rows each
+  engine selects and what it decides from them (rows are compared exactly before scores matter). --no-cache gives
+  the engines no cache at all, not even an in-memory one: each engine calls the model itself for every row it
+  scores, and the scores are compared with THRESHOLD_TOLERANCE (slower, about twice the model calls; the design's
+  answer to thread-count nondeterminism). Before feat/pr-r2-fixes, --no-cache still shared an in-memory cache
+  between the engines (review r2-m1), so reports produced with it before that fix are cached evidence: they support
+  row and decision equality only, not score agreement. The report records `deberta_rows.cache` ("shared" or
+  "none"). The default cache is reports/policy-runtime/<out>.rowcache.jsonl (gitignored).
 
   Provenance: every per-item progress record carries the git commit (and whether the tracked tree was dirty) and
   the engine version of the invocation that produced it, and the report counts items per code version
@@ -179,6 +183,7 @@ class Recorder:
         self._det = det
         self._cache = cache
         self.rows: list[list[int]] = []
+        self.model_calls = 0  # rows this recorder sent to the model itself (not served from the cache)
         for attr in ("detector_id", "detector_version", "threshold", "max_len", "cls_id", "sep_id"):
             setattr(self, attr, getattr(det, attr))
 
@@ -195,6 +200,7 @@ class Recorder:
             cached = None if self._cache is None else self._cache.get(row)
             if cached is None:
                 cached = float(self._det.infer([row])[0])
+                self.model_calls += 1
                 if self._cache is not None:
                     self._cache.put(row, cached)
             out.append(cached)
@@ -214,6 +220,8 @@ def build_engines(pointers: dict, config, cache: RowCache | None, specs: dict):
     from serving.service import ClassifierService
 
     from serving.convert_registry import CALIBRATION_RECORDS
+    # With a cache both recorders share it (a row is scored once). Without one (--no-cache) each recorder calls the
+    # model itself, so the two engines' scores are independent.
     recs = {name: Recorder(specs["stage2"].detector, cache) for name in ("legacy", "policy")}
     mode = pointers.get("stage1_mode")
     legacy = Legacy(_spec_with(specs["stage2"], recs["legacy"]), config, stage1=specs.get("stage1"),
@@ -352,7 +360,9 @@ def t3(out_path: Path, max_seconds: float | None, cache_path: Path | None, limit
     progress.parent.mkdir(parents=True, exist_ok=True)
     done = {json.loads(line)["id"] for line in progress.read_text().splitlines() if line.strip()} \
         if progress.is_file() else set()
-    cache = RowCache(cache_path)
+    # --no-cache: no RowCache at all, so build_engines gives each engine its own uncached Recorder and both call the
+    # model for every row (an in-memory cache shared by the engines would make the scores identical by construction).
+    cache = RowCache(cache_path) if cache_path is not None else None
     pointers = registry_state(registry)
     config = no_timeout_config()
     specs = load_specs(pointers, intra_op_threads)
@@ -364,20 +374,22 @@ def t3(out_path: Path, max_seconds: float | None, cache_path: Path | None, limit
     with progress.open("a", encoding="utf-8") as fh:
         n_new = asyncio.run(run_pair(legacy, policy_svc, recs, items, fh, deadline, done, code))
     wall = time.perf_counter() - t0
-    cache.close()
+    if cache is not None:
+        cache.close()
     wanted = {it["id"] for it in items}
     rows = [r for r in (json.loads(line) for line in progress.read_text().splitlines() if line.strip())
             if r["id"] in wanted]
     this_run = {**code, "started_utc": started, "n_items": n_new, "wall_s": round(wall, 1),
                 "no_cache": cache_path is None}
     rep = t3_report(rows, items, policy, bundle, specs, config, cache, wall, n_new, cache_path, registry,
-                    this_run)
+                    this_run, {name: rec.model_calls for name, rec in recs.items()})
     write_json(out_path, rep)
     return rep
 
 
 def t3_report(rows, items, policy, bundle, specs, config, cache, wall, n_new, cache_path,
-              registry: Path = D23_REGISTRY_V1, this_run: dict | None = None) -> dict:
+              registry: Path = D23_REGISTRY_V1, this_run: dict | None = None,
+              model_calls: dict | None = None) -> dict:
     from serving import engine_version as ev
     from serving.policy import bundle_sha256
 
@@ -429,9 +441,16 @@ def t3_report(rows, items, policy, bundle, specs, config, cache, wall, n_new, ca
         "paths": dict(sorted(Counter(r["policy"]["path"] for r in rows).items())),
         "observe_outcomes": dict(sorted(Counter(str(r["policy"]["observe_outcome"]) for r in rows).items())),
         "deberta_rows": {"total_scored_per_engine": sum(r["n_rows"] for r in rows),
-                         "unique_rows_in_cache": len(cache.scores), "cache_hits": cache.hits,
-                         "cache_misses": cache.misses,
-                         "cache_path": rel(cache_path) if cache_path else None},
+                         "cache": "shared" if cache is not None else "none",
+                         "model_calls_this_run": model_calls,
+                         "unique_rows_in_cache": len(cache.scores) if cache is not None else None,
+                         "cache_hits": cache.hits if cache is not None else None,
+                         "cache_misses": cache.misses if cache is not None else None,
+                         "cache_path": rel(cache_path) if cache_path else None,
+                         "note": "cache shared: both engines read one row cache, so scores are identical by "
+                                 "construction and only rows and decisions are evidence" if cache is not None else
+                                 "no cache: each engine called the model for every row it scored; scores compared "
+                                 "within THRESHOLD_TOLERANCE"},
         "wall_s_this_run": round(wall, 1),
         "provenance": {
             "this_run": this_run,
@@ -694,7 +713,7 @@ def main(argv=None) -> int:
                     help="t3: persisted row score cache (JSONL); default: next to --out, <out>.rowcache.jsonl")
     ap.add_argument("--registry", type=Path, default=D23_REGISTRY_V1,
                     help="t3: the registry v1 state both engines load (default: the D23 state)")
-    ap.add_argument("--no-cache", action="store_true", help="t3: score every row again in both engines")
+    ap.add_argument("--no-cache", action="store_true", help="t3: no row cache, not even in memory: each engine calls the model for every row")
     ap.add_argument("--limit", type=int, default=None, help="first N items by id (smoke runs only)")
     ap.add_argument("--intra-op-threads", type=int, default=0)
     ap.add_argument("--t3", type=Path, default=None, help="t5: the T3 report to compare")
