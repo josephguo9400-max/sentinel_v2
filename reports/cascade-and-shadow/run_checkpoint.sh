@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
 # Milestone cascade-and-shadow checkpoint measurements. Run from the repo root under the shared lock:
 #   flock /home/claude/measure.lock bash reports/cascade-and-shadow/run_checkpoint.sh
-# BEFORE = the gateway-mvp gateway (worktree at $BEFORE_DIR); AFTER = this branch with registry_integration.json.
+# BEFORE = the gateway-mvp gateway (worktree at $BEFORE_DIR); AFTER = this branch with registry_integration_route.json
+# (the committed outputs were measured at d8dfca0 with registry_integration.json, which had no stage1_mode and then
+# meant route; that file is kept as the historical input but no longer loads Stage 1, see serving/README.md).
 set -euo pipefail
 OUT=reports/cascade-and-shadow
 BEFORE_DIR=${BEFORE_DIR:-/home/claude/wt-before}
@@ -15,7 +17,7 @@ wait_up http://127.0.0.1:8001
 python3 -m redteam.probe_runner --gateway-url http://127.0.0.1:8001 --label "before: gateway-mvp" --full --out "$OUT/probes_before.json" > /dev/null
 kill $BPID; wait $BPID 2>/dev/null || true
 
-SENTINEL_REGISTRY_PATH="$PWD/$OUT/registry_integration.json" python3 -m uvicorn serving.app:app --host 127.0.0.1 --port 8000 --log-level warning &
+SENTINEL_REGISTRY_PATH="$PWD/$OUT/registry_integration_route.json" python3 -m uvicorn serving.app:app --host 127.0.0.1 --port 8000 --log-level warning &
 APID=$!
 wait_up http://127.0.0.1:8000
 curl -s --noproxy '*' http://127.0.0.1:8000/health > "$OUT/health_after.json"

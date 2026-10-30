@@ -51,6 +51,9 @@ class GatewayConfig:
     # the hard wait at the full budget stays as a backstop for a hung model. Measured per-chunk cost:
     # serving/bench_results/stage1_latency.json. Capped at half the Stage 1 budget.
     stage1_deadline_margin_ms: int = 15
+    # Observe-only Stage 1 (registry stage1_mode=observe) runs after the decision, outside admission control, at most
+    # this many at a time; a request that finds every slot busy gets a dropped (error/overloaded) Stage 1 result.
+    stage1_observe_concurrency: int = 1
     stage2_timeout_ms: int = 0  # 0 = Stage 2 manifest timeout_ms
 
     # --- language detection (langdetect, seeded; see serving/language.py)
@@ -90,7 +93,8 @@ class GatewayConfig:
             raise ValueError("need max_len >= 3 and 0 < stride <= max_len - 2")
         for name in ("max_chunks", "timeout_ms", "max_batch", "workers", "max_queue", "max_text_chars",
                      "max_inflight", "max_inflight_chars", "tokenize_workers", "stage1_max_chunks",
-                     "deep_scan_max_chunks", "deep_scan_timeout_ms", "shadow_queue", "shadow_max_chunks"):
+                     "deep_scan_max_chunks", "deep_scan_timeout_ms", "shadow_queue", "shadow_max_chunks",
+                     "stage1_observe_concurrency"):
             if getattr(self, name) < 1:
                 raise ValueError(f"{name} must be >= 1")
         for name in ("stage1_timeout_ms", "stage2_timeout_ms", "shadow_timeout_ms", "pack_overlap_tokens",

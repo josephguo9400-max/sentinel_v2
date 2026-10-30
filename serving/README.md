@@ -69,9 +69,19 @@ text; see "Metrics".
  "stage2": "baseline/deberta-pi-v2", "shadow": null}
 ```
 
-`stage1_mode` is optional: `"route"` (the default when absent, so older registry files such as
-`reports/cascade-and-shadow/registry_integration.json` keep their measured meaning) or `"observe"`. Any other value
-is `registry_invalid`.
+`stage1_mode` is `"route"` or `"observe"` (anything else is `registry_invalid`) and is **required whenever `stage1`
+is set**. There is no default: a registry with a Stage 1 pointer and no `stage1_mode` gets the per-pointer
+rejection `stage1_mode_missing`. At startup Stage 1 is then not loaded and Stage 2 serves alone (`/health`
+degraded); a reload to such a file is refused and the last good configuration keeps serving. So deleting the key
+can never give Stage 1 the power to finalize, and it cannot silently drop observation either: the rejection is
+visible. The key may be omitted when `stage1` is null.
+
+Historical input: `reports/cascade-and-shadow/registry_integration.json` (the input of the checkpoint run at
+`d8dfca0`, written when a missing key meant `route`) is kept byte-identical as the record of what was measured,
+and now loads with Stage 1 rejected. `registry_integration_route.json` next to it is the same registry with
+`"stage1_mode": "route"` made explicit, and `run_checkpoint.sh` uses it. I chose a new copy over a schema-version
+exception ("v1 files without the key mean route") because the committed `artifacts/registry.json` is also schema
+v1: an exception keyed on the schema would keep exactly the silent default this rule removes.
 
 **This registry change is a config version change, pending the release gate.** Per D17 a change to what decides
 requests goes through the release gate before the pointer moves. The gate does not exist yet (milestone
@@ -161,13 +171,16 @@ chunk, even one Stage 1 cleared. Content scored by neither stage shows up as `co
 **Observe mode, how it runs.** `ClassifierService._classify_active(route_stage1=False)` is the decision path with
 Stage 1 removed: no chunk is cleared and no Stage 1 score reaches `stage2_order`, so chunk selection, Stage 2
 scoring, the coverage policy (deep scan included) and the decision are those of a gateway built without Stage 1.
-Once that outcome is final, Stage 1 runs on the same chunk plan in its own thread, under its own budget (the hard
-wait is the Stage 1 timeout, not the Stage 2 deadline), and its `DetectorResult` is appended. The decision code
-never reads it, so a Stage 1 timeout, exception or hang cannot change `decision`, `decided_by`, `policy_applied`
-or `coverage_policy_applied`. When there is no chunk plan (prepare timed out or failed) or Stage 2 shed load
+Once that outcome is final, the request **gives back its admission slot** (`MAX_INFLIGHT` /
+`MAX_INFLIGHT_CHARS`), and only then does Stage 1 run, on the same chunk plan in its own thread, under its own
+budget (the hard wait is the Stage 1 timeout, not the Stage 2 deadline), and its `DetectorResult` is appended.
+Observe work has its own bound, `STAGE1_OBSERVE_CONCURRENCY` (1): a request that finds the slot busy does not wait
+or queue; its Stage 1 result is `error`/`overloaded` and `info["stage1_observe"]["outcome"]` is `dropped`
+(counted in `sentinel_stage1_observed_total{outcome="dropped"}`). The app retires an old service only when both
+its admitted requests and its observe work have finished. When there is no chunk plan (prepare timed out or failed) or Stage 2 shed load
 (`overloaded`), Stage 1 is not started and its result carries that `failure_reason`. `info["stage1_observe"]`
 and `sentinel_stage1_observed_total{outcome}` record what routed Stage 1 *would* have done
-(`would_finalize_allow`, `would_escalate`, `not_scored`), so the Stage 1 savings rate keeps being measured on live
+(`would_finalize_allow`, `would_escalate`, `not_scored`, `dropped`), so the Stage 1 savings rate keeps being measured on live
 traffic without Stage 1 deciding anything.
 
 Tests (`tests/serving/test_stage1_observe.py`): over 10 inputs (short, gray-zone, positive, 12-paragraph
@@ -176,7 +189,24 @@ signature / hidden-HTML structure, empty) and all four coverage policies, the ob
 `role="shadow"` result equals the no-Stage-1 response field for field (except `latency_ms`), and Stage 2 scores
 the same rows in the same order; route mode on the same inputs scores different rows, so the check is not
 vacuous. The same equality holds with a Stage 1 that hangs past its budget, one that hits the soft deadline after
-a few chunks, and one that raises.
+a few chunks, and one that raises. Concurrency (the verifier's M1 case,
+`test_observe_stage1_does_not_hold_admission_against_other_requests`): with `MAX_INFLIGHT=1`, request B arrives
+150 ms after A while A's observe Stage 1 (300 ms) is still running. Before the fix A still held the admission slot,
+B was shed as `overloaded` and Stage 2's `fail_closed` flagged it; now B gets the no-Stage-1 decision (`allow`)
+and its own observation is dropped. `test_observe_work_is_bounded_and_drops_instead_of_queueing` checks that 4
+overlapping requests run exactly one observation.
+
+**What is guaranteed, and what is not.**
+
+- Guaranteed, per request: the decision path never reads Stage 1, so this request's `decision`, `decided_by`,
+  `policy_applied` and `coverage_policy_applied` are those of the no-Stage-1 gateway whatever Stage 1 does.
+- Guaranteed across requests through admission control: observe work holds no admission slot and never queues.
+- **Not guaranteed across requests through the CPU.** An observation runs while other requests' Stage 2 runs on
+  the same 2 cores (TF-IDF ONNX plus pure-Python langdetect, which holds the GIL). It can stretch their Stage 2
+  latency, and a Stage 2 that crosses its 5,000 ms deadline becomes a `fail_closed` flag. The slot bound limits
+  this to one observation at a time (at most one Stage 1 budget of CPU); it does not remove it. Measured below
+  ("Observe-mode overhead under concurrency"). Full isolation needs Stage 1 on its own cores or host, or the
+  post-response variant (score logged, not returned).
 
 **Why this design and not the alternatives.**
 
@@ -188,24 +218,26 @@ a few chunks, and one that raises.
   queue drops items under load. Its results are only in the shadow log, not in the response, which the replay
   runner records (`training/replay_runner.py` already keeps `role="shadow"` results per request).
 - *(b) a mode in the registry*, chosen. The mode decides who decides requests, so it is versioned with the
-  pointers in the file the owner edits and the gate will evaluate, not in an environment variable. Old registry
-  files keep `route`.
+  pointers in the file the owner edits and the gate will evaluate, not in an environment variable. It is
+  required whenever `stage1` is set (see "Registry").
 - *Stage 1 after the decision vs concurrently with Stage 2.* Running it concurrently would hide most of its wall
   time, but on 2 cores it competes with Stage 2's onnxruntime threads: it could stretch Stage 2 towards its own
   deadline (so, in principle, change a decision), and Stage 1's own latency would be measured under contention,
   which makes the observe data about timeouts unrepresentative of a routed Stage 1 (which runs before Stage 2,
-  uncontended). After the decision, the guarantee is structural and the measurement conditions match route
-  mode. The cost is wall time: each response waits for Stage 1, at most its budget (50 ms hard, 35 ms soft
-  deadline plus one chunk), which `config.timeout_ms` in `/health` includes. A post-response, fire-and-forget
-  Stage 1 would remove that wait but take the score out of the response; that is the fallback if the wait matters.
+  uncontended). After the decision, this request's decision cannot depend on Stage 1 (see the guarantees above;
+  other requests can still be slowed through the CPU). The cost is wall time: each response waits for its own
+  Stage 1, at most its budget (50 ms hard, 35 ms soft deadline plus one chunk), which `config.timeout_ms` in
+  `/health` includes. A post-response, fire-and-forget Stage 1 would remove that wait but take the score out of
+  the response; that is the fallback if the wait matters.
 
 **Consequence to know about.** Without Stage 1 clearing middle chunks, a request with more than `MAX_CHUNKS` (4)
 chunks (about 1,662 DeBERTa tokens and up, `fixtures/probes` `four_window_reach`) has unscored content unless
 Stage 2 finds a positive, and the coverage policy decides it (default `flag`). So long benign emails are flagged
 by `coverage_policy:flag` in the default deployment; the live smoke run shows it on the 2,600-token control probe.
 `COVERAGE_POLICY=deep_scan` scores up to 16 more chunks instead, at Stage 2 cost (about 0.77 s per 510-token chunk
-on fp32, see the int8 section). The share of replay traffic this affects was not measured here; the replay should
-be re-run on this registry.
+on fp32, see the int8 section). The D23 checkpoint (`reports/cascade-and-shadow/d23/`, replay plus probes on this
+registry) shows the size on that traffic: `sentinel_cascade_path_total{path="coverage_flag"}` is 18 of 1,998
+requests in `d23/metrics.txt`.
 
 ### Stage 1 latency and the 50 ms budget (measured)
 
@@ -237,11 +269,19 @@ take the lock may have run at the same time, so treat differences of a few ms as
 
 What the numbers say:
 
-- Cost is about 7-9 ms per 510-token chunk, and langdetect alone is 37-48% of it on benign English text (before the fix) (for
-  example 23.6 of 50.7 ms on the probes). So a 50 ms per-request budget covers about 5 chunks: a coin flip at 7.
+- Cost is about 7-9 ms per 510-token chunk. Before the fix, langdetect alone (`language_only.p50` /
+  `run_stage1.p50` in `stage1_latency_before.json`) was 34% (1,000 tokens: 9.66 of 28.23 ms) to 59% (64 tokens:
+  1.55 of 2.62 ms) of it; on the probes 24.17 of 50.69 ms. So a 50 ms per-request budget covers about 5 chunks:
+  a coin flip at 7. (After the fix the same ratio is not a share any more, because `language_only` still runs
+  langdetect on every chunk while `_run_stage1` skips some.)
 - **Fix 1, cheaper, semantics unchanged:** language is identified only for chunks scoring below gray-zone low,
-  because only those can be cleared. This helps when chunks score high (64 tokens: 2.62 -> 1.10 ms p50) and
-  does nothing for benign text, where every chunk is below low (probes: 50.69 -> 49.93 ms). Per-chunk language
+  because only those can be cleared. It saves time wherever chunks score at or above low, and that includes this
+  benchmark's "benign" val inputs: the 64- and 510-token cuts score at or above low on their single chunk, and
+  about half of the 5,000-token chunks do (verifier's check of the bench inputs, not a committed output). That is
+  where the p50 drops come from (510: 10.26 -> 6.61 ms, 1,000: 28.23 -> 21.48, 5,000: 131.66 -> 91.75), not
+  noise. The probe bodies score below low on every chunk, so they do not change (50.69 -> 49.93 ms). Benign val
+  paragraphs scoring that high under the 64-token sub-windows is itself a Stage 1 false-positive signal for Agent B.
+  Per-chunk language
   is kept: a request-level language on a prefix would let an English opening clear a non-English chunk later in
   the same email, which is the gap `input_languages` was added to close (`docs/contract_requests.md`).
 - **Fix 2, the budget is explicit and degrades instead of flipping:** with the soft deadline (35 ms = 50 ms
@@ -412,6 +452,7 @@ detector object passed to `create_app()` (tests).
 | `EXTRA_TOKENIZERS` | `""` | `name=sha256,...` added to the pinned tokenizer list |
 | `STAGE1_TIMEOUT_MS` / `STAGE2_TIMEOUT_MS` | `0` | 0 uses the manifest `timeout_ms` (50 / 5,000); Stage 1's is the hard wait |
 | `STAGE1_DEADLINE_MARGIN_MS` | `15` | Stage 1 starts no chunk after budget minus this (35 ms of 50); capped at half the budget |
+| `STAGE1_OBSERVE_CONCURRENCY` | `1` | Observe-only Stage 1 runs at a time, outside admission control; busy -> dropped |
 | `MAX_CHUNKS` | `4` | Stage 2 chunk budget per request |
 | `STAGE1_MAX_CHUNKS` | `512` | Chunks Stage 1 scores; the rest are uncleared |
 | `STAGE1_FINALIZE_FLAG` | `false` | Let Stage 1 finalize `flag` at or above gray zone high |
@@ -436,7 +477,12 @@ New in this milestone:
   `stage2_flag`, `stage2_allow`, `coverage_flag`, `coverage_quarantine`, `coverage_allow`, `stage2_timeout`,
   `stage2_exception`, `stage2_overloaded`, `overloaded`.
 - `sentinel_coverage_policy_applied_total{policy}`.
-- `sentinel_stage1_observed_total{outcome}` (observe mode): `would_finalize_allow`, `would_escalate`, `not_scored`.
+- `sentinel_stage1_observed_total{outcome}` (observe mode): `would_finalize_allow`, `would_escalate`, `not_scored`,
+  `dropped`.
+- `role` label (`active` / `shadow`) on `sentinel_detector_latency_seconds`, `sentinel_detector_failures_total`,
+  `sentinel_truncated_requests_total` and `sentinel_chunks_per_request`. `role="shadow"` is the observe-only
+  Stage 1; a gate error-rate or latency check must read `role="active"` only. (The async shadow mirror keeps its
+  own `sentinel_shadow_*` series.)
 - `sentinel_stage1_deadline_hits_total{detector_id,stage1_mode}`: Stage 1 stopped at its soft deadline.
 - `sentinel_request_chunks`: chunk-plan size.
 - `sentinel_chunks_per_request{stage}`: chunks scored, per stage.
@@ -507,9 +553,11 @@ is not committed, so those three numbers are context, not results. The committed
 
 - The registry now points at Agent B's v1.2 manifest `stage1-tfidf-v2.1` (observe-only, D23). The registry
   change is pending the release gate (see "Registry").
-- The replay and probe runs in `reports/cascade-and-shadow/` were measured in route mode with
-  `registry_integration.json`; they were not re-run on the observe-mode registry.
-- No cascade load test under concurrency. Shadow overhead was measured at concurrency 1 only.
+- `reports/cascade-and-shadow/probes_after.json` and `replay_after/` were measured in route mode at `d8dfca0`
+  (before the anytime Stage 1) with `registry_integration.json`; the observe-mode registry was measured
+  separately in `reports/cascade-and-shadow/d23/`.
+- No full cascade load test (concurrency curves) yet; the observe-mode effect was measured at concurrency 4 only
+  (see "Observe-mode overhead under concurrency"). Shadow overhead was measured at concurrency 1 only.
 - A DeBERTa-class shadow on the same 2 cores doubles active p50 (see above). Running it on separate cores or
   sampling it belongs to serving-hardening.
 - The language gate's error rate on non-English text was not measured; the cost figure is a one-off timing.
