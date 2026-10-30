@@ -150,7 +150,7 @@ Every reported number carries its denominator, confidence interval and measureme
 | frozen test | Public datasets, split by source, hash-locked in the gateway-mvp milestone | Gate script only | Final recall / FPR |
 | attack-dev | Attack results on dev scenarios | Attacker and Agent B | Attack optimization, hard examples |
 | attack-heldout | Held-out scenarios + attack strategies and seeds the attacker never used | Gate script only | Adaptive ASR |
-| benign-hard | Hand-written instruction-like benign emails (IT notices, forwarding requests) and long repetitive emails | Gate script only | The FPR slice that matters most |
+| benign-hard | Template-generated instruction-like benign emails (IT notices, forwarding requests, policy reminders, calendar asks) and long repetitive emails; templates are hand-written | Template 0 is in val and may be used for tuning; templates 1-3 are in the frozen test and read by the gate script only; sentence pools are disjoint between the two | The FPR slice that matters most |
 
 **Leakage checks:** deduplicate before splitting; near-duplicates (e.g. MinHash) across splits are an error; red-team examples may only enter train and are isolated from attack-heldout by strategy and seed.
 
@@ -189,7 +189,7 @@ Time budget: until Monday 2026-11-02 (~90 hours). Milestones are named by what t
 
 **P0:** gateway (chunking, timeouts, failure policy, metrics), Stage 1, frozen test, gate, replay.
 **P1:** simulated version iteration (traffic replay with delayed labels and drift, real and deliberately bad candidates, canary with automatic rollback), async shadow, adaptive attacker with a quantified cascade finding, mode A/B/C comparison, serving hardening (concurrency, overload, fault injection), technical write-up.
-**P2:** GPU (RTX 3080) comparison including token-budget batching and length bucketing (batching by request count cut throughput 36% on CPU with mixed lengths because of padding); probe-based first stage; exchange-level classification (user request and content judged together), which needs a differently trained model.
+**P2:** GPU (RTX 3080) comparison including token-budget batching and length bucketing (on the 2-core CPU with mixed lengths, batching by request count cut mean throughput 21% with a 2 ms wait and 32% with a 10 ms wait over 3 runs each; the drop tracks the measured computed/real token ratio, but padding was not removed in a controlled test); probe-based first stage; exchange-level classification (user request and content judged together), which needs a differently trained model.
 
 What gives the project weight, in priority order: (1) a non-obvious quantified finding, e.g. how much compute the cascade saves and how much the adaptive attacker's bypass rate shifts to Stage 1; (2) real serving engineering under load and failure; (3) a high-quality design doc and results report including negative results. A dashboard, more attack strategies, or canary visuals add little.
 
