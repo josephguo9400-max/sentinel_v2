@@ -1,4 +1,5 @@
 """Deterministic stand-in detector for fast gateway tests."""
+import re
 import threading
 import time
 
@@ -45,7 +46,16 @@ class FakeDetector:
                 self.tokenizing -= 1
 
     def _tokenize(self, text: str) -> list[int]:
-        return [INJECTION_ID if w == INJECTION_WORD else 10 + (sum(map(ord, w)) % 1000) for w in text.split()]
+        return [self._id(w) for w in text.split()]
+
+    @staticmethod
+    def _id(w: str) -> int:
+        return INJECTION_ID if w == INJECTION_WORD else 10 + (sum(map(ord, w)) % 1000)
+
+    def tokenize_with_offsets(self, text: str) -> tuple[list[int], list[tuple[int, int]]]:
+        self.tokenize(text)  # same counters and delays as tokenize()
+        spans = [m.span() for m in re.finditer(r"\S+", text)]
+        return [self._id(text[a:b]) for a, b in spans], spans
 
     def infer(self, batch: list[list[int]]) -> list[float]:
         with self._lock:
@@ -70,3 +80,62 @@ def words(n: int, inject_at: int | None = None) -> str:
     if inject_at is not None:
         ws[inject_at] = INJECTION_WORD
     return " ".join(ws)
+
+
+class FakeStage1:
+    """Text-model stand-in for Stage 1. Scores a text by keyword: 'INJECT' -> 0.95, 'GRAY' -> 0.5, else 0.01.
+    Records every text it scored."""
+
+    detector_id = "fake-s1"
+    detector_version = "0.0.1"
+    tokenizer_name = "regex:[\\p{L}\\p{N}_]{2,}"
+
+    def __init__(self, *, threshold: float = 0.5, delay_s: float = 0.0, fail: Exception | None = None,
+                 max_input_tokens: int = 512):
+        self.threshold = threshold
+        self.delay_s = delay_s
+        self.fail = fail
+        self.max_input_tokens = max_input_tokens
+        self.seen: list[str] = []
+
+    def windows(self, text: str):
+        from serving.detector import tfidf_windows
+        return tfidf_windows(text, self.max_input_tokens)
+
+    def infer(self, batch: list[str]) -> list[float]:
+        if self.delay_s:
+            time.sleep(self.delay_s)
+        if self.fail is not None:
+            raise self.fail
+        self.seen.extend(batch)
+        return [0.95 if INJECTION_WORD in t else 0.5 if "GRAY" in t else 0.01 for t in batch]
+
+
+class RecordingDetector(FakeDetector):
+    """FakeDetector that records each row it scored (content ids)."""
+
+    def __init__(self, **kw):
+        super().__init__(**kw)
+        self.rows: list[list[int]] = []
+
+    def infer(self, batch):
+        with self._lock:
+            self.rows.extend(r[1:-1] for r in batch)
+        return super().infer(batch)
+
+
+def make_specs(stage2=None, stage1=None, *, gray_zone=(0.2, 0.8), languages=("en",), s1_timeout_ms=1000,
+               s2_timeout_ms=5000, s2_policy="fail_closed", s1_policy="fail_open"):
+    from serving.registry import DetectorSpec
+    stage2 = stage2 or FakeDetector()
+    s2 = DetectorSpec(detector=stage2, detector_id=stage2.detector_id, detector_version=stage2.detector_version,
+                      threshold=stage2.threshold, kind="token", role="stage2", failure_policy=s2_policy,
+                      timeout_ms=s2_timeout_ms, max_input_tokens=stage2.max_len)
+    s1 = None
+    if stage1 is not False:
+        stage1 = stage1 or FakeStage1()
+        s1 = DetectorSpec(detector=stage1, detector_id=stage1.detector_id, detector_version=stage1.detector_version,
+                          threshold=stage1.threshold, kind="text", role="stage1", failure_policy=s1_policy,
+                          timeout_ms=s1_timeout_ms, gray_zone=gray_zone,
+                          input_languages=list(languages) if languages else None)
+    return s2, s1

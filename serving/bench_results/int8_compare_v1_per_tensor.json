@@ -1,0 +1,393 @@
+{
+  "agreement": {
+    "abs_score_diff": {
+      "max": 0.9905638424836452,
+      "mean": 0.4824775828736387,
+      "p50": 0.4229132182783053,
+      "p95": 0.9714258817737562,
+      "p99": 0.9828224688387375
+    },
+    "by_label": {
+      "0": {
+        "agree": 129,
+        "fp32_flag": 15,
+        "int8_flag": 7,
+        "n": 147
+      },
+      "1": {
+        "agree": 128,
+        "fp32_flag": 341,
+        "int8_flag": 118,
+        "n": 353
+      }
+    },
+    "data": "data/splits/val.jsonl, first 500 rows in file order",
+    "decision_agree": 257,
+    "elapsed_s": 147.5,
+    "flip_fp32_allow_int8_flag": 6,
+    "flip_fp32_flag_int8_allow": 237,
+    "n": 500,
+    "scoring": "structure-aware windows (510 content tokens, stride 384), max over all windows, no cap",
+    "sources": {
+      "benign_hard": 20,
+      "deepset": 16,
+      "jackhhao": 52,
+      "spml": 412
+    }
+  },
+  "artifacts": {
+    "fp32": {
+      "detector_version": "2.0.0+90c9989b.onnx.fp32",
+      "dir": "baseline/deberta-pi-v2",
+      "sha256": "f0ea7f239f765aedbde7c9e163a7cb38a79c5b8853d3f76db5152172047b228c",
+      "threshold": 0.5
+    },
+    "int8": {
+      "detector_version": "2.0.0+90c9989b.onnx.int8-dyn-qint8-matmul.v1",
+      "dir": "candidates/deberta-pi-v2-int8",
+      "sha256": "9f440d7ee92d8103657a02b9fd0b707facdf752b979466172e3eb759aae0e55c",
+      "threshold": 0.5
+    }
+  },
+  "at": "2026-10-30T06:53:04Z",
+  "generated_by": "python -m serving.bench.int8_compare",
+  "host": {
+    "cpu": "Intel(R) Xeon(R) Processor @ 2.10GHz",
+    "logical_cores": 2,
+    "onnxruntime": "1.29.0",
+    "platform": "Linux-6.18.44-fc-v185-x86_64-with-glibc2.39",
+    "python": "3.13.18",
+    "tokenizers": "0.23.3"
+  },
+  "latency": {
+    "conditions": {
+      "batch": 1,
+      "calls_per_length": 100,
+      "intra_op_threads": "onnxruntime default",
+      "lengths_content_tokens": [
+        64,
+        128,
+        256,
+        510
+      ],
+      "order": "fp32 then int8 within each repeat",
+      "repeats": 3,
+      "timed": "OnnxDebertaDetector.infer only (no tokenization, no HTTP)",
+      "warmup_calls": 5
+    },
+    "per_repeat": [
+      {
+        "fp32_128": {
+          "max_ms": 233.03,
+          "mean_ms": 155.84,
+          "n": 100,
+          "p50_ms": 146.23,
+          "p95_ms": 200.21,
+          "p99_is_max": false,
+          "p99_ms": 225.55
+        },
+        "fp32_256": {
+          "max_ms": 433.13,
+          "mean_ms": 306.59,
+          "n": 100,
+          "p50_ms": 298.69,
+          "p95_ms": 375.85,
+          "p99_is_max": false,
+          "p99_ms": 393.32
+        },
+        "fp32_510": {
+          "max_ms": 949.67,
+          "mean_ms": 793.11,
+          "n": 100,
+          "p50_ms": 786.24,
+          "p95_ms": 874.56,
+          "p99_is_max": false,
+          "p99_ms": 929.24
+        },
+        "fp32_64": {
+          "max_ms": 209.97,
+          "mean_ms": 92.87,
+          "n": 100,
+          "p50_ms": 86.53,
+          "p95_ms": 126.18,
+          "p99_is_max": false,
+          "p99_ms": 185.7
+        },
+        "int8_128": {
+          "max_ms": 110.8,
+          "mean_ms": 74.98,
+          "n": 100,
+          "p50_ms": 69.49,
+          "p95_ms": 93.79,
+          "p99_is_max": false,
+          "p99_ms": 108.77
+        },
+        "int8_256": {
+          "max_ms": 215.72,
+          "mean_ms": 159.78,
+          "n": 100,
+          "p50_ms": 152.83,
+          "p95_ms": 205.95,
+          "p99_is_max": false,
+          "p99_ms": 213.88
+        },
+        "int8_510": {
+          "max_ms": 580.49,
+          "mean_ms": 466.36,
+          "n": 100,
+          "p50_ms": 460.57,
+          "p95_ms": 539.26,
+          "p99_is_max": false,
+          "p99_ms": 564.12
+        },
+        "int8_64": {
+          "max_ms": 63.49,
+          "mean_ms": 42.35,
+          "n": 100,
+          "p50_ms": 40.51,
+          "p95_ms": 49.43,
+          "p99_is_max": false,
+          "p99_ms": 63.47
+        },
+        "repeat": 1,
+        "uptime_start": "23:53:04 up  1:43,  0 user,  load average: 1.04, 1.62, 1.15"
+      },
+      {
+        "fp32_128": {
+          "max_ms": 207.96,
+          "mean_ms": 146.88,
+          "n": 100,
+          "p50_ms": 140.66,
+          "p95_ms": 177.6,
+          "p99_is_max": false,
+          "p99_ms": 182.16
+        },
+        "fp32_256": {
+          "max_ms": 505.18,
+          "mean_ms": 326.56,
+          "n": 100,
+          "p50_ms": 309.38,
+          "p95_ms": 411.31,
+          "p99_is_max": false,
+          "p99_ms": 501.53
+        },
+        "fp32_510": {
+          "max_ms": 871.35,
+          "mean_ms": 758.03,
+          "n": 100,
+          "p50_ms": 746.69,
+          "p95_ms": 834.11,
+          "p99_is_max": false,
+          "p99_ms": 864.37
+        },
+        "fp32_64": {
+          "max_ms": 127.25,
+          "mean_ms": 87.57,
+          "n": 100,
+          "p50_ms": 83.73,
+          "p95_ms": 109.27,
+          "p99_is_max": false,
+          "p99_ms": 121.39
+        },
+        "int8_128": {
+          "max_ms": 93.88,
+          "mean_ms": 69.67,
+          "n": 100,
+          "p50_ms": 67.12,
+          "p95_ms": 79.94,
+          "p99_is_max": false,
+          "p99_ms": 83.13
+        },
+        "int8_256": {
+          "max_ms": 209.65,
+          "mean_ms": 153.46,
+          "n": 100,
+          "p50_ms": 150.07,
+          "p95_ms": 175.74,
+          "p99_is_max": false,
+          "p99_ms": 188.98
+        },
+        "int8_510": {
+          "max_ms": 519.11,
+          "mean_ms": 444.89,
+          "n": 100,
+          "p50_ms": 439.07,
+          "p95_ms": 497.82,
+          "p99_is_max": false,
+          "p99_ms": 515.34
+        },
+        "int8_64": {
+          "max_ms": 58.72,
+          "mean_ms": 39.53,
+          "n": 100,
+          "p50_ms": 37.41,
+          "p95_ms": 50.27,
+          "p99_is_max": false,
+          "p99_ms": 54.06
+        },
+        "repeat": 2,
+        "uptime_start": "23:56:44 up  1:47,  0 user,  load average: 2.14, 1.86, 1.35"
+      },
+      {
+        "fp32_128": {
+          "max_ms": 228.51,
+          "mean_ms": 149.54,
+          "n": 100,
+          "p50_ms": 143.92,
+          "p95_ms": 183.4,
+          "p99_is_max": false,
+          "p99_ms": 219.58
+        },
+        "fp32_256": {
+          "max_ms": 373.6,
+          "mean_ms": 301.75,
+          "n": 100,
+          "p50_ms": 293.94,
+          "p95_ms": 352.52,
+          "p99_is_max": false,
+          "p99_ms": 362.9
+        },
+        "fp32_510": {
+          "max_ms": 875.77,
+          "mean_ms": 742.62,
+          "n": 100,
+          "p50_ms": 732.43,
+          "p95_ms": 815.57,
+          "p99_is_max": false,
+          "p99_ms": 874.32
+        },
+        "fp32_64": {
+          "max_ms": 114.07,
+          "mean_ms": 85.73,
+          "n": 100,
+          "p50_ms": 82.19,
+          "p95_ms": 102.7,
+          "p99_is_max": false,
+          "p99_ms": 106.71
+        },
+        "int8_128": {
+          "max_ms": 102.92,
+          "mean_ms": 70.63,
+          "n": 100,
+          "p50_ms": 68.67,
+          "p95_ms": 84.9,
+          "p99_is_max": false,
+          "p99_ms": 90.7
+        },
+        "int8_256": {
+          "max_ms": 212.24,
+          "mean_ms": 153.85,
+          "n": 100,
+          "p50_ms": 151.11,
+          "p95_ms": 170.2,
+          "p99_is_max": false,
+          "p99_ms": 191.86
+        },
+        "int8_510": {
+          "max_ms": 588.25,
+          "mean_ms": 446.4,
+          "n": 100,
+          "p50_ms": 443.61,
+          "p95_ms": 490.58,
+          "p99_is_max": false,
+          "p99_ms": 520.89
+        },
+        "int8_64": {
+          "max_ms": 63.51,
+          "mean_ms": 40.05,
+          "n": 100,
+          "p50_ms": 37.98,
+          "p95_ms": 48.04,
+          "p99_is_max": false,
+          "p99_ms": 50.15
+        },
+        "repeat": 3,
+        "uptime_start": "00:00:17 up  1:50,  0 user,  load average: 2.04, 2.02, 1.54"
+      }
+    ],
+    "pooled": {
+      "fp32_128": {
+        "max_ms": 233.03,
+        "mean_ms": 150.75,
+        "n": 300,
+        "p50_ms": 143.05,
+        "p95_ms": 189.44,
+        "p99_is_max": false,
+        "p99_ms": 219.58
+      },
+      "fp32_256": {
+        "max_ms": 505.18,
+        "mean_ms": 311.63,
+        "n": 300,
+        "p50_ms": 300.26,
+        "p95_ms": 382.15,
+        "p99_is_max": false,
+        "p99_ms": 433.13
+      },
+      "fp32_510": {
+        "max_ms": 949.67,
+        "mean_ms": 764.59,
+        "n": 300,
+        "p50_ms": 752.37,
+        "p95_ms": 864.48,
+        "p99_is_max": false,
+        "p99_ms": 876.87
+      },
+      "fp32_64": {
+        "max_ms": 209.97,
+        "mean_ms": 88.72,
+        "n": 300,
+        "p50_ms": 83.94,
+        "p95_ms": 112.53,
+        "p99_is_max": false,
+        "p99_ms": 147.2
+      },
+      "int8_128": {
+        "max_ms": 110.8,
+        "mean_ms": 71.76,
+        "n": 300,
+        "p50_ms": 68.57,
+        "p95_ms": 88.8,
+        "p99_is_max": false,
+        "p99_ms": 102.92
+      },
+      "int8_256": {
+        "max_ms": 215.72,
+        "mean_ms": 155.69,
+        "n": 300,
+        "p50_ms": 151.65,
+        "p95_ms": 188.55,
+        "p99_is_max": false,
+        "p99_ms": 211.28
+      },
+      "int8_510": {
+        "max_ms": 588.25,
+        "mean_ms": 452.55,
+        "n": 300,
+        "p50_ms": 446.17,
+        "p95_ms": 514.68,
+        "p99_is_max": false,
+        "p99_ms": 554.89
+      },
+      "int8_64": {
+        "max_ms": 63.51,
+        "mean_ms": 40.64,
+        "n": 300,
+        "p50_ms": 38.7,
+        "p95_ms": 49.31,
+        "p99_is_max": false,
+        "p99_ms": 58.72
+      },
+      "speedup_p50_128": 2.086,
+      "speedup_p50_256": 1.98,
+      "speedup_p50_510": 1.686,
+      "speedup_p50_64": 2.169
+    }
+  },
+  "model_bytes": {
+    "fp32": 738563188,
+    "int8": 539018927
+  },
+  "uptime_after": "00:06:13 up  1:56,  0 user,  load average: 2.51, 2.24, 1.79",
+  "uptime_before": "23:53:04 up  1:43,  0 user,  load average: 1.04, 1.62, 1.15"
+}
