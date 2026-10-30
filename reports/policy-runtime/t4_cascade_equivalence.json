@@ -57,7 +57,33 @@
   "bundle": {
     "policy_id": "cascade-tfidf-allow-only",
     "policy_version": "1",
-    "bundle_sha256": "5bbccdf06346ee9666a28ad5fb0d8eddbb7c41478f0c543c1f7a85cda7a3b216",
-    "committed_policy": "artifacts/policies/cascade-tfidf-allow-only/1/policy.json"
+    "run_policy_bundle_sha256": "c1623eee08e9f6065e8e1cc647e9868da7ed8df67fcf0edba917b510f38135c3",
+    "committed_policy": "artifacts/policies/cascade-tfidf-allow-only/1/policy.json",
+    "committed_bundle_sha256": "b12b7ebce6bda5be94b050c3f585e4130235aed216c32b9251c7e03bd461ad67",
+    "engine_version": "1.1.0",
+    "differences_from_committed_policy": {
+      "decide.members[0].timeout_ms": [
+        5000,
+        600000
+      ],
+      "gate.on_failure.fallback.timeout_ms": [
+        5000,
+        600000
+      ],
+      "gate.timeout_ms": [
+        50,
+        600000
+      ]
+    },
+    "only_timeout_fields_differ": true,
+    "note": "the run raises the budgets to 600 s so no decision is made by a deadline; everything else, including every capability pin, is the committed route policy. The two bundle hashes differ by those budgets only."
+  },
+  "provenance": {
+    "this_run": {
+      "git_commit": "c0c684b26d40a10b06d6567e5283c27f4b149439",
+      "git_dirty": false,
+      "engine_version": "1.1.0",
+      "engine_record_sha256": "c4dc5e43ae2444aa57f5dad058ea2d7f2373ebf3504761a0324f02771371555c"
+    }
   }
 }

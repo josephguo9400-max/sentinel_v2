@@ -329,6 +329,13 @@ def test_t3_and_t4_reports_record_a_pass():
     assert t3["bundle"]["only_timeout_fields_differ"] is True
     t4 = json.loads((ROOT / "reports/policy-runtime/t4_cascade_equivalence.json").read_text())
     assert t4["identical_on_every_item"] and t4["headline_201_306_reproduced"]
+    # review r1 m9: T4's in-memory policy is the committed route policy except for the raised budgets.
+    assert t4["bundle"]["only_timeout_fields_differ"] is True
+    assert set(t4["bundle"]["differences_from_committed_policy"]) == {
+        "gate.timeout_ms", "gate.on_failure.fallback.timeout_ms", "decide.members[0].timeout_ms"}
+    from serving.registry import load_policy_file
+    cascade = load_policy_file(ROOT / "artifacts", "policies/cascade-tfidf-allow-only/1/policy.json")
+    assert bundle_sha256(cascade, t4["bundle"]["engine_version"]) == t4["bundle"]["committed_bundle_sha256"]
     assert t4["recall"]["as_fraction"] == "201/306" and t4["fpr"]["as_fraction"] == "191/1185"
     t5 = json.loads((ROOT / "reports/policy-runtime/t5_live_comparison.json").read_text())
     assert t5["identical_on_every_comparable_item"] and t5["n_different"] == 0
