@@ -3,8 +3,9 @@
     flock /home/claude/measure.lock python -m training.window_scores --set val --window 128 --max-items 400
 
 Each request is tokenized once (DeBERTa tokenizer, no special tokens) and split into windows of W content tokens
-with the gateway's rule (training.cascade_scores.window_starts: starts every `stride` tokens plus one window ending
-exactly at the tail); each model input is [CLS] + window + [SEP], batch size 1; the request score is the max over
+with the original gateway rule (training.cascade_scores.window_starts = serving/encoding.py chunk_ids: starts every
+`stride` tokens plus one window ending exactly at the tail; the served structure-aware planner of serving/structure.py
+differs, see training/planner_fidelity.py); each model input is [CLS] + window + [SEP], batch size 1; the request score is the max over
 ALL windows (no chunk cap). Strides: 384 for the W=510 baseline (the gateway's), W/2 for the smaller windows.
 
 Sets: val (data/splits/val.jsonl), replay (data/replay/replay-v1.jsonl, label None = unlabeled) and probes

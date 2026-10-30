@@ -6,9 +6,13 @@ ONNX fp32 (`artifacts/baseline/deberta-pi-v2`), Stage 1 is a TF-IDF + logistic r
 Everything runs on onnxruntime CPU.
 
 **Default deployment since D23 (2026-10-30): DeBERTa decides every request; Stage 1 is observe-only.** On the
-replay set, Stage 1 finalizing `allow` cut recall from 80.7% to 62.4% (56 DeBERTa-caught injections allowed, 53 of
-them from `gandalf_summ`) and at equal recall it saved 1.35% of Stage 2 calls against the 30% bar
-(`reports/cascade-and-shadow/replay_counterfactual.json`). The cascade code stays: `stage1_mode: "route"` in the
+replay set, simulated the way the gateway routes, Stage 1 finalizing `allow` cut recall from 247/306 = 80.7% to
+201/306 = 65.7% (paired -15.0 pt [-19.4, -10.7]; 48 DeBERTa-caught injections allowed, 45 of them from
+`gandalf_summ`), gave no FPR benefit (194/1,185 -> 191/1,185, paired -0.25 pt [-0.91, +0.40]), and at equal recall
+it saved 2.5% of Stage 2 calls against the 30% bar
+(`reports/cascade-and-shadow/replay_counterfactual_served_faithful.json`). The D23 deployment itself, replayed
+through the gateway, measured recall 248/303 = 81.8% [77.1, 85.8] and FPR 199/1,169 = 17.0% [15.0, 19.3]
+(`reports/cascade-and-shadow/d23/replay_counterfactual.json`). The cascade code stays: `stage1_mode: "route"` in the
 registry turns it back on for a future Stage 1 candidate. See "Stage 1 modes".
 
 ## Run
@@ -181,7 +185,9 @@ its admitted requests and its observe work have finished. When there is no chunk
 (`overloaded`), Stage 1 is not started and its result carries that `failure_reason`. `info["stage1_observe"]`
 and `sentinel_stage1_observed_total{outcome}` record what routed Stage 1 *would* have done
 (`would_finalize_allow`, `would_escalate`, `not_scored`, `dropped`), so the Stage 1 savings rate keeps being measured on live
-traffic without Stage 1 deciding anything.
+traffic without Stage 1 deciding anything. That rate (and `observe_stage1.below_low_share` in the replay runner) is
+over the observations that were not dropped. A drop happens exactly when another observation is running, so drops
+cluster under load and are not a random sample: report the `dropped` count next to any savings rate (0 dropped in the measured run below).
 
 Tests (`tests/serving/test_stage1_observe.py`): over 10 inputs (short, gray-zone, positive, 12-paragraph
 documents truncated by the Stage 2 budget, an injection in a middle chunk, a foreign-language chunk, quoted /
@@ -304,10 +310,9 @@ What the numbers say:
   a coin flip at 7. (After the fix the same ratio is not a share any more, because `language_only` still runs
   langdetect on every chunk while `_run_stage1` skips some.)
 - **Fix 1, cheaper, semantics unchanged:** language is identified only for chunks scoring below gray-zone low,
-  because only those can be cleared. It saves time wherever chunks score at or above low, and that includes this
-  benchmark's "benign" val inputs: the 64- and 510-token cuts score at or above low on their single chunk, and
-  about half of the 5,000-token chunks do (verifier's check of the bench inputs, not a committed output). That is
-  where the p50 drops come from (510: 10.26 -> 6.61 ms, 1,000: 28.23 -> 21.48, 5,000: 131.66 -> 91.75), not
+  because only those can be cleared. It saves time wherever chunks score at or above low, and the p50 drops show that
+  this benchmark's "benign" val inputs have such chunks (per-chunk scores of the bench inputs are not in a
+  committed output). That is where the p50 drops come from (510: 10.26 -> 6.61 ms, 1,000: 28.23 -> 21.48, 5,000: 131.66 -> 91.75), not
   noise. The probe bodies score below low on every chunk, so they do not change (50.69 -> 49.93 ms). Benign val
   paragraphs scoring that high under the 64-token sub-windows is itself a Stage 1 false-positive signal for Agent B.
   Per-chunk language

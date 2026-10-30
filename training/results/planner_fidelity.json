@@ -1,0 +1,184 @@
+{
+  "inputs": {
+    "served": "reports/cascade-and-shadow/replay_counterfactual_served_faithful.json",
+    "served_sha256": "f1efbb7d0d5507e8aa66942324de4b0e850107583e6b5033002e2209d506c3db",
+    "windows": "training/results/window_scores_replay.jsonl",
+    "windows_sha256": "53949b2e7a162fed39d3f903598e79e65c6941682412b147fdf8c5d53dd47c8a",
+    "window_eval": "training/results/window_eval.json",
+    "max_chunks": 4
+  },
+  "threshold": 0.5,
+  "w510_proxy_vs_served_planner": {
+    "n_escalated": 1198,
+    "n_fully_scored": 1139,
+    "identical_max_score": 1074,
+    "identical_max_score_6dp": 1067,
+    "identical_window_count": 1120,
+    "decision_flips_at_0.5": 5,
+    "flips_by_label": {
+      "label=0:served_only": 2,
+      "label=1:proxy_only": 1,
+      "label=1:served_only": 1,
+      "label=none:proxy_only": 1
+    }
+  },
+  "two_pass_gain_by_served_chunk_count": {
+    "setting": {
+      "W2": 128,
+      "N": 128,
+      "t2": 0.9
+    },
+    "by_served_chunk_count": {
+      "all": {
+        "recall": {
+          "deberta_510": {
+            "value": 0.8071895424836601,
+            "numerator": 247,
+            "denominator": 306,
+            "ci95": [
+              0.7592891812312711,
+              0.8474727437724322
+            ],
+            "ci_method": "wilson"
+          },
+          "two_pass": {
+            "value": 0.8300653594771242,
+            "numerator": 254,
+            "denominator": 306,
+            "ci95": [
+              0.7839542466598006,
+              0.8679920770143912
+            ],
+            "ci_method": "wilson"
+          },
+          "gained": 7,
+          "lost": 0
+        },
+        "fpr": {
+          "deberta_510": {
+            "value": 0.16371308016877636,
+            "numerator": 194,
+            "denominator": 1185,
+            "ci95": [
+              0.14373845570530322,
+              0.18586096725677334
+            ],
+            "ci_method": "wilson"
+          },
+          "two_pass": {
+            "value": 0.1848101265822785,
+            "numerator": 219,
+            "denominator": 1185,
+            "ci95": [
+              0.16374139184146091,
+              0.20791578375787562
+            ],
+            "ci_method": "wilson"
+          },
+          "gained": 25,
+          "lost": 0
+        }
+      },
+      "n_chunks<=4": {
+        "recall": {
+          "deberta_510": {
+            "value": 0.8075601374570447,
+            "numerator": 235,
+            "denominator": 291,
+            "ci95": [
+              0.758377355352016,
+              0.8487285812281501
+            ],
+            "ci_method": "wilson"
+          },
+          "two_pass": {
+            "value": 0.8247422680412371,
+            "numerator": 240,
+            "denominator": 291,
+            "ci95": [
+              0.7769092809201639,
+              0.8641131884298439
+            ],
+            "ci_method": "wilson"
+          },
+          "gained": 5,
+          "lost": 0
+        },
+        "fpr": {
+          "deberta_510": {
+            "value": 0.1620016963528414,
+            "numerator": 191,
+            "denominator": 1179,
+            "ci95": [
+              0.14207329296510504,
+              0.18412550226936567
+            ],
+            "ci_method": "wilson"
+          },
+          "two_pass": {
+            "value": 0.1823579304495335,
+            "numerator": 215,
+            "denominator": 1179,
+            "ci95": [
+              0.16135998049680614,
+              0.20541906295440907
+            ],
+            "ci_method": "wilson"
+          },
+          "gained": 24,
+          "lost": 0
+        }
+      },
+      "n_chunks>4": {
+        "recall": {
+          "deberta_510": {
+            "value": 0.8,
+            "numerator": 12,
+            "denominator": 15,
+            "ci95": [
+              0.5481455128483065,
+              0.9295245065301844
+            ],
+            "ci_method": "wilson"
+          },
+          "two_pass": {
+            "value": 0.9333333333333333,
+            "numerator": 14,
+            "denominator": 15,
+            "ci95": [
+              0.7018347012621998,
+              0.9881331045067315
+            ],
+            "ci_method": "wilson"
+          },
+          "gained": 2,
+          "lost": 0
+        },
+        "fpr": {
+          "deberta_510": {
+            "value": 0.5,
+            "numerator": 3,
+            "denominator": 6,
+            "ci95": [
+              0.1876163064826506,
+              0.8123836935173494
+            ],
+            "ci_method": "wilson"
+          },
+          "two_pass": {
+            "value": 0.6666666666666666,
+            "numerator": 4,
+            "denominator": 6,
+            "ci95": [
+              0.299993315138392,
+              0.9032285888942195
+            ],
+            "ci_method": "wilson"
+          },
+          "gained": 1,
+          "lost": 0
+        }
+      }
+    }
+  }
+}

@@ -123,3 +123,23 @@ def test_report_counts_lost_injections_served_agreement_and_sweep():
     assert sweep[0.5]["n_cleared"] == 2 and sweep[0.01]["n_cleared"] == 0
     assert rep["kill_criterion"]["best_equal_recall_setting"]["low"] < 0.5
     assert all("_rows" not in it for it in rep["items"])
+    # paired differences over the same labeled items: d is caught only offline, f is flagged only by the cascade
+    p = rep["paired"]
+    assert list(rep).index("paired") == list(rep).index("views") + 1
+    r = p["chunk_level_minus_deberta_recall"]
+    assert (r["only_first"], r["only_second"], r["n"]) == (0, 1, 2) and abs(r["diff"] + 0.5) < 1e-12
+    f = p["chunk_level_minus_deberta_fpr"]
+    assert (f["only_first"], f["only_second"], f["n"]) == (1, 0, 4) and f["ci95"][0] < f["diff"] < f["ci95"][1]
+    assert p["request_level_minus_deberta_fpr"]["only_first"] == 0
+
+
+def test_from_output_recomputes_the_paired_block_without_a_model(tmp_path):
+    _, sim = run()
+    cache = [cache_row(it, 0.99 if it["label"] else 0.1, 0.01) for it in ITEMS]
+    rep = rcs.report(sim, cache, {it["id"]: it for it in ITEMS}, None, 0.5, ["en"], {})
+    stale = {k: v for k, v in rep.items() if k != "paired"}
+    out = tmp_path / "cf.json"
+    rcs.write_json(out, stale)
+    assert rcs.main(["--from-output", "--out", str(out)]) == 0
+    import json
+    assert json.loads(out.read_text()) == json.loads(json.dumps(rep))

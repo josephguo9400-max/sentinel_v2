@@ -12566,6 +12566,57 @@
           }
         }
       }
+    },
+    "tied_on_val": {
+      "note": "settings equal to the chosen one on val recall and pass-2 tokens; the chosen t2 is the largest of them by the rule's last tie-break (prefer the larger t2)",
+      "settings": [
+        {
+          "W2": 128,
+          "N": 128,
+          "t2": 0.5,
+          "recall_numerator": 2169,
+          "fpr_numerator": 86,
+          "benign_hard_fp": 32,
+          "val_flags_identical_to_chosen": true
+        },
+        {
+          "W2": 128,
+          "N": 128,
+          "t2": 0.6,
+          "recall_numerator": 2169,
+          "fpr_numerator": 86,
+          "benign_hard_fp": 32,
+          "val_flags_identical_to_chosen": true
+        },
+        {
+          "W2": 128,
+          "N": 128,
+          "t2": 0.7,
+          "recall_numerator": 2169,
+          "fpr_numerator": 86,
+          "benign_hard_fp": 32,
+          "val_flags_identical_to_chosen": true
+        },
+        {
+          "W2": 128,
+          "N": 128,
+          "t2": 0.8,
+          "recall_numerator": 2169,
+          "fpr_numerator": 86,
+          "benign_hard_fp": 32,
+          "val_flags_identical_to_chosen": true
+        },
+        {
+          "W2": 128,
+          "N": 128,
+          "t2": 0.9,
+          "recall_numerator": 2169,
+          "fpr_numerator": 86,
+          "benign_hard_fp": 32,
+          "val_flags_identical_to_chosen": true
+        }
+      ],
+      "all_val_flags_identical": true
     }
   }
 }

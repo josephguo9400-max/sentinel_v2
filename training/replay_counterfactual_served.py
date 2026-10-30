@@ -3,6 +3,9 @@
     flock /home/claude/measure.lock python -m training.replay_counterfactual_served \
         --served reports/cascade-and-shadow/replay_after/requests.jsonl \
         --out reports/cascade-and-shadow/replay_counterfactual_served_faithful.json
+    # no model: refresh the paired block from the recorded items of an existing output
+    python -m training.replay_counterfactual_served --from-output \
+        --out reports/cascade-and-shadow/replay_counterfactual_served_faithful.json
 
 training/replay_counterfactual.py is an offline approximation: it scores Stage 1 with its own windows over the whole
 text and gates on the stored request-level language tag. The gateway does neither. This script runs every replay
@@ -30,7 +33,8 @@ Phase B (the decision for escalated requests), two ways:
 Requests Stage 1 finalized as allow are allow in both.
 
 Reported: Stage 2 share; recall / FPR of both decision views vs the offline DeBERTa-only reference (every window
-scored); DeBERTa-caught injections that Stage 1 finalized as allow ("lost"; the reference is offline DeBERTa-only, as
+scored), with paired differences (Newcombe hybrid score 95%, training.cascade_sweep.newcombe_paired) over the same
+labeled items; DeBERTa-caught injections that Stage 1 finalized as allow ("lost"; the reference is offline DeBERTa-only, as
 in the kill criterion); per-item agreement with the served route-mode run (--served); why items the offline view
 routes low escalate in the gateway; and a descriptive sweep of Stage 1's gray-zone low using the serving Stage 1's
 per-chunk scores and languages (exact for which requests Stage 1 clears at low <= the served low, because the
@@ -48,7 +52,7 @@ from collections import Counter
 from pathlib import Path
 from typing import Callable
 
-from training.cascade_sweep import DEBERTA_THRESHOLD, KILL_MIN_SAVED, decide, load
+from training.cascade_sweep import DEBERTA_THRESHOLD, KILL_MIN_SAVED, decide, load, newcombe_paired
 from training.common import ROOT, read_jsonl, sha256_file, write_json
 from training.metrics import rate
 
@@ -149,6 +153,54 @@ def _rates(items: list[tuple[int, int]]) -> dict:
     return {"recall": rate(sum(pos), len(pos)), "fpr": rate(sum(neg), len(neg))}
 
 
+def _paired(rows: list[dict], a_key: str, b_key: str, label: int) -> dict | None:
+    """Paired difference mean(a) - mean(b) over the items with this label (Newcombe hybrid score 95%)."""
+    a = b = c = d = 0
+    for r in rows:
+        if r["label"] != label:
+            continue
+        x, y = bool(r[a_key]), bool(r[b_key])
+        a += x and y
+        b += x and not y
+        c += y and not x
+        d += not x and not y
+    out = newcombe_paired(a, b, c, d)
+    return None if out is None else {"diff": out[0], "ci95": [out[1], out[2]], "only_first": b, "only_second": c,
+                                     "n": a + b + c + d}
+
+
+def paired_block(items: list[dict]) -> dict:
+    """Cascade (served-faithful) minus offline DeBERTa-only, recall and FPR, over the same labeled items."""
+    labeled = [r for r in items if r.get("label") in (0, 1)]
+    return {
+        "note": "diff = cascade view - deberta_only_offline over the same labeled items; only_first = flagged by the "
+                "cascade view only, only_second = flagged by offline DeBERTa-only only",
+        "chunk_level_minus_deberta_recall": _paired(labeled, "chunk_level_flag", "deb_flag", 1),
+        "chunk_level_minus_deberta_fpr": _paired(labeled, "chunk_level_flag", "deb_flag", 0),
+        "request_level_minus_deberta_recall": _paired(labeled, "request_level_flag", "deb_flag", 1),
+        "request_level_minus_deberta_fpr": _paired(labeled, "request_level_flag", "deb_flag", 0),
+    }
+
+
+def with_paired(rep: dict) -> dict:
+    """`rep` with its `paired` block (re)computed from rep["items"], placed right after `views`."""
+    out = {}
+    for k, v in rep.items():
+        if k == "paired":
+            continue
+        out[k] = v
+        if k == "views":
+            out["paired"] = paired_block(rep["items"])
+    return out
+
+
+def recompute(path: Path) -> dict:
+    """--from-output: add/refresh the paired block of an existing output from its recorded items (no model)."""
+    rep = with_paired(json.loads(Path(path).read_text(encoding="utf-8")))
+    write_json(path, rep)
+    return rep
+
+
 def _cleared(r: dict, low: float, languages: list[str] | None) -> bool:
     """Would the serving Stage 1 clear every chunk at gray-zone low `low` (<= the served low)?"""
     sc, lg = r["s1_scores"], r["s1_langs"]
@@ -239,7 +291,7 @@ def report(sim: list[dict], cache_rows: list[dict], truth: dict[str, dict], serv
     pos_ref = sum(r["deb_flag"] for r in pos)
     within_2pt = [s for s in sweep if pos and (pos_ref - s["n_recall"]) / len(pos) <= 0.02]
 
-    return {
+    return with_paired({
         "view_kind": "serving-faithful: real ClassifierService route mode, real Stage 1 and language detector, "
                      "no timeouts; Stage 2 stubbed in phase A, escalated requests decided with DeBERTa",
         "inputs": meta | {"n_items": n, "n_labeled": len(labeled), "n_positive": len(pos)},
@@ -264,7 +316,7 @@ def report(sim: list[dict], cache_rows: list[dict], truth: dict[str, dict], serv
         },
         "items": [{k: ([None if x is None else round(x, 6) for x in v] if k == "s1_scores" and v else v)
                    for k, v in r.items() if not k.startswith("_")} for r in sim],
-    }
+    })
 
 
 def run(out: Path, served_path: Path | None, cache: Path = CACHE, limit: int | None = None,
@@ -313,9 +365,15 @@ def main(argv=None) -> int:
     ap.add_argument("--served", type=Path, default=None, help="route-mode replay_runner requests.jsonl")
     ap.add_argument("--cache", type=Path, default=CACHE)
     ap.add_argument("--out", type=Path, required=True)
+    ap.add_argument("--from-output", action="store_true",
+                    help="no model: recompute the paired block of the existing --out from its recorded items")
     ap.add_argument("--limit", type=int, default=None, help="first N items by id (smoke runs only)")
     ap.add_argument("--intra-op-threads", type=int, default=0)
     a = ap.parse_args(argv)
+    if a.from_output:
+        rep = recompute(a.out)
+        print(json.dumps(rep["paired"], indent=1))
+        return 0
     rep = run(a.out, a.served, a.cache, a.limit, a.intra_op_threads)
     print(json.dumps({k: v for k, v in rep.items() if k != "items" and k != "low_sweep_descriptive"}, indent=1))
     return 0

@@ -399,8 +399,11 @@ metadata the gateway never sees). A label is used only once `send time + label_a
 passed; each window reports the labels revealed in it and cumulatively. Tested against a fake gateway
 (`tests/training/test_replay_runner.py`) and run against the real gateway twice in this milestone: the route-mode
 cascade (`reports/cascade-and-shadow/replay_after/`) and the D23 deployment, DeBERTa deciding with Stage 1
-observe-only (`reports/cascade-and-shadow/d23/replay/`). Both at 2 req/s on the shared 2-core host; results and
-their reading are in `training/CASCADE.md` and `docs/RFC.md` (D23).
+observe-only (`reports/cascade-and-shadow/d23/replay/`). Both at 2 req/s on the shared 2-core host. Results: the route-mode run in
+`reports/cascade-and-shadow/replay_counterfactual.json` (`views.served`) and
+`replay_counterfactual_served_faithful.json`, the D23 run in `reports/cascade-and-shadow/d23/replay_counterfactual.json`
+(`views.served.same_items`); their reading is in `training/CASCADE.md` (D23 outcome) and `docs/RFC.md` (milestone 3
+row).
 
 ## Changelog
 
