@@ -981,7 +981,14 @@ class ClassifierService:
         # Coverage is about content no step scored: a chunk one member scored is covered even if the other failed.
         uncovered = [i for i in order if i not in scored and i not in cleared]
         unscored = bool(uncovered)
-        if not model_backed:
+        # The coverage rule applies to an aggregated allow whenever some member (or its fallback) scored chunks and
+        # content remains that no step scored, whichever member's vote was a failure-policy vote (review r1 M2): a
+        # failed member scores no chunk the other member did not, so its failure cannot shrink the unscored content
+        # and must not turn a coverage flag into an allow. Only when no member scored anything does the failure
+        # policy alone decide, as for a single decide member (FAIL_OPEN = the owner's choice when no detector
+        # answered).
+        coverage_applies = not flag and bool(uncovered) and bool(scored)
+        if not model_backed and not coverage_applies:
             policy_vote = next(v for v in votes if not v[1] and v[0] == flag)
             info["path"] = f"parallel_{policy_vote[3]}"
             return self._outcome(request_id, decision, policy_vote[2].spec.detector_id, policy_vote[3], results,
@@ -995,6 +1002,7 @@ class ClassifierService:
             info["path"] = "parallel_allow"
             return self._outcome(request_id, "allow", by, None, results, stages, None, info, unscored=unscored,
                                  escalation=escalation)
+        # Coverage decides; a failed member stays visible in its result's status and info["members"].
         policy = self.coverage.mode  # deep_scan is refused for parallel stages by the policy validator
         info["path"] = f"coverage_{policy}"
         return self._outcome(request_id, "allow" if policy == "allow" else "flag", f"coverage_policy:{policy}", None,
