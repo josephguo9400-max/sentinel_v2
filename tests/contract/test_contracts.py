@@ -52,7 +52,7 @@ def event(**kw):
 # ---------- DetectorResult ----------
 
 def test_ok_result_valid():
-    assert result().schema_version == "1.2"
+    assert result().schema_version == "1.3"
 
 
 def test_prediction_must_match_threshold():
@@ -156,9 +156,10 @@ def test_detector_events_require_version():
 
 def test_schema_snapshot_unchanged():
     """Contracts are frozen: any schema change must update tests/contract/schema_snapshot.json deliberately."""
-    from contracts import ClassifyRequest, ClassifyResponse
+    from contracts import CapabilityManifest, ClassifyRequest, ClassifyResponse, ExecutionPolicy
     current = {m.__name__: m.model_json_schema()
-               for m in (DetectorResult, ArtifactManifest, TraceEvent, ClassifyRequest, ClassifyResponse)}
+               for m in (DetectorResult, ArtifactManifest, TraceEvent, ClassifyRequest, ClassifyResponse,
+                         CapabilityManifest, ExecutionPolicy)}
     snap = Path(__file__).with_name("schema_snapshot.json")
     assert json.loads(snap.read_text()) == json.loads(json.dumps(current))
 

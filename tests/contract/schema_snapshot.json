@@ -257,6 +257,365 @@
   "title": "ArtifactManifest",
   "type": "object"
  },
+ "CapabilityManifest": {
+  "$defs": {
+   "Calibration": {
+    "additionalProperties": false,
+    "properties": {
+     "calibrated_with": {
+      "anyOf": [
+       {
+        "$ref": "#/$defs/ScoringRule"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null
+     },
+     "chosen_on": {
+      "title": "Chosen On",
+      "type": "string"
+     },
+     "evidence_path": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Evidence Path"
+     },
+     "notes": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Notes"
+     },
+     "rule": {
+      "title": "Rule",
+      "type": "string"
+     },
+     "threshold": {
+      "maximum": 1.0,
+      "minimum": 0.0,
+      "title": "Threshold",
+      "type": "number"
+     }
+    },
+    "required": [
+     "threshold",
+     "chosen_on",
+     "rule"
+    ],
+    "title": "Calibration",
+    "type": "object"
+   },
+   "InputContract": {
+    "additionalProperties": false,
+    "properties": {
+     "kind": {
+      "enum": [
+       "text",
+       "token"
+      ],
+      "title": "Kind",
+      "type": "string"
+     },
+     "max_input_tokens": {
+      "exclusiveMinimum": 0,
+      "title": "Max Input Tokens",
+      "type": "integer"
+     },
+     "preprocessing": {
+      "enum": [
+       "tfidf-v1",
+       "deberta-v3-window-v1"
+      ],
+      "title": "Preprocessing",
+      "type": "string"
+     },
+     "tokenizer": {
+      "pattern": "^(hf|regex):.+$",
+      "title": "Tokenizer",
+      "type": "string"
+     },
+     "validated_languages": {
+      "anyOf": [
+       {
+        "items": {
+         "type": "string"
+        },
+        "type": "array"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Validated Languages"
+     }
+    },
+    "required": [
+     "kind",
+     "preprocessing",
+     "tokenizer",
+     "max_input_tokens"
+    ],
+    "title": "InputContract",
+    "type": "object"
+   },
+   "OperationalLimits": {
+    "additionalProperties": false,
+    "properties": {
+     "latency_evidence_path": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Latency Evidence Path"
+     },
+     "max_batch": {
+      "minimum": 1,
+      "title": "Max Batch",
+      "type": "integer"
+     },
+     "recommended_timeout_ms": {
+      "exclusiveMinimum": 0,
+      "title": "Recommended Timeout Ms",
+      "type": "integer"
+     }
+    },
+    "required": [
+     "recommended_timeout_ms",
+     "max_batch"
+    ],
+    "title": "OperationalLimits",
+    "type": "object"
+   },
+   "Runtime": {
+    "additionalProperties": false,
+    "properties": {
+     "onnxruntime": {
+      "title": "Onnxruntime",
+      "type": "string"
+     },
+     "python": {
+      "title": "Python",
+      "type": "string"
+     },
+     "skl2onnx": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Skl2Onnx"
+     },
+     "sklearn": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Sklearn"
+     },
+     "tokenizers": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Tokenizers"
+     }
+    },
+    "required": [
+     "python",
+     "onnxruntime"
+    ],
+    "title": "Runtime",
+    "type": "object"
+   },
+   "ScoringRule": {
+    "additionalProperties": false,
+    "description": "How the model is applied to one chunk. Part of the calibration: the threshold is only valid with it.",
+    "properties": {
+     "aggregation": {
+      "const": "max",
+      "default": "max",
+      "title": "Aggregation",
+      "type": "string"
+     },
+     "score_segment_pieces": {
+      "title": "Score Segment Pieces",
+      "type": "boolean"
+     },
+     "subwindow_stride": {
+      "anyOf": [
+       {
+        "minimum": 1,
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Subwindow Stride"
+     },
+     "subwindow_tokens": {
+      "minimum": 0,
+      "title": "Subwindow Tokens",
+      "type": "integer"
+     }
+    },
+    "required": [
+     "subwindow_tokens",
+     "score_segment_pieces"
+    ],
+    "title": "ScoringRule",
+    "type": "object"
+   }
+  },
+  "additionalProperties": false,
+  "properties": {
+   "artifact_format": {
+    "const": "onnx",
+    "title": "Artifact Format",
+    "type": "string"
+   },
+   "calibration": {
+    "$ref": "#/$defs/Calibration"
+   },
+   "created_at": {
+    "title": "Created At",
+    "type": "string"
+   },
+   "detector_id": {
+    "minLength": 1,
+    "title": "Detector Id",
+    "type": "string"
+   },
+   "detector_version": {
+    "minLength": 1,
+    "title": "Detector Version",
+    "type": "string"
+   },
+   "files": {
+    "additionalProperties": {
+     "pattern": "^[0-9a-f]{64}$",
+     "type": "string"
+    },
+    "title": "Files",
+    "type": "object"
+   },
+   "input": {
+    "$ref": "#/$defs/InputContract"
+   },
+   "label_mapping": {
+    "additionalProperties": {
+     "enum": [
+      "benign",
+      "injection"
+     ],
+     "type": "string"
+    },
+    "propertyNames": {
+     "enum": [
+      "0",
+      "1"
+     ]
+    },
+    "title": "Label Mapping",
+    "type": "object"
+   },
+   "limits": {
+    "$ref": "#/$defs/OperationalLimits"
+   },
+   "model_file": {
+    "title": "Model File",
+    "type": "string"
+   },
+   "runtime": {
+    "$ref": "#/$defs/Runtime"
+   },
+   "schema_version": {
+    "const": "2.0",
+    "default": "2.0",
+    "title": "Schema Version",
+    "type": "string"
+   },
+   "scoring": {
+    "$ref": "#/$defs/ScoringRule"
+   },
+   "tokenizer_file": {
+    "anyOf": [
+     {
+      "type": "string"
+     },
+     {
+      "type": "null"
+     }
+    ],
+    "default": null,
+    "title": "Tokenizer File"
+   },
+   "training_data_version": {
+    "anyOf": [
+     {
+      "type": "string"
+     },
+     {
+      "type": "null"
+     }
+    ],
+    "default": null,
+    "title": "Training Data Version"
+   }
+  },
+  "required": [
+   "detector_id",
+   "detector_version",
+   "artifact_format",
+   "files",
+   "model_file",
+   "runtime",
+   "label_mapping",
+   "input",
+   "scoring",
+   "calibration",
+   "limits",
+   "created_at"
+  ],
+  "title": "CapabilityManifest",
+  "type": "object"
+ },
  "ClassifyRequest": {
   "additionalProperties": false,
   "properties": {
@@ -364,16 +723,18 @@
       "default": "active",
       "enum": [
        "active",
+       "observe",
        "shadow"
       ],
       "title": "Role",
       "type": "string"
      },
      "schema_version": {
-      "default": "1.2",
+      "default": "1.3",
       "enum": [
        "1.1",
-       "1.2"
+       "1.2",
+       "1.3"
       ],
       "title": "Schema Version",
       "type": "string"
@@ -440,6 +801,19 @@
   },
   "additionalProperties": false,
   "properties": {
+   "bundle_sha256": {
+    "anyOf": [
+     {
+      "pattern": "^[0-9a-f]{64}$",
+      "type": "string"
+     },
+     {
+      "type": "null"
+     }
+    ],
+    "default": null,
+    "title": "Bundle Sha256"
+   },
    "coverage_policy_applied": {
     "anyOf": [
      {
@@ -470,6 +844,24 @@
     "title": "Decision",
     "type": "string"
    },
+   "escalation_reason": {
+    "anyOf": [
+     {
+      "enum": [
+       "band",
+       "language",
+       "coverage",
+       "gate_failed"
+      ],
+      "type": "string"
+     },
+     {
+      "type": "null"
+     }
+    ],
+    "default": null,
+    "title": "Escalation Reason"
+   },
    "policy_applied": {
     "anyOf": [
      {
@@ -485,6 +877,30 @@
     ],
     "default": null,
     "title": "Policy Applied"
+   },
+   "policy_id": {
+    "anyOf": [
+     {
+      "type": "string"
+     },
+     {
+      "type": "null"
+     }
+    ],
+    "default": null,
+    "title": "Policy Id"
+   },
+   "policy_version": {
+    "anyOf": [
+     {
+      "type": "string"
+     },
+     {
+      "type": "null"
+     }
+    ],
+    "default": null,
+    "title": "Policy Version"
    },
    "request_id": {
     "title": "Request Id",
@@ -508,6 +924,18 @@
     },
     "title": "Stages Run",
     "type": "array"
+   },
+   "unscored_by_any_step": {
+    "anyOf": [
+     {
+      "type": "boolean"
+     },
+     {
+      "type": "null"
+     }
+    ],
+    "default": null,
+    "title": "Unscored By Any Step"
    }
   },
   "required": [
@@ -598,16 +1026,18 @@
     "default": "active",
     "enum": [
      "active",
+     "observe",
      "shadow"
     ],
     "title": "Role",
     "type": "string"
    },
    "schema_version": {
-    "default": "1.2",
+    "default": "1.3",
     "enum": [
      "1.1",
-     "1.2"
+     "1.2",
+     "1.3"
     ],
     "title": "Schema Version",
     "type": "string"
@@ -669,6 +1099,650 @@
    "input_tokens"
   ],
   "title": "DetectorResult",
+  "type": "object"
+ },
+ "ExecutionPolicy": {
+  "$defs": {
+   "Band": {
+    "additionalProperties": false,
+    "description": "Per-chunk routing on the gate detector's score. Independent of the gate detector's threshold.",
+    "properties": {
+     "clear_below": {
+      "maximum": 1.0,
+      "minimum": 0.0,
+      "title": "Clear Below",
+      "type": "number"
+     },
+     "finalize": {
+      "items": {
+       "enum": [
+        "allow",
+        "flag"
+       ],
+       "type": "string"
+      },
+      "title": "Finalize",
+      "type": "array",
+      "uniqueItems": true
+     },
+     "flag_at_or_above": {
+      "anyOf": [
+       {
+        "maximum": 1.0,
+        "minimum": 0.0,
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Flag At Or Above"
+     },
+     "scope_languages": {
+      "anyOf": [
+       {
+        "items": {
+         "type": "string"
+        },
+        "type": "array"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Scope Languages"
+     }
+    },
+    "required": [
+     "clear_below",
+     "finalize"
+    ],
+    "title": "Band",
+    "type": "object"
+   },
+   "Canary": {
+    "additionalProperties": false,
+    "properties": {
+     "candidate": {
+      "$ref": "#/$defs/PolicyRef"
+     },
+     "salt": {
+      "title": "Salt",
+      "type": "string"
+     },
+     "share_bp": {
+      "maximum": 10000,
+      "minimum": 0,
+      "title": "Share Bp",
+      "type": "integer"
+     }
+    },
+    "required": [
+     "candidate",
+     "share_bp",
+     "salt"
+    ],
+    "title": "Canary",
+    "type": "object"
+   },
+   "Chunking": {
+    "additionalProperties": false,
+    "properties": {
+     "pack_overlap_tokens": {
+      "minimum": 0,
+      "title": "Pack Overlap Tokens",
+      "type": "integer"
+     },
+     "plan_tokenizer": {
+      "$ref": "#/$defs/DetectorRef"
+     },
+     "stride": {
+      "minimum": 1,
+      "title": "Stride",
+      "type": "integer"
+     },
+     "structure_aware": {
+      "title": "Structure Aware",
+      "type": "boolean"
+     }
+    },
+    "required": [
+     "plan_tokenizer",
+     "stride",
+     "structure_aware",
+     "pack_overlap_tokens"
+    ],
+    "title": "Chunking",
+    "type": "object"
+   },
+   "Coverage": {
+    "additionalProperties": false,
+    "properties": {
+     "deep_scan": {
+      "anyOf": [
+       {
+        "$ref": "#/$defs/DeepScan"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null
+     },
+     "mode": {
+      "enum": [
+       "flag",
+       "quarantine",
+       "allow",
+       "deep_scan"
+      ],
+      "title": "Mode",
+      "type": "string"
+     }
+    },
+    "required": [
+     "mode"
+    ],
+    "title": "Coverage",
+    "type": "object"
+   },
+   "DecideMember": {
+    "additionalProperties": false,
+    "properties": {
+     "detector": {
+      "$ref": "#/$defs/DetectorRef"
+     },
+     "max_chunks": {
+      "minimum": 1,
+      "title": "Max Chunks",
+      "type": "integer"
+     },
+     "on_failure": {
+      "$ref": "#/$defs/Failure"
+     },
+     "timeout_ms": {
+      "exclusiveMinimum": 0,
+      "title": "Timeout Ms",
+      "type": "integer"
+     }
+    },
+    "required": [
+     "detector",
+     "timeout_ms",
+     "max_chunks",
+     "on_failure"
+    ],
+    "title": "DecideMember",
+    "type": "object"
+   },
+   "DecideStage": {
+    "additionalProperties": false,
+    "properties": {
+     "aggregate": {
+      "anyOf": [
+       {
+        "enum": [
+         "any_flag",
+         "all_flag"
+        ],
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Aggregate"
+     },
+     "members": {
+      "items": {
+       "$ref": "#/$defs/DecideMember"
+      },
+      "title": "Members",
+      "type": "array"
+     },
+     "mode": {
+      "enum": [
+       "single",
+       "parallel"
+      ],
+      "title": "Mode",
+      "type": "string"
+     }
+    },
+    "required": [
+     "mode",
+     "members"
+    ],
+    "title": "DecideStage",
+    "type": "object"
+   },
+   "DeepScan": {
+    "additionalProperties": false,
+    "properties": {
+     "detector": {
+      "$ref": "#/$defs/DetectorRef"
+     },
+     "fallback": {
+      "enum": [
+       "flag",
+       "quarantine",
+       "allow"
+      ],
+      "title": "Fallback",
+      "type": "string"
+     },
+     "max_chunks": {
+      "minimum": 1,
+      "title": "Max Chunks",
+      "type": "integer"
+     },
+     "timeout_ms": {
+      "exclusiveMinimum": 0,
+      "title": "Timeout Ms",
+      "type": "integer"
+     }
+    },
+    "required": [
+     "detector",
+     "max_chunks",
+     "timeout_ms",
+     "fallback"
+    ],
+    "title": "DeepScan",
+    "type": "object"
+   },
+   "DetectorRef": {
+    "additionalProperties": false,
+    "properties": {
+     "capability_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Capability Sha256",
+      "type": "string"
+     },
+     "detector_id": {
+      "title": "Detector Id",
+      "type": "string"
+     },
+     "detector_version": {
+      "title": "Detector Version",
+      "type": "string"
+     }
+    },
+    "required": [
+     "detector_id",
+     "detector_version",
+     "capability_sha256"
+    ],
+    "title": "DetectorRef",
+    "type": "object"
+   },
+   "Failure": {
+    "additionalProperties": false,
+    "properties": {
+     "fallback": {
+      "anyOf": [
+       {
+        "$ref": "#/$defs/FallbackStep"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null
+     },
+     "mode": {
+      "enum": [
+       "FAIL_OPEN",
+       "FAIL_CLOSED",
+       "FALLBACK",
+       "ASYNC_ONLY"
+      ],
+      "title": "Mode",
+      "type": "string"
+     }
+    },
+    "required": [
+     "mode"
+    ],
+    "title": "Failure",
+    "type": "object"
+   },
+   "FallbackStep": {
+    "additionalProperties": false,
+    "properties": {
+     "detector": {
+      "$ref": "#/$defs/DetectorRef"
+     },
+     "terminal": {
+      "enum": [
+       "FAIL_OPEN",
+       "FAIL_CLOSED"
+      ],
+      "title": "Terminal",
+      "type": "string"
+     },
+     "timeout_ms": {
+      "exclusiveMinimum": 0,
+      "title": "Timeout Ms",
+      "type": "integer"
+     }
+    },
+    "required": [
+     "detector",
+     "timeout_ms",
+     "terminal"
+    ],
+    "title": "FallbackStep",
+    "type": "object"
+   },
+   "GateStep": {
+    "additionalProperties": false,
+    "properties": {
+     "band": {
+      "$ref": "#/$defs/Band"
+     },
+     "deadline_margin_ms": {
+      "minimum": 0,
+      "title": "Deadline Margin Ms",
+      "type": "integer"
+     },
+     "detector": {
+      "$ref": "#/$defs/DetectorRef"
+     },
+     "max_chunks": {
+      "minimum": 1,
+      "title": "Max Chunks",
+      "type": "integer"
+     },
+     "on_failure": {
+      "$ref": "#/$defs/Failure"
+     },
+     "timeout_ms": {
+      "exclusiveMinimum": 0,
+      "title": "Timeout Ms",
+      "type": "integer"
+     }
+    },
+    "required": [
+     "detector",
+     "band",
+     "timeout_ms",
+     "deadline_margin_ms",
+     "max_chunks",
+     "on_failure"
+    ],
+    "title": "GateStep",
+    "type": "object"
+   },
+   "LanguageDetector": {
+    "additionalProperties": false,
+    "properties": {
+     "impl": {
+      "const": "langdetect==1.0.9",
+      "title": "Impl",
+      "type": "string"
+     },
+     "max_chars": {
+      "minimum": 1,
+      "title": "Max Chars",
+      "type": "integer"
+     },
+     "min_letters": {
+      "minimum": 0,
+      "title": "Min Letters",
+      "type": "integer"
+     },
+     "min_prob": {
+      "maximum": 1.0,
+      "minimum": 0.0,
+      "title": "Min Prob",
+      "type": "number"
+     },
+     "seed": {
+      "title": "Seed",
+      "type": "integer"
+     },
+     "tag_map": {
+      "additionalProperties": {
+       "type": "string"
+      },
+      "title": "Tag Map",
+      "type": "object"
+     }
+    },
+    "required": [
+     "impl",
+     "seed",
+     "min_letters",
+     "min_prob",
+     "max_chars"
+    ],
+    "title": "LanguageDetector",
+    "type": "object"
+   },
+   "ObserveStep": {
+    "additionalProperties": false,
+    "properties": {
+     "band": {
+      "anyOf": [
+       {
+        "$ref": "#/$defs/Band"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null
+     },
+     "concurrency": {
+      "minimum": 1,
+      "title": "Concurrency",
+      "type": "integer"
+     },
+     "deadline_margin_ms": {
+      "minimum": 0,
+      "title": "Deadline Margin Ms",
+      "type": "integer"
+     },
+     "detector": {
+      "$ref": "#/$defs/DetectorRef"
+     },
+     "max_chunks": {
+      "minimum": 1,
+      "title": "Max Chunks",
+      "type": "integer"
+     },
+     "on_failure": {
+      "$ref": "#/$defs/Failure"
+     },
+     "timeout_ms": {
+      "exclusiveMinimum": 0,
+      "title": "Timeout Ms",
+      "type": "integer"
+     }
+    },
+    "required": [
+     "detector",
+     "timeout_ms",
+     "deadline_margin_ms",
+     "max_chunks",
+     "concurrency",
+     "on_failure"
+    ],
+    "title": "ObserveStep",
+    "type": "object"
+   },
+   "PolicyRef": {
+    "additionalProperties": false,
+    "properties": {
+     "policy_id": {
+      "title": "Policy Id",
+      "type": "string"
+     },
+     "policy_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Policy Sha256",
+      "type": "string"
+     },
+     "policy_version": {
+      "title": "Policy Version",
+      "type": "string"
+     }
+    },
+    "required": [
+     "policy_id",
+     "policy_version",
+     "policy_sha256"
+    ],
+    "title": "PolicyRef",
+    "type": "object"
+   },
+   "ShadowStep": {
+    "additionalProperties": false,
+    "properties": {
+     "detector": {
+      "$ref": "#/$defs/DetectorRef"
+     },
+     "intra_op_threads": {
+      "minimum": 0,
+      "title": "Intra Op Threads",
+      "type": "integer"
+     },
+     "max_chunks": {
+      "minimum": 1,
+      "title": "Max Chunks",
+      "type": "integer"
+     },
+     "on_failure": {
+      "$ref": "#/$defs/Failure"
+     },
+     "queue": {
+      "minimum": 1,
+      "title": "Queue",
+      "type": "integer"
+     },
+     "timeout_ms": {
+      "exclusiveMinimum": 0,
+      "title": "Timeout Ms",
+      "type": "integer"
+     }
+    },
+    "required": [
+     "detector",
+     "timeout_ms",
+     "queue",
+     "max_chunks",
+     "intra_op_threads",
+     "on_failure"
+    ],
+    "title": "ShadowStep",
+    "type": "object"
+   }
+  },
+  "additionalProperties": false,
+  "properties": {
+   "canary": {
+    "anyOf": [
+     {
+      "$ref": "#/$defs/Canary"
+     },
+     {
+      "type": "null"
+     }
+    ],
+    "default": null
+   },
+   "chunking": {
+    "$ref": "#/$defs/Chunking"
+   },
+   "coverage": {
+    "$ref": "#/$defs/Coverage"
+   },
+   "decide": {
+    "$ref": "#/$defs/DecideStage"
+   },
+   "engine_version": {
+    "title": "Engine Version",
+    "type": "string"
+   },
+   "entrypoint": {
+    "const": "classify",
+    "title": "Entrypoint",
+    "type": "string"
+   },
+   "gate": {
+    "anyOf": [
+     {
+      "$ref": "#/$defs/GateStep"
+     },
+     {
+      "type": "null"
+     }
+    ],
+    "default": null
+   },
+   "language_detector": {
+    "anyOf": [
+     {
+      "$ref": "#/$defs/LanguageDetector"
+     },
+     {
+      "type": "null"
+     }
+    ],
+    "default": null
+   },
+   "observe": {
+    "items": {
+     "$ref": "#/$defs/ObserveStep"
+    },
+    "title": "Observe",
+    "type": "array"
+   },
+   "policy_id": {
+    "title": "Policy Id",
+    "type": "string"
+   },
+   "policy_version": {
+    "title": "Policy Version",
+    "type": "string"
+   },
+   "rationale": {
+    "title": "Rationale",
+    "type": "string"
+   },
+   "schema_version": {
+    "const": "1.0",
+    "default": "1.0",
+    "title": "Schema Version",
+    "type": "string"
+   },
+   "shadow": {
+    "anyOf": [
+     {
+      "$ref": "#/$defs/ShadowStep"
+     },
+     {
+      "type": "null"
+     }
+    ],
+    "default": null
+   }
+  },
+  "required": [
+   "policy_id",
+   "policy_version",
+   "entrypoint",
+   "engine_version",
+   "chunking",
+   "decide",
+   "coverage",
+   "rationale"
+  ],
+  "title": "ExecutionPolicy",
   "type": "object"
  },
  "TraceEvent": {

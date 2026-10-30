@@ -1,0 +1,11 @@
+Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+    from serving.app import create_app; create_app()
+                                        ~~~~~~~~~~^^
+  File "/home/claude/wt-policy/serving/app.py", line 89, in create_app
+    check_decision_settings(config)  # D25.3: raises DecisionSettingError, the gateway does not start
+    ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^
+  File "/home/claude/wt-policy/serving/policy.py", line 260, in check_decision_settings
+    raise DecisionSettingError("decision-affecting settings outside the policy (D25.3): " + "; ".join(problems))
+serving.policy.DecisionSettingError: decision-affecting settings outside the policy (D25.3): SENTINEL_COVERAGE_POLICY is set: under registry v2 change coverage.mode in the active policy
+exit=1

@@ -247,11 +247,24 @@ def test_reload_rejects_bad_registry_and_keeps_last_good(tmp_path):
 
 
 def test_committed_registry_loads_real_artifacts_when_weights_present():
+    """The committed registry is schema v2 (D25): it loads one bundle, all or nothing."""
     if not (ROOT / "artifacts/baseline/deberta-pi-v2/onnx/model.onnx").exists():
         pytest.skip("weights not present (python scripts/fetch_models.py)")
-    out = load_registry(ROOT / "artifacts" / "registry.json", ROOT / "artifacts")
+    from serving.registry import load_bundle_v2
+    b = load_bundle_v2(ROOT / "artifacts" / "registry.json", ROOT / "artifacts")
+    assert b.policy_source == "registry_v2" and b.policy.policy_id == "d23-deberta-decides"
+    assert b.detectors[("deberta-pi-v2", "2.0.0+90c9989b.onnx.fp32")].sha256.startswith("f0ea7f23")
+    assert b.detectors[("stage1-tfidf-lr", "stage1-tfidf-v2.1")].kind == "text"
+
+
+def test_committed_v1_registry_state_still_loads_with_the_v1_path():
+    """The v1 path is kept one more milestone (design §7, migration 6); the state D23 served is committed."""
+    if not (ROOT / "artifacts/baseline/deberta-pi-v2/onnx/model.onnx").exists():
+        pytest.skip("weights not present (python scripts/fetch_models.py)")
+    out = load_registry(ROOT / "reports/policy-runtime/registry_v1_d23.json", ROOT / "artifacts")
     assert not out.rejections, out.rejections
     assert out.specs["stage2"].sha256.startswith("f0ea7f23") and out.specs["stage1"].kind == "text"
+    assert out.stage1_mode == "observe"
 
 
 def test_tfidf_windows_match_training_preprocessing():

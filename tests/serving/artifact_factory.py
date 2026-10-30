@@ -120,3 +120,48 @@ def extra_tokenizers_cfg() -> str:
 def softmax_check(logits: np.ndarray) -> np.ndarray:  # pragma: no cover - debugging helper
     e = np.exp(logits - logits.max(axis=1, keepdims=True))
     return e / e.sum(axis=1, keepdims=True)
+
+
+def write_capability(root: Path, cap) -> Path:
+    p = root / "capabilities" / cap.detector_id / cap.detector_version / "capability.json"
+    p.parent.mkdir(parents=True, exist_ok=True)
+    p.write_text(cap.model_dump_json(indent=1))
+    return p
+
+
+def write_policy(root: Path, policy) -> str:
+    rel = f"policies/{policy.policy_id}/{policy.policy_version}/policy.json"
+    (root / rel).parent.mkdir(parents=True, exist_ok=True)
+    (root / rel).write_text(policy.model_dump_json(indent=1))
+    return rel
+
+
+def write_registry_v2(root: Path, active: str, previous: str | None = None, **extra) -> Path:
+    p = root / "registry.json"
+    p.write_text(json.dumps({"schema": "sentinel-registry-v2", "active": active, "previous": previous,
+                             "capabilities_root": "capabilities", **extra}))
+    return p
+
+
+def write_v2_tree(root: Path, *, stage1_mode: str | None = "observe", policy_id: str = "tiny-policy",
+                  config=None, shadow: bool = False):
+    """A tiny token model (+ the committed Stage 1 model) converted to capabilities + one policy + registry v2.
+    Returns (policy, capabilities, registry path)."""
+    from serving.config import GatewayConfig
+    from serving.convert_registry import read_manifests
+    from serving.policy import legacy_to_v2
+
+    write_token_artifact(root, "baseline/tiny")
+    pointers = {"stage2": "baseline/tiny", "stage1": None, "shadow": None, "stage1_mode": stage1_mode}
+    if stage1_mode is not None:
+        write_stage1_artifact(root, "candidates/s1")
+        pointers["stage1"] = "candidates/s1"
+    if shadow:
+        write_token_artifact(root, "candidates/tiny-shadow", detector_id="tiny-shadow")
+        pointers["shadow"] = "candidates/tiny-shadow"
+    policy, caps = legacy_to_v2(pointers, read_manifests(pointers, root), config or GatewayConfig(),
+                                known_tokenizers=known_tokenizers(), policy_id=policy_id)
+    for c in caps.values():
+        write_capability(root, c)
+    reg = write_registry_v2(root, write_policy(root, policy))
+    return policy, caps, reg

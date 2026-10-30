@@ -1,0 +1,18 @@
+{
+ "comment": "Decision-path files of engine_version (D25.2). Bump ENGINE_VERSION in serving/engine_version.py when any of them changes, then run python -m serving.engine_version --record. tests/serving/test_engine_version.py enforces it.",
+ "engine_version": "1.0.0",
+ "files": {
+  "contracts/capability.py": "cd194024b83c404ac1c763020989cc1fd7e545d44622ddbe42d9cf15777293a2",
+  "contracts/classify.py": "01ffec01abc2f60519a64cabcfb48e08e4a0b919c4c86ee5aa4c71286ca98eca",
+  "contracts/detector.py": "a89912a534b00052826b5c4f00bfb0d1ef6613f64838bf0b872ba53f2d5b3b95",
+  "contracts/policy.py": "74be885fccb5057b4b6b32e80cc014dde599a67b42f2f7ce43208a63151c7331",
+  "serving/batcher.py": "e73321b5359eb5585cfe3e40e7997b40f6f397f8a39317b4a375fdbd228b2cab",
+  "serving/detector.py": "c224be719cb2767686ac1b3d8125ef8217357f040817fc63967a56ddcbf05aed",
+  "serving/encoding.py": "3c63d5c107ce3bb5c1b55eab0593d1426457a28432f92a4d747731f0e0c05d82",
+  "serving/language.py": "d4e9f6199a47323478236caebb3d3ace26479cf7e7e40d49b25a5e30257580fe",
+  "serving/policy.py": "327705ad818509559fc55bc13639870554d7ee96dd3e062c508188aeca1f5ea5",
+  "serving/registry.py": "0f2e9f0e700fa121b1fe0c9515259dcc12074f75f4aee4bc5e21e0a9c694b82b",
+  "serving/service.py": "7713312fbab421acb31bfa88e4d85823e89d4cfbb2bf229868c2136e002409b2",
+  "serving/structure.py": "92445c9e12f6b04d47edff0b8e07a2125d21a3c8ec4a1d51da43f2152b88df3c"
+ }
+}

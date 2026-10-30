@@ -39,8 +39,11 @@ class Inverted(Named):
 
 
 def comparable_view(out) -> dict:
-    """The active response minus wall-clock latency."""
+    """The active response minus wall-clock latency and the bundle identity (a policy with a shadow step is a
+    different bundle from the same policy without one)."""
     body = out.as_response()
+    for k in ("bundle_sha256", "policy_version"):
+        body.pop(k)
     for r in body["results"]:
         r.pop("latency_ms")
     return body

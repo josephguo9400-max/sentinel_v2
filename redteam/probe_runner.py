@@ -66,8 +66,10 @@ class ProbeOutcome:
     truncated: bool
     stages_run: tuple[str, ...]
     scored_positive: bool  # any scored chunk predicted injection
-    # per-stage detail, for diagnosing a decision: {stage: {"score", "n_chunks", "truncated", "status"}}
+    # per-stage detail, for diagnosing a decision: {stage: {"score", "n_chunks", "truncated", "status"}};
+    # an observe or shadow result is keyed "<stage>_observe" / "<stage>_shadow" and never counts as a detection
     stage_scores: dict = field(default_factory=dict)
+    bundle_sha256: str | None = None  # v1.3: which bundle served this probe
 
     @classmethod
     def from_verdict(cls, probe: Probe, v: ClassifierVerdict) -> "ProbeOutcome":
@@ -75,8 +77,10 @@ class ProbeOutcome:
         return cls(probe.probe_id, probe.placement, probe.kind, probe.offset_label, probe.total_tokens,
                    v.decision, v.gateway_status, v.fallback, v.flag_cause, v.coverage_policy_applied,
                    v.truncated, tuple(v.stages_run), scored_positive,
-                   {(r.stage if r.role != "shadow" else f"{r.stage}_observe"): {"score": r.score, "n_chunks": r.n_chunks, "truncated": r.truncated,
-                                                 "status": r.status} for r in v.results})
+                   {(r.stage if r.role == "active" else f"{r.stage}_{r.role}"):
+                    {"score": r.score, "n_chunks": r.n_chunks, "truncated": r.truncated, "status": r.status}
+                    for r in v.results},
+                   v.bundle_sha256)
 
 
 def _rate(k: int, n: int) -> dict:
@@ -123,16 +127,23 @@ def run_probes(classifier: Classifier, probes: list[Probe] | None = None,
     probes = probes if probes is not None else load_probes()
     reports: dict[str, PlacementReport] = {}
     outcomes: list[ProbeOutcome] = []
+    last_verdict = None
     for p in probes:
-        v = classifier.classify(p.body, f"{attempt_id}:{p.probe_id}")
+        v = last_verdict = classifier.classify(p.body, f"{attempt_id}:{p.probe_id}")
         o = ProbeOutcome.from_verdict(p, v)
         outcomes.append(o)
         reports.setdefault(p.placement, PlacementReport(p.placement)).outcomes.append(o)
     from .probes import PROBE_SET_VERSION
 
+    bundles = sorted({o.bundle_sha256 for o in outcomes if o.bundle_sha256})
     return {
         "probe_set_version": PROBE_SET_VERSION,
         "n_probes": len(probes),
+        # v1.3: the bundle(s) that served these probes. More than one means the gateway reloaded mid-run.
+        "bundle_sha256": bundles[0] if len(bundles) == 1 else None,
+        "bundles_seen": bundles,
+        "policy": next(({"policy_id": v.policy_id, "policy_version": v.policy_version}
+                        for v in [last_verdict] if v is not None and v.policy_id), None),
         "placements": {name: rep.summary() for name, rep in sorted(reports.items())},
         "outcomes": [o.__dict__ for o in outcomes],
     }

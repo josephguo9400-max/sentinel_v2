@@ -23,7 +23,8 @@ have finished, so the file grows during the run and drift is visible while it ru
   counts, decided_by counts, policy_applied counts, coverage_policy_applied counts, failure_reason counts of
   failed active results (overloaded separate from timeout / exception), shadow: n_ok, agreement with the served
   decision, shadow failure reasons (shadow detectors other than the observe-only Stage 1); observe_stage1: the
-  observe-only Stage 1 of D23 (role="shadow", stage="stage1"), which can only ever clear (allow), so agreement
+  observe-only Stage 1 of D23 (role "observe" in v1.3, "shadow" in v1.2; stage="stage1"), which can only ever
+  clear (allow), so agreement
   with the decision means nothing for it. Reported instead: n_ok, n_partial (anytime deadline, some chunks
   unscored -> could not clear), below_low_share (fully scored and every chunk below gray-zone low = the Stage 1
   threshold: the share Stage 1 would allow if the per-chunk language gate passes, an upper bound on its
@@ -82,16 +83,35 @@ class Rec:
                 else round(self.latency_ms, 3), "error": self.error, "decision": p.get("decision"),
                 "decided_by": p.get("decided_by"), "stages_run": p.get("stages"), "statuses": p.get("statuses"),
                 "policy_applied": p.get("policy_applied"), "coverage_policy_applied": p.get("coverage_policy_applied"),
-                "failure_reasons": p.get("failure_reasons"), "shadow": p.get("shadow")}
+                "failure_reasons": p.get("failure_reasons"), "shadow": p.get("shadow"),
+                # v1.3: the bundle that served this request.
+                "bundle_sha256": p.get("bundle_sha256"), "policy_id": p.get("policy_id"),
+                "policy_version": p.get("policy_version"), "unscored_by_any_step": p.get("unscored_by_any_step"),
+                "escalation_reason": p.get("escalation_reason")}
 
 
 def _shadow(payload: dict) -> list[dict]:
-    return [r for r in payload.get("results", []) if isinstance(r, dict) and r.get("role") == "shadow"]
+    """Results that did not take part in the decision: an observe step (v1.3 role "observe"; "shadow" from a v1.2
+    gateway) or the shadow mirror."""
+    return [r for r in payload.get("results", []) if isinstance(r, dict)
+            and r.get("role") in ("observe", "shadow")]
 
 
 def _is_observe_stage1(s: dict) -> bool:
-    """An observe-only Stage 1 (D23): role="shadow", stage="stage1". Older rows without `stage` are not."""
+    """An observe-only Stage 1 (D23): stage="stage1", role "observe" (v1.3) or "shadow" (v1.2). Older rows
+    without `stage` are not."""
     return s.get("stage") == "stage1"
+
+
+def _bundle_block(ok: list[Rec]) -> dict:
+    """Which bundle(s) served the responded requests (v1.3; empty from a pre-1.3 gateway)."""
+    by_bundle = Counter(r.parsed["bundle_sha256"] for r in ok if r.parsed.get("bundle_sha256"))
+    policies = Counter(f"{r.parsed['policy_id']}@{r.parsed['policy_version']}" for r in ok
+                       if r.parsed.get("policy_id"))
+    return {"by_bundle_sha256": dict(sorted(by_bundle.items())),
+            "bundle_sha256": next(iter(by_bundle)) if len(by_bundle) == 1 else None,
+            "policies": dict(sorted(policies.items())), "single_bundle": len(by_bundle) == 1,
+            "n_without_bundle": sum(1 for r in ok if not r.parsed.get("bundle_sha256"))}
 
 
 def _observe_stage1_block(ok: list[Rec]) -> dict:
@@ -253,7 +273,8 @@ class Runner:
                     p = parse_gateway_response(payload, rid)
                     p["shadow"] = [{"status": s.get("status"), "predicted_injection": s.get("predicted_injection"),
                                     "failure_reason": s.get("failure_reason"), "detector_id": s.get("detector_id"),
-                                    "stage": s.get("stage"), "truncated": s.get("truncated")}
+                                    "stage": s.get("stage"), "role": s.get("role", "shadow"),
+                                    "truncated": s.get("truncated")}
                                    for s in _shadow(payload)]
                     rec.parsed = p
                 except (GatewayResponseError, ValueError):
@@ -373,6 +394,9 @@ class Runner:
             "flag_rate": rate(sum(r.parsed["decision"] == "flag" for r in ok), len(ok)),
             "escalation_rate": rate(sum("stage2" in r.parsed["stages"] for r in ok), len(ok)),
             "failure_reason": dict(sorted(reasons.items())),
+            # v1.3: the bundle(s) this run measured. More than one means the gateway reloaded mid-run, so the run
+            # does not describe a single bundle (a gate verdict is bound to one bundle_sha256).
+            "bundles": _bundle_block(ok),
             "observe_stage1": _observe_stage1_block(ok),
             "client_latency_ms": _latency([r.latency_ms for r in self.recs if r.latency_ms is not None]),
             "latency_conditions": LATENCY_CONDITIONS,

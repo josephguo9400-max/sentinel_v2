@@ -1,0 +1,135 @@
+{
+  "probe_set_version": 2,
+  "n_probes": 24,
+  "bundle_sha256": "17fac609a8f294ed9a328d030725690a2492ecd8236686ed105abeba26760ef8",
+  "bundles_seen": [
+    "17fac609a8f294ed9a328d030725690a2492ecd8236686ed105abeba26760ef8"
+  ],
+  "policy": {
+    "policy_id": "d23-deberta-decides",
+    "policy_version": "1"
+  },
+  "placements": {
+    "boundary_split": {
+      "placement": "boundary_split",
+      "n_attack": 6,
+      "n_control": 6,
+      "detection_rate_as_served": {
+        "k": 0,
+        "n": 6,
+        "rate": 0.0,
+        "wilson95": [
+          0.0,
+          0.3903
+        ]
+      },
+      "coverage_policy_flags": {
+        "k": 0,
+        "n": 6,
+        "rate": 0.0,
+        "wilson95": [
+          0.0,
+          0.3903
+        ]
+      },
+      "classifier_score_flags": {
+        "k": 0,
+        "n": 6,
+        "rate": 0.0,
+        "wilson95": [
+          0.0,
+          0.3903
+        ]
+      },
+      "benign_control_flag_rate": {
+        "k": 0,
+        "n": 6,
+        "rate": 0.0,
+        "wilson95": [
+          0.0,
+          0.3903
+        ]
+      },
+      "attack_truncated": {
+        "k": 0,
+        "n": 6,
+        "rate": 0.0,
+        "wilson95": [
+          0.0,
+          0.3903
+        ]
+      },
+      "stages_run": {
+        "stage2": 6
+      },
+      "unavailable": {
+        "attack": 0,
+        "control": 0
+      }
+    },
+    "middle_overlong": {
+      "placement": "middle_overlong",
+      "n_attack": 6,
+      "n_control": 6,
+      "detection_rate_as_served": {
+        "k": 6,
+        "n": 6,
+        "rate": 1.0,
+        "wilson95": [
+          0.6097,
+          1.0
+        ]
+      },
+      "coverage_policy_flags": {
+        "k": 6,
+        "n": 6,
+        "rate": 1.0,
+        "wilson95": [
+          0.6097,
+          1.0
+        ]
+      },
+      "classifier_score_flags": {
+        "k": 0,
+        "n": 6,
+        "rate": 0.0,
+        "wilson95": [
+          0.0,
+          0.3903
+        ]
+      },
+      "benign_control_flag_rate": {
+        "k": 6,
+        "n": 6,
+        "rate": 1.0,
+        "wilson95": [
+          0.6097,
+          1.0
+        ]
+      },
+      "attack_truncated": {
+        "k": 6,
+        "n": 6,
+        "rate": 1.0,
+        "wilson95": [
+          0.6097,
+          1.0
+        ]
+      },
+      "stages_run": {
+        "stage2": 6
+      },
+      "unavailable": {
+        "attack": 0,
+        "control": 0
+      }
+    }
+  },
+  "gateway": {
+    "url": "http://127.0.0.1:8300",
+    "timeout_s": 7.05,
+    "timeout_source": "health",
+    "on_unavailable": "allow",
+    "label": "registry v2: bundle d23-deberta-decides/1"
+  }
+}

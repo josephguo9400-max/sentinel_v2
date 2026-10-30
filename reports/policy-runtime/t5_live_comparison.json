@@ -1,0 +1,136 @@
+{
+  "test": "T5 (design §8): policy engine vs the live D23 run",
+  "live_run": "reports/cascade-and-shadow/d23/replay/requests.jsonl",
+  "live_run_sha256": "3f3d0e495173fc1e1ac064fed1736ceb817fa4721d4231bb270f70a8dbd543e7",
+  "t3_report": "reports/policy-runtime/t3_d23_equivalence.json",
+  "n_live_records": 2000,
+  "n_compared": 1970,
+  "n_identical": 1970,
+  "n_different": 0,
+  "identical_on_every_comparable_item": true,
+  "differences": [],
+  "n_not_compared": 30,
+  "not_compared": [
+    {
+      "id": "rp-eefcd6682483a7feedb9",
+      "why": "transport error: client_saturated"
+    },
+    {
+      "id": "rp-de3e474104024e78d90a",
+      "why": "transport error: client_saturated"
+    },
+    {
+      "id": "rp-bd0add694d838380be07",
+      "why": "transport error: client_saturated"
+    },
+    {
+      "id": "rp-738012e5433a14d2c1d8",
+      "why": "transport error: client_saturated"
+    },
+    {
+      "id": "rp-7be35f192f15969aee13",
+      "why": "transport error: client_saturated"
+    },
+    {
+      "id": "rp-2941d8978d9907262b33",
+      "why": "transport error: client_saturated"
+    },
+    {
+      "id": "rp-ea2d548c32797d2bf2c2",
+      "why": "transport error: client_saturated"
+    },
+    {
+      "id": "rp-7695667c3dca6aa910eb",
+      "why": "transport error: client_saturated"
+    },
+    {
+      "id": "rp-147abd6a89127c1784e1",
+      "why": "transport error: client_saturated"
+    },
+    {
+      "id": "rp-afffec084cf1bf6d4ee3",
+      "why": "transport error: client_saturated"
+    },
+    {
+      "id": "rp-3c6c7ca6d90c8022be7f",
+      "why": "transport error: client_saturated"
+    },
+    {
+      "id": "rp-f0b7eb7c828426516a2e",
+      "why": "served response had a failed active result: statuses=['timeout'], policy_applied=fail_closed"
+    },
+    {
+      "id": "rp-73b1e1c8cea74188f9b1",
+      "why": "served response had a failed active result: statuses=['timeout'], policy_applied=fail_closed"
+    },
+    {
+      "id": "rp-d6e60f429721596e43a6",
+      "why": "transport error: client_saturated"
+    },
+    {
+      "id": "rp-cbee1516ce608c8c141b",
+      "why": "transport error: client_saturated"
+    },
+    {
+      "id": "rp-733b43bc8905c4fa0cc6",
+      "why": "transport error: client_saturated"
+    },
+    {
+      "id": "rp-4bf405ed01b0f2e8e3f4",
+      "why": "transport error: client_saturated"
+    },
+    {
+      "id": "rp-55d2daa7397da316c31e",
+      "why": "transport error: client_saturated"
+    },
+    {
+      "id": "rp-47d6e00a94e55114ebcf",
+      "why": "transport error: client_saturated"
+    },
+    {
+      "id": "rp-acb91637bae3bde99a44",
+      "why": "transport error: client_saturated"
+    },
+    {
+      "id": "rp-fa515084d14959882122",
+      "why": "transport error: client_saturated"
+    },
+    {
+      "id": "rp-2ed4efb539a52fa375e6",
+      "why": "transport error: client_saturated"
+    },
+    {
+      "id": "rp-cf47eebaf7980b1fbccd",
+      "why": "transport error: client_saturated"
+    },
+    {
+      "id": "rp-49d261c456cd3fb10fbf",
+      "why": "transport error: client_saturated"
+    },
+    {
+      "id": "rp-4dba1d0e96ee160af7a4",
+      "why": "transport error: client_saturated"
+    },
+    {
+      "id": "rp-a06b85994fac4e957bed",
+      "why": "served response had a failed active result: statuses=['timeout'], policy_applied=fail_closed"
+    },
+    {
+      "id": "rp-08a2f399750f4058cc6c",
+      "why": "served response had a failed active result: statuses=['timeout'], policy_applied=fail_closed"
+    },
+    {
+      "id": "rp-0263b5157a4e0a2cb93d",
+      "why": "transport error: client_saturated"
+    },
+    {
+      "id": "rp-ea345fa9a9f8eee43312",
+      "why": "transport error: client_saturated"
+    },
+    {
+      "id": "rp-18084e895763cefee6b0",
+      "why": "transport error: client_saturated"
+    }
+  ],
+  "note": "The live run served under real timeouts on a 2-core host; items it decided by a failure policy cannot be reproduced by a run with timeouts disabled, so they are listed instead of compared."
+}
