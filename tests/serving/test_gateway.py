@@ -223,3 +223,106 @@ def test_real_onnx_batching_on_off_scores_match():
     single = [det.infer([r])[0] for r in rows]
     batched = det.infer(rows)  # padded batch: attention mask must make padding irrelevant
     assert batched == pytest.approx(single, abs=1e-4)
+
+
+def _burst(det: FakeDetector, config: GatewayConfig, texts: list[str]):
+    async def scenario():
+        service = ClassifierService(det, config)
+        await service.start()
+        try:
+            loop = asyncio.get_running_loop()
+            t0 = loop.time()
+
+            async def timed(i: int, t: str):
+                out = await service.classify(t, f"b{i}")
+                return out, loop.time() - t0
+
+            outs = await asyncio.gather(*(timed(i, t) for i, t in enumerate(texts)))
+            return outs, service.inflight, service.inflight_chars
+        finally:
+            await service.stop()
+
+    return asyncio.run(scenario())
+
+
+@pytest.mark.parametrize("policy,decision", [("fail_closed", "flag"), ("fail_open", "allow")])
+def test_burst_of_large_requests_is_rejected_before_tokenization(policy, decision):
+    """A burst larger than max_inflight: the excess is rejected at once, with the failure policy and
+    without being tokenized, and tokenization never runs on more than tokenize_workers threads."""
+    det = FakeDetector(tokenize_delay_s=0.05)
+    config = cfg(max_inflight=4, tokenize_workers=1, max_queue=1000, max_chunks=4, timeout_ms=5000,
+                 failure_policy=policy)
+    texts = [words(2000) for _ in range(20)]
+    outs, inflight, inflight_chars = _burst(det, config, texts)
+    ok = [(o, t) for o, t in outs if o.results[0].status == "ok"]
+    rejected = [(o, t) for o, t in outs if o.results[0].status == "error"]
+    assert len(ok) == 4 and len(rejected) == 16
+    assert det.tokenize_calls == 4  # rejected requests were never tokenized
+    assert det.max_tokenizing == 1
+    for o, t in rejected:
+        assert o.decision == decision and o.policy_applied == policy and o.results[0].truncated
+        assert o.results[0].input_tokens == 0
+        assert t < 0.04  # rejected before the first tokenization (50 ms) finished
+    assert inflight == 0 and inflight_chars == 0
+
+
+def test_inflight_char_cap_rejects_and_capacity_is_released():
+    det = FakeDetector(tokenize_delay_s=0.02)
+    big = words(3000)  # ~14k characters
+    config = cfg(max_inflight=100, max_inflight_chars=2 * len(big) + 10, max_text_chars=len(big), max_queue=1000)
+    outs, inflight, inflight_chars = _burst(det, config, [big] * 5)
+    statuses = sorted(o.results[0].status for o, _ in outs)
+    assert statuses == ["error"] * 3 + ["ok"] * 2
+    assert det.tokenize_calls == 2 and inflight == 0 and inflight_chars == 0
+    # Capacity is returned after timeouts and detector errors too.
+    for det2, kw in ((FakeDetector(delay_s=0.3), {"timeout_ms": 50}), (FakeDetector(fail=RuntimeError("x")), {})):
+        outs, inflight, inflight_chars = _burst(det2, cfg(max_inflight=2, **kw), ["a b"] * 2)
+        assert all(o.results[0].status != "ok" for o, _ in outs)
+        assert inflight == 0 and inflight_chars == 0
+
+
+def test_overload_metric_and_health_report_admission():
+    det = FakeDetector(tokenize_delay_s=0.05)
+    app = create_app(cfg(max_inflight=1), det)
+
+    async def scenario():
+        import httpx
+        async with app.router.lifespan_context(app):
+            transport = httpx.ASGITransport(app=app)
+            async with httpx.AsyncClient(transport=transport, base_url="http://t") as c:
+                bodies = await asyncio.gather(*(c.post("/classify", json={"text": "x y"}) for _ in range(3)))
+                return [b.json() for b in bodies], (await c.get("/metrics")).text, (await c.get("/health")).json()
+
+    bodies, metrics, health = asyncio.run(scenario())
+    assert sorted(b["results"][0]["status"] for b in bodies) == ["error", "error", "ok"]
+    assert 'reason="overloaded",status="error"} 2.0' in metrics
+    assert "sentinel_inflight_requests 0.0" in metrics
+    assert health["config"]["max_inflight"] == 1 and health["inflight_requests"] == 0
+
+
+def test_config_rejects_char_cap_below_max_text_chars():
+    with pytest.raises(ValueError):
+        cfg(max_text_chars=1000, max_inflight_chars=999)
+
+
+def test_padding_metrics_count_real_and_padded_tokens():
+    """computed tokens = rows x longest row per ONNX call; real tokens = sum of row lengths."""
+    det = FakeDetector(delay_s=0.05)
+    config = cfg(max_batch=8, max_wait_ms=50)
+
+    async def scenario():
+        service = ClassifierService(det, config)
+        await service.start()
+        try:
+            await service.classify("warm", "w")  # 1 row of 3 tokens: [CLS] warm [SEP]
+            # While no worker is busy, these three queue up and go out as one batch of rows 3, 12, 102.
+            await asyncio.gather(*(service.classify(words(n), str(n)) for n in (1, 10, 100)))
+            from prometheus_client import generate_latest
+            return generate_latest(service.metrics.registry).decode()
+        finally:
+            await service.stop()
+
+    text = asyncio.run(scenario())
+    assert det.batches == [1, 3]
+    assert "sentinel_inference_real_tokens_total 120.0" in text  # 3 + (3 + 12 + 102)
+    assert "sentinel_inference_computed_tokens_total 309.0" in text  # 3 + 3 * 102

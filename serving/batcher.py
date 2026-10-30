@@ -19,13 +19,13 @@ class Overloaded(Exception):
 
 class MicroBatcher:
     def __init__(self, infer: InferFn, *, max_batch: int, max_wait_ms: float, workers: int, max_queue: int,
-                 on_batch: Callable[[int], None] | None = None):
+                 on_batch: Callable[[list[list[int]]], None] | None = None):
         self._infer = infer
         self.max_batch = max_batch
         self.max_wait_s = max_wait_ms / 1000.0
         self.workers = workers
         self.max_queue = max_queue
-        self._on_batch = on_batch
+        self._on_batch = on_batch  # called with the rows of every batch handed to a worker
         self._queue: asyncio.Queue[tuple[list[int], asyncio.Future]] | None = None
         self._slots: asyncio.Semaphore | None = None
         self._executor: ThreadPoolExecutor | None = None
@@ -98,9 +98,10 @@ class MicroBatcher:
                 self._slots.release()
                 raise
             self.busy_workers += 1
+            rows = [ids for ids, _ in batch]
             if self._on_batch is not None:
-                self._on_batch(len(batch))
-            job = loop.run_in_executor(self._executor, self._infer, [ids for ids, _ in batch])
+                self._on_batch(rows)
+            job = loop.run_in_executor(self._executor, self._infer, rows)
             job.add_done_callback(lambda j, b=batch: self._finish(j, b))
 
     def _finish(self, job: asyncio.Future, batch: list[tuple[list[int], asyncio.Future]]) -> None:

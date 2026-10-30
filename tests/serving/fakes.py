@@ -15,8 +15,12 @@ class FakeDetector:
     detector_version = "0.0.1"
 
     def __init__(self, *, max_len: int = 512, threshold: float = 0.5, delay_s: float = 0.0,
-                 fail: Exception | None = None):
+                 fail: Exception | None = None, tokenize_delay_s: float = 0.0):
         self.max_len = max_len
+        self.tokenize_delay_s = tokenize_delay_s
+        self.tokenize_calls = 0
+        self.tokenizing = 0
+        self.max_tokenizing = 0  # peak number of concurrent tokenize calls
         self.threshold = threshold
         self.cls_id, self.sep_id = CLS, SEP
         self.delay_s = delay_s
@@ -28,6 +32,19 @@ class FakeDetector:
         self._lock = threading.Lock()
 
     def tokenize(self, text: str) -> list[int]:
+        with self._lock:
+            self.tokenize_calls += 1
+            self.tokenizing += 1
+            self.max_tokenizing = max(self.max_tokenizing, self.tokenizing)
+        try:
+            if self.tokenize_delay_s:
+                time.sleep(self.tokenize_delay_s)
+            return self._tokenize(text)
+        finally:
+            with self._lock:
+                self.tokenizing -= 1
+
+    def _tokenize(self, text: str) -> list[int]:
         return [INJECTION_ID if w == INJECTION_WORD else 10 + (sum(map(ord, w)) % 1000) for w in text.split()]
 
     def infer(self, batch: list[list[int]]) -> list[float]:

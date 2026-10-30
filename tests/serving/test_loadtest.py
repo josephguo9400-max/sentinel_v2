@@ -41,3 +41,18 @@ def test_loadtest_against_live_fake_server(tmp_path):
     assert code == 0 and r["errors"]["total"] == 0 and r["load"]["n"] == 30
     assert r["latency_ok_requests"]["count"] == 30 and r["latency_ok_requests"]["p99_is_max"] is True
     assert r["hardware"]["logical_cores"] and r["throughput_rps"] > 0
+    run = r["server_this_run"]  # batching off: no padding, and warmup is excluded
+    assert run["chunks"] == run["onnx_calls"] and run["computed_per_real_token"] == 1.0
+    assert run["chunks"] == 15 * 1 + 15 * 2  # "700" texts are 538 fake tokens: 2 chunks each
+
+
+def test_counter_delta_reports_padding_ratio_for_this_run_only():
+    before = loadtest.server_counters("sentinel_inference_batch_size_count 2.0\nsentinel_inference_batch_size_sum 3.0\n"
+                                      "sentinel_inference_real_tokens_total 100.0\n"
+                                      "sentinel_inference_computed_tokens_total 150.0\n")
+    after = loadtest.server_counters("sentinel_inference_batch_size_count 6.0\nsentinel_inference_batch_size_sum 11.0\n"
+                                     "sentinel_inference_real_tokens_total 500.0\n"
+                                     "sentinel_inference_computed_tokens_total 950.0\n")
+    d = loadtest.counter_delta(before, after)
+    assert d == {"onnx_calls": 4.0, "chunks": 8.0, "mean_chunks_per_call": 2.0, "real_tokens": 400.0,
+                 "computed_tokens": 800.0, "computed_per_real_token": 2.0}
