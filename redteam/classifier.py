@@ -28,14 +28,21 @@ class ClassifierVerdict:
     request_id: str | None = None
     stages_run: tuple[str, ...] = ()
     coverage_policy_applied: str | None = None
+    # contracts v1.3: which bundle decided (None from a pre-1.3 gateway, for fakes and for client fallbacks).
+    policy_id: str | None = None
+    policy_version: str | None = None
+    bundle_sha256: str | None = None
+    unscored_by_any_step: bool | None = None
+    escalation_reason: str | None = None
 
     @property
     def detector_version(self) -> str:
         """Value for TraceEvent.detector_version: which detectors produced this verdict.
 
         A client fallback (no detector answered) always uses contracts.UNAVAILABLE_DETECTOR_VERSION.
-        Only active results are named: an observe-only Stage 1 (role="shadow", D23) did not take part in the
-        verdict, so naming it here would attribute the decision to it. It is listed in `observe_detector_version`.
+        Only active results are named: an observe step (role="observe" in v1.3, "shadow" from a v1.2 gateway;
+        D23's Stage 1) did not take part in the verdict, so naming it here would attribute the decision to it. It
+        is listed in `observe_detector_version`.
         """
         if self.fallback:
             return UNAVAILABLE_DETECTOR_VERSION
@@ -47,14 +54,16 @@ class ClassifierVerdict:
 
     @property
     def active_results(self) -> tuple[DetectorResult, ...]:
-        """Results that took part in the decision. An observe-only Stage 1 (D23) is returned with role="shadow"
-        and must never count as a catch, a truncation or a failure of the active path."""
-        return tuple(r for r in self.results if r.role != "shadow")
+        """Results that took part in the decision. An observe step (role="observe"; "shadow" from a pre-1.3
+        gateway) and the shadow mirror must never count as a catch, a truncation or a failure of the active
+        path."""
+        return tuple(r for r in self.results if r.role == "active")
 
     @property
     def observe_results(self) -> tuple[DetectorResult, ...]:
-        """Results returned for observation only (role="shadow"): reported, never part of the decision."""
-        return tuple(r for r in self.results if r.role == "shadow")
+        """Results returned for observation only (role="observe" or "shadow"): reported, never part of the
+        decision."""
+        return tuple(r for r in self.results if r.role in ("observe", "shadow"))
 
     @property
     def observe_detector_version(self) -> str | None:
@@ -70,7 +79,7 @@ class ClassifierVerdict:
 
     @property
     def observe_failure_reasons(self) -> tuple[str | None, ...]:
-        """failure_reason of every observe-only (role="shadow") result: observe data, not an active failure."""
+        """failure_reason of every observe-only result (role "observe" or "shadow"): not an active failure."""
         return tuple(r.failure_reason for r in self.observe_results)
 
     @property
@@ -109,6 +118,11 @@ class ClassifierVerdict:
             "policy_applied": self.policy_applied,
             "coverage_policy_applied": self.coverage_policy_applied,
             "stages_run": list(self.stages_run),
+            "policy_id": self.policy_id,
+            "policy_version": self.policy_version,
+            "bundle_sha256": self.bundle_sha256,
+            "unscored_by_any_step": self.unscored_by_any_step,
+            "escalation_reason": self.escalation_reason,
             "failure_reasons": list(self.failure_reasons),
             "observe_failure_reasons": list(self.observe_failure_reasons),
             "observe_detector_version": self.observe_detector_version,
@@ -119,7 +133,7 @@ class ClassifierVerdict:
             "error": self.error,
             "latency_ms": self.latency_ms,
             # Every result, observe-only ones included; each carries its role, and consumers that count
-            # catches, truncations or failures must skip role == "shadow".
+            # catches, truncations or failures must keep only role == "active".
             "results": [r.model_dump(mode="json") for r in self.results],
         }
 
