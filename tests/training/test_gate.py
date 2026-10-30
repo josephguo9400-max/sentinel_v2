@@ -152,27 +152,55 @@ def test_no_committed_gate_report_used_the_frozen_test():
                 assert json.loads(line)["action"] != "gate_on_frozen_test"
 
 
+# Every non-test Python file that mentions the frozen test. All but training/gate.py predate the gate and are
+# training-side analysis (split building, leakage checks, Stage 1 training, harness --split choices), not release
+# decisions. A new file on this list needs a reason.
+FROZEN_TEST_MENTIONS = {
+    "training/benign_hard.py", "training/build_splits.py", "training/cascade_scores.py", "training/check_leakage.py",
+    "training/common.py", "training/dilution_curve.py", "training/eval_harness.py", "training/gate.py",
+    "training/publish_stage1.py", "training/replay.py", "training/train_stage1.py", "training/window_scores.py",
+}
+MILESTONE_BASE = ("origin/milestone/cascade-and-shadow", "milestone/cascade-and-shadow", "36ce683")
+
+
+def test_no_new_file_mentions_the_frozen_test():
+    """Works without git (review r1 n6): the set of non-test Python files that mention frozen_test is pinned."""
+    found = {str(p.relative_to(ROOT)) for top in ("training", "serving", "redteam", "scripts", "benchmarks",
+                                                  "contracts", "web")
+             for p in (ROOT / top).rglob("*.py") if (ROOT / top).is_dir() and "frozen_test" in p.read_text()}
+    assert found <= FROZEN_TEST_MENTIONS, f"new readers of the frozen test: {sorted(found - FROZEN_TEST_MENTIONS)}"
+
+
 def test_the_gate_is_the_only_new_reader_of_the_frozen_test():
-    """No file added in this milestone reads data/splits/frozen_test.jsonl except training/gate.py.
+    """No file added or modified since the cascade-and-shadow milestone adds a line mentioning
+    data/splits/frozen_test.jsonl, except training/gate.py.
 
     Earlier readers are training-side analysis that predates the gate (e.g. training/eval_harness.py's --split
     choice, training/build_splits.py, training/check_leakage.py); they are not release decisions and are left
-    alone. What this guards is that the gate did not grow a second reader alongside it.
+    alone. What this guards is that the gate did not grow a second reader alongside it. The base falls back from the
+    remote branch to the local branch to the merge-base commit; without any of them (a shallow clone) the git-free
+    test above still applies, and this one skips with the reason.
     """
     import subprocess
-    base = "origin/milestone/cascade-and-shadow"
-    added = subprocess.run(["git", "diff", "--diff-filter=A", "--name-only", f"{base}...HEAD"], cwd=ROOT,
-                           capture_output=True, text=True)
-    if added.returncode != 0:
-        pytest.skip("git diff unavailable")
-    offenders = []
-    for rel in added.stdout.split():
-        if not rel.endswith(".py") or rel == "training/gate.py" or rel.startswith("tests/"):
-            continue
-        path = ROOT / rel
-        if path.is_file() and "frozen_test" in path.read_text():
-            offenders.append(rel)
-    assert not offenders, f"these read the frozen test: {offenders}"
+
+    def git(*args):
+        return subprocess.run(["git", *args], cwd=ROOT, capture_output=True, text=True)
+
+    base = next((b for b in MILESTONE_BASE if git("rev-parse", "--verify", "--quiet", f"{b}^{{commit}}").returncode
+                 == 0), None)
+    if base is None:
+        pytest.skip(f"none of {MILESTONE_BASE} is available (shallow clone?); "
+                    f"test_no_new_file_mentions_the_frozen_test still applies")
+    diff = git("diff", "--diff-filter=AM", "-U0", f"{base}...HEAD", "--", "*.py")
+    assert diff.returncode == 0, diff.stderr
+    offenders, current = set(), None
+    for line in diff.stdout.splitlines():
+        if line.startswith("+++ "):
+            current = line[6:] if line.startswith("+++ b/") else None
+        elif line.startswith("+") and current and "frozen_test" in line:
+            if current != "training/gate.py" and not current.startswith("tests/"):
+                offenders.add(current)
+    assert not offenders, f"these add a reference to the frozen test: {sorted(offenders)}"
 
 
 # ---------------------------------------------------------------- report binding, promote, rollback
@@ -182,7 +210,8 @@ def fake_report(tmp_path: Path, bundle_sha: str, policy_path: str, verdict: str 
     p = tmp_path / "gate.json"
     p.write_text(json.dumps({"verdict": verdict, "promotes": False,
                              "bundle": {"bundle_sha256": bundle_sha, "policy_path": policy_path},
-                             "run": {"split": split, "frozen_test_approved_by": None}}))
+                             "run": {"split": split, "frozen_test_approved_by": None, "complete": True,
+                                     "limit": None, "n_items_in_split": 3214, "n_items_evaluated": 3214}}))
     return p
 
 
@@ -313,3 +342,108 @@ def test_committed_gate_report_is_bound_to_the_served_bundle():
     assert rep["verdict"] == gate.INSUFFICIENT
     if rep["bundle"]["engine_version"] != ENGINE_VERSION:
         assert rep["bundle"]["bundle_sha256"] != bundle_sha(state["active"])
+
+
+# ---------------------------------------------------------------- promote refusals (review r1 m2, m3)
+
+def test_promote_of_the_already_active_bundle_is_refused_and_keeps_previous(tmp_path):
+    """Review r1 m2 (probe test_r3_...): promoting the active bundle used to set previous = active and lose the real
+    rollback target. It is refused, even with --allow-not-pass, and nothing is written."""
+    reg = tmp_registry(tmp_path, ACTIVE, CANDIDATE)
+    log = tmp_path / "audit.jsonl"
+    rep = fake_report(tmp_path, bundle_sha(ACTIVE), ACTIVE, verdict=gate.INSUFFICIENT)
+    before = reg.read_text()
+    with pytest.raises(SystemExit) as exc:
+        gate.promote(reg, rep, "owner", log=log, allow_not_pass=True)
+    assert "already the active bundle" in str(exc.value)
+    assert reg.read_text() == before and not log.exists()
+    state = json.loads(reg.read_text())
+    assert state["active"] == ACTIVE and state["previous"] == CANDIDATE
+
+
+@pytest.mark.parametrize("run_over,why", [
+    ({"complete": False, "n_items_evaluated": 10}, "incomplete"),
+    ({"limit": 50, "n_items_in_split": 50, "n_items_evaluated": 50}, "incomplete"),
+    ({"complete": None}, "incomplete"),
+    ({"split": "train"}, "not a gate split"),
+    ({"split": None}, "not a gate split"),
+])
+def test_promote_refuses_an_incomplete_or_non_gate_run(tmp_path, run_over, why):
+    """Review r1 m3 (probe test_r3b_...): a PASS on a partial run, a --limit run or a non-gate split is refused,
+    and --allow-not-pass does not override it."""
+    reg = tmp_registry(tmp_path, ACTIVE)
+    path = fake_report(tmp_path, bundle_sha(CANDIDATE), CANDIDATE, verdict=gate.PASS)
+    rep = json.loads(path.read_text())
+    rep["run"].update(run_over)
+    path.write_text(json.dumps(rep))
+    for allow in (False, True):
+        with pytest.raises(SystemExit) as exc:
+            gate.promote(reg, path, "owner", log=tmp_path / "a.jsonl", allow_not_pass=allow)
+        assert why in str(exc.value)
+    assert json.loads(reg.read_text())["active"] == ACTIVE and not (tmp_path / "a.jsonl").exists()
+
+
+def test_promote_accepts_a_complete_frozen_test_report(tmp_path):
+    reg = tmp_registry(tmp_path, ACTIVE)
+    path = fake_report(tmp_path, bundle_sha(CANDIDATE), CANDIDATE, verdict=gate.PASS, split="frozen_test")
+    entry = gate.promote(reg, path, "owner", log=tmp_path / "a.jsonl")
+    assert entry["gate_split"] == "frozen_test" and json.loads(reg.read_text())["active"] == CANDIDATE
+
+
+# ---------------------------------------------------------------- frozen-test audit before the run (review r1 m4)
+
+def _frozen_args(tmp_path):
+    import argparse
+    return argparse.Namespace(split="frozen_test", frozen_test_approved_by="owner", audit_log=tmp_path / "audit.jsonl",
+                              registry=tmp_path / "registry.json", out=tmp_path / "gate_frozen.json",
+                              max_seconds=None, limit=None, splits_dir=tmp_path, active_report=None)
+
+
+def test_a_frozen_test_run_is_audited_before_it_starts_even_if_it_crashes(tmp_path, monkeypatch):
+    """The split is never read here: run_bundle is replaced. The "started" entry must exist when run_bundle is
+    entered, and a crash adds "failed"."""
+    args = _frozen_args(tmp_path)
+    seen = {}
+
+    def crashing_run_bundle(*a, **k):
+        seen["log_at_start"] = [json.loads(line) for line in args.audit_log.read_text().splitlines()]
+        raise MemoryError("simulated OOM")
+
+    monkeypatch.setattr(gate, "run_bundle", crashing_run_bundle)
+    with pytest.raises(MemoryError):
+        gate.evaluate(args)
+    assert [(e["action"], e["status"]) for e in seen["log_at_start"]] == [("gate_on_frozen_test", "started")]
+    entries = [json.loads(line) for line in args.audit_log.read_text().splitlines()]
+    assert [e["status"] for e in entries] == ["started", "failed"]
+    assert entries[0]["actor"] == "owner" and entries[1]["error"] == "MemoryError"
+
+
+def test_a_completed_frozen_test_run_has_a_started_and_a_completed_entry(tmp_path, monkeypatch):
+    args = _frozen_args(tmp_path)
+    meta = {"split": "frozen_test", "complete": True, "n_items_evaluated": 0, "n_items_in_split": 0}
+    monkeypatch.setattr(gate, "run_bundle", lambda *a, **k: ([], meta, object(), 0.0, 0))
+    monkeypatch.setattr(gate, "build_report", lambda *a, **k: {"verdict": gate.INSUFFICIENT, "run": meta,
+                                                               "bundle": {"bundle_sha256": BUNDLE}})
+    gate.evaluate(args)
+    entries = [json.loads(line) for line in args.audit_log.read_text().splitlines()]
+    assert [e["status"] for e in entries] == ["started", "completed"]
+    assert entries[1]["bundle_sha256"] == BUNDLE and entries[1]["verdict"] == gate.INSUFFICIENT
+
+
+def test_a_val_run_writes_no_audit_entry(tmp_path, monkeypatch):
+    args = _frozen_args(tmp_path)
+    args.split, args.frozen_test_approved_by = "val", None
+    meta = {"split": "val", "complete": True, "n_items_evaluated": 0, "n_items_in_split": 0}
+    monkeypatch.setattr(gate, "run_bundle", lambda *a, **k: ([], meta, object(), 0.0, 0))
+    monkeypatch.setattr(gate, "build_report", lambda *a, **k: {"verdict": gate.INSUFFICIENT, "run": meta,
+                                                               "bundle": {"bundle_sha256": BUNDLE}})
+    gate.evaluate(args)
+    assert not args.audit_log.exists()
+
+
+def test_benign_hard_why_states_the_comparison_that_held():
+    """Review r1 n5: a FAIL says '>' rather than always '<= 5%'."""
+    fail = checks_for(perfect(benign_hard=120, fpr_hits=30))["benign_hard_fpr"]
+    assert fail["verdict"] == gate.FAIL and " > " in fail["why"] and "<=" not in fail["why"]
+    ok = checks_for(perfect(benign_hard=120, fpr_hits=0))["benign_hard_fpr"]
+    assert ok["verdict"] == gate.PASS and " <= " in ok["why"]

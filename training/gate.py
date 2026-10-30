@@ -35,7 +35,9 @@ candidate *is* the active bundle there is nothing to pair with, so the check rep
 **The frozen test.** `data/splits/frozen_test.jsonl` is the final split: this script is the only thing that reads
 it for a verdict, and only when the owner passes `--split frozen_test --frozen-test-approved-by NAME`. Every other
 use of it in the repository predates this gate and is training-side analysis, not a release decision. Each run of
-the gate on the frozen test is recorded in the audit log, so repeated looks at it are visible.
+the gate on the frozen test is recorded in the audit log, so repeated looks at it are visible: a "started" entry is
+written before the split is opened, then "completed" (or "failed" on an exception; a killed process leaves only
+"started").
 
 As served: the bundle runs in-process through serving/service.py with its own budgets, and every response is read
 with training/eval_harness.py's rules (`as_served`: a failure-policy or coverage-policy decision counts as the
@@ -223,8 +225,9 @@ def checks(records: list[dict], slices: dict, paired: dict | None, comparison: s
         fpr["why"] = f"{n} benign-hard samples < {MIN_BENIGN_HARD_N}"
     else:
         upper = bh["fpr"]["ci95"][1]
-        fpr["verdict"] = PASS if upper <= BENIGN_HARD_FPR_MAX_UPPER else FAIL
-        fpr["why"] = f"Wilson 95% upper bound {upper:.4f} <= {BENIGN_HARD_FPR_MAX_UPPER}"
+        ok = upper <= BENIGN_HARD_FPR_MAX_UPPER
+        fpr["verdict"] = PASS if ok else FAIL
+        fpr["why"] = f"Wilson 95% upper bound {upper:.4f} {'<=' if ok else '>'} {BENIGN_HARD_FPR_MAX_UPPER}"
     out["benign_hard_fpr"] = fpr
 
     served = [r["parsed"] for r in records if "error" not in r["parsed"]]
@@ -344,12 +347,26 @@ def write_registry_pointers(registry: Path, **changes) -> dict:
 
 def promote(registry: Path, gate_report: Path, approved_by: str, candidate_policy: str | None = None,
             log: Path = AUDIT_LOG, allow_not_pass: bool = False) -> dict:
-    """Point `active` at the candidate and keep the old active as `previous`. Owner action only."""
+    """Point `active` at the candidate and keep the old active as `previous`. Owner action only.
+
+    Refused, whatever --allow-not-pass says: a report whose run did not complete, ran with --limit or did not use a
+    gate split; a report bound to another bundle; a candidate that is already the active bundle (promoting it would
+    overwrite `previous` with the active bundle itself and lose the real rollback target)."""
     rep = json.loads(gate_report.read_text())
     state = read_registry_v2_state(registry)
     previous_active = state["active"]
     bundle = _bundle_of_policy(registry, previous_active)  # hashes only: promotion loads no model
     candidate = candidate_policy or rep["bundle"]["policy_path"] or state["active"]
+    run = rep.get("run") or {}
+    if run.get("split") not in GATE_SPLITS:
+        raise SystemExit(f"the gate report ran on split {run.get('split')!r}, not a gate split {GATE_SPLITS}: "
+                         f"nothing is promoted")
+    if run.get("complete") is not True or run.get("limit") is not None or (
+            run.get("n_items_evaluated") is not None and run.get("n_items_in_split") is not None
+            and run["n_items_evaluated"] < run["n_items_in_split"]):
+        raise SystemExit(f"the gate report's run is incomplete (complete={run.get('complete')}, "
+                         f"limit={run.get('limit')}, {run.get('n_items_evaluated')}/{run.get('n_items_in_split')} "
+                         f"items): finish the run before promoting; nothing is promoted")
     if rep["verdict"] != PASS and not allow_not_pass:
         raise SystemExit(f"gate verdict is {rep['verdict']}, not {PASS}: nothing is promoted. The owner may "
                          f"override with --allow-not-pass, which is recorded in the audit log.")
@@ -360,6 +377,9 @@ def promote(registry: Path, gate_report: Path, approved_by: str, candidate_polic
     if rep["bundle"]["bundle_sha256"] != candidate_bundle.bundle_sha256:
         raise SystemExit(f"the gate report is bound to bundle {rep['bundle']['bundle_sha256']}, but "
                          f"{candidate} is bundle {candidate_bundle.bundle_sha256}: re-run the gate")
+    if candidate == previous_active or candidate_bundle.bundle_sha256 == bundle.bundle_sha256:
+        raise SystemExit(f"{candidate} (bundle {candidate_bundle.bundle_sha256}) is already the active bundle: "
+                         f"nothing to promote, and `previous` ({state['previous']}) is kept as it is")
     write_registry_pointers(registry, active=candidate, previous=previous_active, status="approved")
     return append_audit({
         "action": "promote", "at": _now(), "actor": approved_by,
@@ -415,8 +435,23 @@ def evaluate(args) -> dict:
     if args.split == "frozen_test" and not args.frozen_test_approved_by:
         raise SystemExit("data/splits/frozen_test.jsonl is the final split: pass "
                          "--frozen-test-approved-by NAME to record who decided to look at it, or use --split val")
-    records, meta, bundle, wall, n_new = run_bundle(args.registry, args.split, args.out, args.max_seconds,
-                                                     args.limit, args.splits_dir)
+    audit_log = getattr(args, "audit_log", None) or AUDIT_LOG
+    frozen = args.split == "frozen_test"
+    if frozen:
+        # Recorded BEFORE the split is opened, so a run that crashes, is killed or runs out of memory midway is
+        # still visible in the audit log (status "started" without a matching "completed").
+        append_audit({"action": "gate_on_frozen_test", "status": "started", "at": _now(),
+                      "actor": args.frozen_test_approved_by, "registry": str(args.registry),
+                      "gate_report_path": str(args.out), "limit": args.limit}, audit_log)
+    try:
+        records, meta, bundle, wall, n_new = run_bundle(args.registry, args.split, args.out, args.max_seconds,
+                                                         args.limit, args.splits_dir)
+    except BaseException as exc:
+        if frozen:
+            append_audit({"action": "gate_on_frozen_test", "status": "failed", "at": _now(),
+                          "actor": args.frozen_test_approved_by, "gate_report_path": str(args.out),
+                          "error": type(exc).__name__}, audit_log)
+        raise
     active_records = active_bundle = None
     if args.active_report:
         other = json.loads(args.active_report.read_text())
@@ -429,10 +464,12 @@ def evaluate(args) -> dict:
     rep = build_report(records, meta, bundle, wall, n_new, args.registry, active_records, active_bundle,
                        args.frozen_test_approved_by)
     write_json(args.out, rep)
-    if args.split == "frozen_test":
-        append_audit({"action": "gate_on_frozen_test", "at": _now(), "actor": args.frozen_test_approved_by,
-                      "bundle_sha256": rep["bundle"]["bundle_sha256"], "verdict": rep["verdict"],
-                      "gate_report_path": str(args.out)})
+    if frozen:
+        append_audit({"action": "gate_on_frozen_test", "status": "completed", "at": _now(),
+                      "actor": args.frozen_test_approved_by, "bundle_sha256": rep["bundle"]["bundle_sha256"],
+                      "verdict": rep["verdict"], "run_complete": rep["run"]["complete"],
+                      "n_items_evaluated": rep["run"]["n_items_evaluated"], "gate_report_path": str(args.out)},
+                     audit_log)
     return rep
 
 
@@ -451,6 +488,8 @@ def main(argv=None) -> int:
                     help="a gate report of the active bundle, for the paired recall check")
     ev.add_argument("--frozen-test-approved-by", default=None,
                     help="required with --split frozen_test: who decided to look at the final split")
+    ev.add_argument("--audit-log", type=Path, default=AUDIT_LOG,
+                    help="where frozen-test runs are recorded (default artifacts/audit_log.jsonl)")
 
     pr = sub.add_parser("promote", help="owner action: point active at a gated bundle, keeping the old as previous")
     pr.add_argument("--registry", type=Path, default=ROOT / "artifacts" / "registry.json")
