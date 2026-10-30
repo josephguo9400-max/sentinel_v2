@@ -34,11 +34,13 @@ class ClassifierVerdict:
         """Value for TraceEvent.detector_version: which detectors produced this verdict.
 
         A client fallback (no detector answered) always uses contracts.UNAVAILABLE_DETECTOR_VERSION.
+        Only active results are named: an observe-only Stage 1 (role="shadow", D23) did not take part in the
+        verdict, so naming it here would attribute the decision to it. It is listed in `observe_detector_version`.
         """
         if self.fallback:
             return UNAVAILABLE_DETECTOR_VERSION
-        if self.results:
-            return ",".join(f"{r.detector_id}@{r.detector_version}" for r in self.results)
+        if self.active_results:
+            return ",".join(f"{r.detector_id}@{r.detector_version}" for r in self.active_results)
         if self.decided_by:
             return self.decided_by
         return UNAVAILABLE_DETECTOR_VERSION
@@ -50,9 +52,26 @@ class ClassifierVerdict:
         return tuple(r for r in self.results if r.role != "shadow")
 
     @property
+    def observe_results(self) -> tuple[DetectorResult, ...]:
+        """Results returned for observation only (role="shadow"): reported, never part of the decision."""
+        return tuple(r for r in self.results if r.role == "shadow")
+
+    @property
+    def observe_detector_version(self) -> str | None:
+        """detector_id@version of the observe-only results, or None when there are none."""
+        if not self.observe_results:
+            return None
+        return ",".join(f"{r.detector_id}@{r.detector_version}" for r in self.observe_results)
+
+    @property
     def failure_reasons(self) -> tuple[str | None, ...]:
-        """DetectorResult.failure_reason of every result, in result order (v1.2)."""
-        return tuple(r.failure_reason for r in self.results)
+        """DetectorResult.failure_reason of every active result, in result order (v1.2)."""
+        return tuple(r.failure_reason for r in self.active_results)
+
+    @property
+    def observe_failure_reasons(self) -> tuple[str | None, ...]:
+        """failure_reason of every observe-only (role="shadow") result: observe data, not an active failure."""
+        return tuple(r.failure_reason for r in self.observe_results)
 
     @property
     def flag_cause(self) -> str | None:
@@ -91,12 +110,16 @@ class ClassifierVerdict:
             "coverage_policy_applied": self.coverage_policy_applied,
             "stages_run": list(self.stages_run),
             "failure_reasons": list(self.failure_reasons),
+            "observe_failure_reasons": list(self.observe_failure_reasons),
+            "observe_detector_version": self.observe_detector_version,
             "gateway_status": self.gateway_status,
             "fallback": self.fallback,
             "flag_cause": self.flag_cause,
             "truncated": self.truncated,
             "error": self.error,
             "latency_ms": self.latency_ms,
+            # Every result, observe-only ones included; each carries its role, and consumers that count
+            # catches, truncations or failures must skip role == "shadow".
             "results": [r.model_dump(mode="json") for r in self.results],
         }
 

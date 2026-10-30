@@ -22,9 +22,11 @@ What counts as a model prediction (http backend)
   decision and label) and failure_reason of failed active results, with overloaded (load shedding) separated
   from timeouts and exceptions (`served.failures`), plus shadow failure reasons.
   Transport failures (httpx errors, after bounded retries), non-200 responses and malformed responses are
-  recorded under `errors` and the run continues. `truncated` (any input content not scored) is counted over
-  every response that carried results, overall and per slice; truncated model predictions stay in the
-  metrics, since that is the decision the gateway made.
+  recorded under `errors` and the run continues. `truncated` (any input content not scored by an active
+  detector) is counted over every response that carried results, overall and per slice; truncated model
+  predictions stay in the metrics, since that is the decision the gateway made. A truncated role="shadow"
+  result (e.g. the observe-only Stage 1 of D23 hitting its deadline) is counted apart, as
+  `truncated.n_shadow_truncated`, and never as a truncation of the decision.
 
 Partial output: with --out, the result JSON is rewritten every --checkpoint-every items and once more at
 the end, also when the run is interrupted (`complete: false`, `aborted: <reason>`).
@@ -155,7 +157,10 @@ def parse_gateway_response(payload: dict, request_id: str | None = None) -> dict
         "shadow_failure_reasons": [failure_reason(r) for r in shadow if r.status != "ok"],
         "n_shadow": len(shadow),
         "escalated": "stage2" in stages,
-        "truncated": any(r.truncated for r in resp.results),
+        # Only active results count: an observe-only Stage 1 (D23, role="shadow") that hit its deadline did not
+        # take part in the decision, so it must not mark the item truncated in the release-gate counts.
+        "truncated": any(r.truncated for r in active),
+        "shadow_truncated": any(r.truncated for r in shadow),
         "n_results": len(resp.results),
     }
 
@@ -283,6 +288,7 @@ class _SliceAcc:
         self.with_results = 0
         self.truncated = 0
         self.truncated_predictions = 0
+        self.shadow_truncated = 0
         self.stages = Counter()  # "+".join(stages_run)
         self.coverage = Counter()  # (coverage_policy_applied, decision, label)
         self.reasons = Counter()  # failure_reason of failed active results
@@ -362,6 +368,7 @@ def evaluate(rows: Iterable[dict], backend: Backend, progress: Callable[[int], N
                 if "truncated" in r:
                     a.with_results += 1
                     a.truncated += int(bool(r["truncated"]))
+                    a.shadow_truncated += int(bool(r.get("shadow_truncated", False)))
                 if "stages" in r:
                     a.stages["+".join(r["stages"]) or "none"] += 1
                     a.coverage[(r.get("coverage_policy_applied"), r.get("decision"), row["label"])] += 1
@@ -406,7 +413,8 @@ def _assemble(rows, n_done, acc, errors, lat, zones, complete, aborted) -> dict:
         m["as_served"] = as_served(m, name)
         if a.with_results:
             m["truncated"] = {"n_responses_with_results": a.with_results, "n_truncated": a.truncated,
-                              "n_truncated_model_predictions": a.truncated_predictions}
+                              "n_truncated_model_predictions": a.truncated_predictions,
+                              "n_shadow_truncated": a.shadow_truncated}
         served = _served_block(a)
         if served and a.stages:
             m["served"] = served

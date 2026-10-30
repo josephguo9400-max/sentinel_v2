@@ -1,4 +1,5 @@
 {
+  "view_kind": "offline approximation: cascade_offline uses request-level Stage 1 windows and the stored language tag, not the serving Stage 1 (see training/replay_counterfactual_served.py)",
   "inputs": {
     "cache": "training/results/cascade_scores_replay.jsonl",
     "cache_sha256": "5fd21728e5db2a01a7011843b7ba92b360f446782e61623be7d86d729bf3b9bd",
@@ -99,7 +100,98 @@
         "ci_method": "wilson"
       },
       "n_responses": 1995,
-      "disagrees_with_offline_cascade": 68
+      "disagrees_with_offline_cascade": 68,
+      "disagrees_with_offline_deberta_only": 204,
+      "same_items": {
+        "n": 1486,
+        "n_positive": 306,
+        "served": {
+          "recall": {
+            "value": 0.6601307189542484,
+            "numerator": 202,
+            "denominator": 306,
+            "ci95": [
+              0.605366933362168,
+              0.7109238573312519
+            ],
+            "ci_method": "wilson"
+          },
+          "fpr": {
+            "value": 0.16271186440677965,
+            "numerator": 192,
+            "denominator": 1180,
+            "ci95": [
+              0.1427522674430562,
+              0.18486040056322361
+            ],
+            "ci_method": "wilson"
+          }
+        },
+        "deberta_only_offline": {
+          "recall": {
+            "value": 0.8071895424836601,
+            "numerator": 247,
+            "denominator": 306,
+            "ci95": [
+              0.7592891812312711,
+              0.8474727437724322
+            ],
+            "ci_method": "wilson"
+          },
+          "fpr": {
+            "value": 0.16271186440677965,
+            "numerator": 192,
+            "denominator": 1180,
+            "ci95": [
+              0.1427522674430562,
+              0.18486040056322361
+            ],
+            "ci_method": "wilson"
+          }
+        },
+        "cascade_offline": {
+          "recall": {
+            "value": 0.6241830065359477,
+            "numerator": 191,
+            "denominator": 306,
+            "ci95": [
+              0.568692377477766,
+              0.676594358162029
+            ],
+            "ci_method": "wilson"
+          },
+          "fpr": {
+            "value": 0.12627118644067797,
+            "numerator": 149,
+            "denominator": 1180,
+            "ci95": [
+              0.10852417919955831,
+              0.14644362630488744
+            ],
+            "ci_method": "wilson"
+          }
+        },
+        "flips_vs_deberta_only_offline": {
+          "coverage_policy:to_flag:label=0": 3,
+          "coverage_policy:to_flag:label=1": 2,
+          "failure_policy:to_flag:label=0": 2,
+          "other:to_allow:label=0": 1,
+          "other:to_allow:label=1": 1,
+          "other:to_flag:label=0": 3,
+          "other:to_flag:label=1": 2,
+          "stage1_allow:to_allow:label=0": 7,
+          "stage1_allow:to_allow:label=1": 48
+        },
+        "flips_vs_cascade_offline": {
+          "coverage_policy:to_flag:label=0": 3,
+          "coverage_policy:to_flag:label=1": 2,
+          "failure_policy:to_flag:label=0": 2,
+          "other:to_allow:label=1": 1,
+          "other:to_flag:label=0": 38,
+          "other:to_flag:label=1": 11,
+          "stage1_allow:to_allow:label=1": 1
+        }
+      }
     }
   },
   "paired": {
