@@ -1,0 +1,242 @@
+{
+  "at": "2026-10-30T10:08:30Z",
+  "concurrency": 4,
+  "config": {
+    "max_batch": 1,
+    "max_chunks": 4,
+    "max_inflight": 64,
+    "stage1_deadline_margin_ms": 15,
+    "stage1_observe_concurrency": 1,
+    "workers": 1
+  },
+  "decision_differences": [
+    {
+      "items": [],
+      "n": 0,
+      "repeat": 1
+    },
+    {
+      "items": [],
+      "n": 0,
+      "repeat": 2
+    },
+    {
+      "items": [],
+      "n": 0,
+      "repeat": 3
+    }
+  ],
+  "generated_by": "python -m serving.bench.observe_overhead ",
+  "host": {
+    "cpu": "Intel(R) Xeon(R) Processor @ 2.10GHz",
+    "logical_cores": 2,
+    "onnxruntime": "1.29.0",
+    "platform": "Linux-6.18.44-fc-v185-x86_64-with-glibc2.39",
+    "python": "3.13.18",
+    "tokenizers": "0.23.3"
+  },
+  "items": "data/replay/replay-v1.jsonl, first 120 in file order",
+  "modes": {
+    "none": {
+      "all_repeats": {
+        "decision": {
+          "max_ms": 4774.47,
+          "mean_ms": 1009.12,
+          "n": 360,
+          "p50_ms": 652.03,
+          "p95_ms": 2916.8,
+          "p99_is_max": false,
+          "p99_ms": 4395.17
+        },
+        "n": 360,
+        "observe_outcomes": {},
+        "policy_applied": 0,
+        "response": {
+          "max_ms": 4774.59,
+          "mean_ms": 1009.24,
+          "n": 360,
+          "p50_ms": 652.13,
+          "p95_ms": 2916.9,
+          "p99_is_max": false,
+          "p99_ms": 4395.27
+        },
+        "stage2_status": {
+          "ok/None": 360
+        }
+      },
+      "per_repeat": [
+        {
+          "decision": {
+            "max_ms": 4561.55,
+            "mean_ms": 1035.0,
+            "n": 120,
+            "p50_ms": 673.7,
+            "p95_ms": 2935.26,
+            "p99_is_max": false,
+            "p99_ms": 4395.17
+          },
+          "repeat": 1,
+          "response": {
+            "max_ms": 4561.68,
+            "mean_ms": 1035.12,
+            "n": 120,
+            "p50_ms": 673.81,
+            "p95_ms": 2935.54,
+            "p99_is_max": false,
+            "p99_ms": 4395.27
+          },
+          "uptime_after": "03:09:06 up  1:47,  0 user,  load average: 1.96, 2.16, 2.15"
+        },
+        {
+          "decision": {
+            "max_ms": 4774.47,
+            "mean_ms": 1002.41,
+            "n": 120,
+            "p50_ms": 652.03,
+            "p95_ms": 2665.88,
+            "p99_is_max": false,
+            "p99_ms": 4079.35
+          },
+          "repeat": 2,
+          "response": {
+            "max_ms": 4774.59,
+            "mean_ms": 1002.52,
+            "n": 120,
+            "p50_ms": 652.13,
+            "p95_ms": 2666.03,
+            "p99_is_max": false,
+            "p99_ms": 4079.45
+          },
+          "uptime_after": "03:10:09 up  1:48,  0 user,  load average: 2.13, 2.18, 2.16"
+        },
+        {
+          "decision": {
+            "max_ms": 4451.44,
+            "mean_ms": 989.96,
+            "n": 120,
+            "p50_ms": 643.03,
+            "p95_ms": 2641.16,
+            "p99_is_max": false,
+            "p99_ms": 4181.51
+          },
+          "repeat": 3,
+          "response": {
+            "max_ms": 4451.57,
+            "mean_ms": 990.07,
+            "n": 120,
+            "p50_ms": 643.17,
+            "p95_ms": 2641.28,
+            "p99_is_max": false,
+            "p99_ms": 4181.6
+          },
+          "uptime_after": "03:11:12 up  1:49,  0 user,  load average: 2.07, 2.15, 2.15"
+        }
+      ]
+    },
+    "observe": {
+      "all_repeats": {
+        "decision": {
+          "max_ms": 4909.19,
+          "mean_ms": 1101.86,
+          "n": 360,
+          "p50_ms": 730.47,
+          "p95_ms": 2948.74,
+          "p99_is_max": false,
+          "p99_ms": 4706.23
+        },
+        "n": 360,
+        "observe_outcomes": {
+          "would_escalate": 207,
+          "would_finalize_allow": 153
+        },
+        "policy_applied": 0,
+        "response": {
+          "max_ms": 4935.67,
+          "mean_ms": 1109.97,
+          "n": 360,
+          "p50_ms": 733.59,
+          "p95_ms": 2955.63,
+          "p99_is_max": false,
+          "p99_ms": 4715.41
+        },
+        "stage2_status": {
+          "ok/None": 360
+        }
+      },
+      "per_repeat": [
+        {
+          "decision": {
+            "max_ms": 4855.6,
+            "mean_ms": 1099.44,
+            "n": 120,
+            "p50_ms": 750.18,
+            "p95_ms": 2926.32,
+            "p99_is_max": false,
+            "p99_ms": 4706.23
+          },
+          "repeat": 1,
+          "response": {
+            "max_ms": 4888.58,
+            "mean_ms": 1107.69,
+            "n": 120,
+            "p50_ms": 754.32,
+            "p95_ms": 2927.5,
+            "p99_is_max": false,
+            "p99_ms": 4715.41
+          },
+          "uptime_after": "03:09:39 up  1:47,  0 user,  load average: 2.21, 2.20, 2.16"
+        },
+        {
+          "decision": {
+            "max_ms": 4768.33,
+            "mean_ms": 1091.93,
+            "n": 120,
+            "p50_ms": 712.71,
+            "p95_ms": 2948.74,
+            "p99_is_max": false,
+            "p99_ms": 4347.97
+          },
+          "repeat": 2,
+          "response": {
+            "max_ms": 4799.7,
+            "mean_ms": 1099.65,
+            "n": 120,
+            "p50_ms": 723.73,
+            "p95_ms": 2949.65,
+            "p99_is_max": false,
+            "p99_ms": 4362.4
+          },
+          "uptime_after": "03:10:42 up  1:48,  0 user,  load average: 2.12, 2.17, 2.16"
+        },
+        {
+          "decision": {
+            "max_ms": 4909.19,
+            "mean_ms": 1114.22,
+            "n": 120,
+            "p50_ms": 733.82,
+            "p95_ms": 2940.72,
+            "p99_is_max": false,
+            "p99_ms": 4510.24
+          },
+          "repeat": 3,
+          "response": {
+            "max_ms": 4935.67,
+            "mean_ms": 1122.57,
+            "n": 120,
+            "p50_ms": 734.5,
+            "p95_ms": 2955.63,
+            "p99_is_max": false,
+            "p99_ms": 4517.68
+          },
+          "uptime_after": "03:11:46 up  1:49,  0 user,  load average: 2.30, 2.20, 2.17"
+        }
+      ]
+    }
+  },
+  "n_items": 120,
+  "registry": "/home/claude/wt-pivot-serving/artifacts/registry.json",
+  "repeats": 3,
+  "transport": "in-process ClassifierService.classify (no HTTP)",
+  "uptime_after": "03:11:46 up  1:49,  0 user,  load average: 2.30, 2.20, 2.17",
+  "uptime_before": "03:08:30 up  1:46,  0 user,  load average: 2.01, 2.21, 2.17"
+}

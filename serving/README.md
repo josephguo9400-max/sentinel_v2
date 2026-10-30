@@ -239,6 +239,35 @@ on fp32, see the int8 section). The D23 checkpoint (`reports/cascade-and-shadow/
 registry) shows the size on that traffic: `sentinel_cascade_path_total{path="coverage_flag"}` is 18 of 1,998
 requests in `d23/metrics.txt`.
 
+### Observe-mode overhead under concurrency (measured)
+
+Command: `flock /home/claude/measure.lock -c 'python3 -m serving.bench.observe_overhead --out
+serving/bench_results/observe_overhead.json'` (`serving/bench/observe_overhead.py`). Two `ClassifierService`
+instances share the registry's loaded detectors: `none` (no Stage 1) and `observe` (the committed registry's
+observe mode, `STAGE1_OBSERVE_CONCURRENCY=1`). In-process, no HTTP; closed loop with 4 concurrent workers over the
+first 120 replay items (`data/replay/replay-v1.jsonl`, file order); 3 repeats, modes interleaved; default config
+(Stage 2 fp32, 5,000 ms timeout, one Stage 2 worker). Host: 2 logical cores, Xeon @ 2.10 GHz, under the lock;
+1-minute load average 2.01 at the start (the previous locked job had just ended) and 2.30 at the end.
+
+"Decision" is the Stage 2 result's `latency_ms` (request start to Stage 2 done, queueing included). It is the
+latency observe work can stretch for other requests. "Response" adds the request's own Stage 1 observation.
+
+| Mode | Decision p50 / p95 / p99 | Response p50 / p95 / p99 | Stage 2 failures | Decision diffs vs `none` | Observations |
+| --- | --- | --- | --- | --- | --- |
+| none | 652.0 / 2,916.8 / 4,395.2 ms | 652.1 / 2,916.9 / 4,395.3 ms | 0 / 360 | — | — |
+| observe | 730.5 / 2,948.7 / 4,706.2 ms | 733.6 / 2,955.6 / 4,715.4 ms | 0 / 360 | 0 / 360 | 360 scored, 0 dropped |
+
+Per-repeat decision p50: none 673.7 / 652.0 / 643.0 ms, observe 750.2 / 712.7 / 733.8 ms, so the gap is larger
+than the run-to-run spread. Reading:
+
+- At concurrency 4, observe mode made **other requests' decisions about 12% slower at p50 (+78 ms) and +311 ms
+  at p99**, through CPU sharing with the serial Stage 2 queue. The admission fix does not remove this.
+- In this run no decision changed and no Stage 2 timed out. The p99 (4.7 s) is close to the 5 s Stage 2 budget,
+  so under heavier load or longer inputs this CPU effect can turn into `fail_closed` flags. That was not measured.
+- No observation was dropped: one Stage 1 run (tens of ms) is short next to the Stage 2 service time, so the
+  single slot was almost always free.
+- Not measured: other concurrency levels, open-loop arrival at the replay rate, and the real HTTP server.
+
 ### Stage 1 latency and the 50 ms budget (measured)
 
 Finding from the cascade-and-shadow probes: on the 2,600-token `middle_overlong` probes, Stage 1 (7 chunks) timed
