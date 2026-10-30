@@ -1,0 +1,137 @@
+{
+  "description": "Records of our sources that exactly or near-duplicate (char-5gram Jaccard >= 0.8) a text in a dataset named in the Stage 2 model card. Counts are pre-dedup records.",
+  "stage2_model": "protectai/deberta-v3-base-prompt-injection-v2@90c9989b1a342275dd0d1a95aad283c04e075671",
+  "references_checked": {
+    "alespalla/chatbot_instruction_prompts/data/train-00000-of-00001-d3450385c0ae3f98.parquet": {
+      "n_reference_texts": 257999
+    },
+    "alespalla/chatbot_instruction_prompts/data/test-00000-of-00001-8d5da67d5c6856ed.parquet": {
+      "n_reference_texts": 64489
+    },
+    "VMware/open-instruct/data/train-00000-of-00001-c6f4e090ee7100b6.parquet": {
+      "n_reference_texts": 142622
+    },
+    "HuggingFaceH4/grok-conversation-harmless/data/train_sft-00000-of-00001-71f7b2a54cfc90b9.parquet": {
+      "n_reference_texts": 21268
+    },
+    "HuggingFaceH4/grok-conversation-harmless/data/test_sft-00000-of-00001-8e8f87780d2fd798.parquet": {
+      "n_reference_texts": 1156
+    },
+    "OpenSafetyLab/Salad-Data/base_set.json": {
+      "n_reference_texts": 21318
+    },
+    "OpenSafetyLab/Salad-Data/attack_enhanced_set.json": {
+      "n_reference_texts": 5000
+    },
+    "OpenSafetyLab/Salad-Data/defense_enhanced_set.json": {
+      "n_reference_texts": 200
+    },
+    "natolambert/xstest-v2-copy/data/prompts-00000-of-00001.parquet": {
+      "n_reference_texts": 450
+    }
+  },
+  "named_but_unreachable": {
+    "Harelix/Prompt-Injection-Mixed-Techniques-2024": "HF API returns 401 (removed or private)"
+  },
+  "named_and_used_by_us": [
+    "jackhhao/jailbreak-classification"
+  ],
+  "unnamed_datasets_in_card": 15,
+  "by_source": {
+    "deepset": {
+      "n_records": 662,
+      "matches": {
+        "OpenSafetyLab/Salad-Data": {
+          "exact": 0,
+          "near_or_exact": 2,
+          "by_label": {
+            "0": 0,
+            "1": 2
+          }
+        },
+        "VMware/open-instruct": {
+          "exact": 3,
+          "near_or_exact": 3,
+          "by_label": {
+            "0": 2,
+            "1": 1
+          }
+        },
+        "alespalla/chatbot_instruction_prompts": {
+          "exact": 2,
+          "near_or_exact": 2,
+          "by_label": {
+            "0": 2,
+            "1": 0
+          }
+        }
+      }
+    },
+    "spml": {
+      "n_records": 16011,
+      "matches": {
+        "HuggingFaceH4/grok-conversation-harmless": {
+          "exact": 0,
+          "near_or_exact": 1,
+          "by_label": {
+            "0": 1,
+            "1": 0
+          }
+        },
+        "VMware/open-instruct": {
+          "exact": 3,
+          "near_or_exact": 4,
+          "by_label": {
+            "0": 4,
+            "1": 0
+          }
+        },
+        "alespalla/chatbot_instruction_prompts": {
+          "exact": 26,
+          "near_or_exact": 49,
+          "by_label": {
+            "0": 49,
+            "1": 0
+          }
+        }
+      }
+    },
+    "yanis": {
+      "n_records": 1034,
+      "matches": {}
+    },
+    "gandalf": {
+      "n_records": 1000,
+      "matches": {}
+    },
+    "jackhhao": {
+      "n_records": 1998,
+      "matches": {
+        "OpenSafetyLab/Salad-Data": {
+          "exact": 0,
+          "near_or_exact": 81,
+          "by_label": {
+            "0": 0,
+            "1": 81
+          }
+        },
+        "VMware/open-instruct": {
+          "exact": 48,
+          "near_or_exact": 51,
+          "by_label": {
+            "0": 49,
+            "1": 2
+          }
+        },
+        "alespalla/chatbot_instruction_prompts": {
+          "exact": 1,
+          "near_or_exact": 1,
+          "by_label": {
+            "0": 0,
+            "1": 1
+          }
+        }
+      }
+    }
+  }
+}
