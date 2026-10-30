@@ -300,8 +300,14 @@ These numbers are not comparable one-to-one with the deleted v1 numbers: the fro
 
 ### How the HTTP (gateway) backend counts
 
-A response is a **model prediction** only if every active `DetectorResult` has `status == "ok"` and
-`policy_applied` is null; then `predicted = decision == "flag"`. A response decided by a failure policy
+Every response is validated with `contracts.ClassifyResponse` (v1.2, `extra="forbid"`); one that does not
+validate is an error. A response is a **model prediction** only if every active `DetectorResult` has
+`status == "ok"`, `policy_applied` is null and `coverage_policy_applied` is not `flag` / `allow` /
+`quarantine` (`deep_scan` is still a model decision); then `predicted = decision == "flag"`. Per slice, `served`
+counts `stages_run` combinations, `coverage_policy_applied` by policy, decision and label, and the
+`failure_reason` of failed active results, with `overloaded` (load shedding) counted apart from timeouts and
+exceptions (`served.failures`); shadow failures are counted separately and never change a decision. The
+as-served view (`as_served`, failure-policy and coverage-policy decisions counted as served) is the gate view. A response decided by a failure policy
 (timeout, error or skipped -> fail_open / fail_closed) is excluded from precision, recall and FPR and
 reported per slice under `policy_decisions` (by status, by policy_applied, by decision and label).
 Transport errors (after 2 retries by default), non-200 responses and malformed responses go to `errors`, and
