@@ -1,0 +1,2 @@
+# Red-team sandbox dependencies (in addition to the root requirements.txt).
+httpx>=0.27
