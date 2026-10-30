@@ -273,15 +273,18 @@ def test_committed_v1_registry_converts_to_the_d23_capabilities():
                            calibrations=CALIBRATION_RECORDS)
     d23, d23_caps = convert("d23-deberta-decides")
     assert caps == d23_caps
+    # An in-memory conversion is stamped with the running engine; the committed /1 policy records 1.0.0, the engine
+    # it was validated on (serving/convert_registry.py SOURCES).
     strip = lambda x: {k: v for k, v in x.model_dump(mode="json").items()  # noqa: E731
-                       if k not in ("policy_id", "policy_version", "rationale")}
+                       if k not in ("policy_id", "policy_version", "rationale", "engine_version")}
     assert strip(p) == strip(d23)
 
 
 # ---------------------------------------------------------------- the committed registry (step g)
 
 def test_committed_registry_is_a_loadable_v2_bundle():
-    """artifacts/registry.json serves the D23 bundle; its hash is the one T3 and the smoke run recorded."""
+    """artifacts/registry.json serves the D23 policy; under the engine version T3 ran on (1.0.0) its bundle hash is
+    the one T3 and the smoke run recorded. Engine 1.1.0 (review r1 fixes) gives the same policy a new bundle hash."""
     from serving.registry import REGISTRY_SCHEMA_V2, load_policy_file, read_registry_v2
 
     reg = ROOT / "artifacts" / "registry.json"
@@ -298,7 +301,11 @@ def test_committed_registry_is_a_loadable_v2_bundle():
     converted, _ = convert("d23-deberta-decides")
     assert policy == converted  # the committed policy is exactly what the converter derives
     t3 = json.loads((ROOT / "reports/policy-runtime/t3_d23_equivalence.json").read_text())
-    assert bundle_sha256(policy) == t3["bundle"]["committed_bundle_sha256"]
+    assert t3["inputs"]["engine_version"] == "1.0.0"
+    assert bundle_sha256(policy, t3["inputs"]["engine_version"]) == t3["bundle"]["committed_bundle_sha256"]
+    from serving.engine_version import ENGINE_VERSION
+    if ENGINE_VERSION != t3["inputs"]["engine_version"]:
+        assert bundle_sha256(policy) != t3["bundle"]["committed_bundle_sha256"]  # a new engine is a new bundle
 
 
 def test_committed_capabilities_are_pinned_by_the_committed_policies():

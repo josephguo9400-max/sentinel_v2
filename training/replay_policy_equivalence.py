@@ -219,10 +219,13 @@ def build_engines(pointers: dict, config, cache: RowCache | None, specs: dict):
     legacy = Legacy(_spec_with(specs["stage2"], recs["legacy"]), config, stage1=specs.get("stage1"),
                     shadow=specs.get("shadow"), stage1_mode=mode)
     manifests = {name: spec.manifest for name, spec in specs.items()}
-    # Same id, version and rationale as the committed bundle, so the only differences are the raised budgets.
+    # Same id, version, rationale and validated-on engine version as the committed policy, so the only differences
+    # are the raised budgets.
+    committed = committed_policy()
     policy, caps = legacy_to_v2(pointers, manifests, config, known_tokenizers=KNOWN_TOKENIZERS,
                                 calibrations=CALIBRATION_RECORDS, policy_id="d23-deberta-decides",
-                                policy_version="1", rationale=committed_policy().rationale)
+                                policy_version="1", rationale=committed.rationale,
+                                engine_version=committed.engine_version)
     detectors = {}
     for name, spec in specs.items():
         if name == "shadow":

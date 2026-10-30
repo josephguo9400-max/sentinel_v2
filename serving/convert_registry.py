@@ -72,20 +72,25 @@ D23_RATIONALE = ("D23 (docs/RFC.md, milestone 3): the cascade's kill criterion f
                  "every request and Stage 1 runs observe-only. Registry change pending the release gate "
                  "(serving/README.md 'Registry'). Converted from artifacts/registry.json (sentinel-registry-v1) by "
                  "serving.convert_registry.")
+# `engine_version` is the engine each committed policy version was validated on (a field of the hashed policy). It is
+# pinned per source, not taken from serving.engine_version, so an engine bump does not rewrite immutable policy
+# versions; the bundle hash still changes with the running engine (serving/policy.py bundle_sha256).
 SOURCES = {
     # The v1 state this was converted from; artifacts/registry.json now holds the resulting v2 bundle.
     "d23-deberta-decides": {"registry": "reports/policy-runtime/registry_v1_d23.json",
-                            "rationale": D23_RATIONALE},
+                            "rationale": D23_RATIONALE, "engine_version": "1.0.0"},
     "cascade-tfidf-allow-only": {
         "registry": "reports/cascade-and-shadow/registry_integration_route.json",
         "rationale": "Rejected by D23: replay recall -15.0 pt [-19.4, -10.7] "
                      "(reports/cascade-and-shadow/replay_counterfactual_served_faithful.json). Route mode with "
-                     "stage1-tfidf-v2.1 (allow-only gray zone [0.505068, 1.0]). Converted by serving.convert_registry."},
+                     "stage1-tfidf-v2.1 (allow-only gray zone [0.505068, 1.0]). Converted by serving.convert_registry.",
+        "engine_version": "1.0.0"},
     "cascade-tfidf-provisional": {
         "registry": {"schema": "sentinel-registry-v1", "stage1": "candidates/stage1-tfidf-v2", "stage1_mode": "route",
                      "stage2": "baseline/deberta-pi-v2", "shadow": None},
         "rationale": "Historical: route mode with stage1-tfidf-v2's provisional gray zone [0.282715, 0.764614] "
-                     "(training/CASCADE.md). Never the default deployment. Converted by serving.convert_registry."},
+                     "(training/CASCADE.md). Never the default deployment. Converted by serving.convert_registry.",
+        "engine_version": "1.0.0"},
 }
 
 
@@ -101,7 +106,8 @@ def convert(policy_id: str, config: GatewayConfig | None = None, artifacts: Path
     pointers = json.loads((ROOT / reg).read_text()) if isinstance(reg, str) else dict(reg)
     return legacy_to_v2(pointers, read_manifests(pointers, artifacts), config or GatewayConfig(),
                         known_tokenizers=KNOWN_TOKENIZERS, calibrations=CALIBRATION_RECORDS,
-                        policy_id=policy_id, policy_version="1", rationale=src["rationale"])
+                        policy_id=policy_id, policy_version="1", rationale=src["rationale"],
+                        engine_version=src["engine_version"])
 
 
 def capability_path(c: CapabilityManifest) -> str:

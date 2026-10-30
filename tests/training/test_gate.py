@@ -294,14 +294,22 @@ def test_the_gate_never_promotes_by_itself():
 
 
 def test_committed_gate_report_is_bound_to_the_served_bundle():
+    """The val dry run is bound to the D23 bundle as it was under the engine version it ran on (1.0.0). After the
+    engine bump to 1.1.0 (review r1 fixes) the same policy is a new bundle, so that report no longer describes the
+    served bundle and promote refuses it (D25.2: no verdict carries over)."""
     path = ROOT / "reports" / "policy-runtime" / "gate_val_d23.json"
     if not path.is_file():
         pytest.skip("no committed gate run")
     rep = json.loads(path.read_text())
-    from serving.registry import read_registry_v2
+    from serving.engine_version import ENGINE_VERSION
+    from serving.policy import bundle_sha256
+    from serving.registry import load_policy_file, read_registry_v2
     state = read_registry_v2(ROOT / "artifacts" / "registry.json")
-    assert rep["bundle"]["bundle_sha256"] == bundle_sha(state["active"])
+    policy = load_policy_file(ROOT / "artifacts", state["active"])
+    assert rep["bundle"]["bundle_sha256"] == bundle_sha256(policy, rep["bundle"]["engine_version"])
     assert rep["promotes"] is False and rep["run"]["split"] == "val"
     # val has 92 benign-hard samples (< 100), so a val run can never be a PASS.
     assert rep["checks"]["benign_hard_fpr"]["verdict"] == gate.INSUFFICIENT
     assert rep["verdict"] == gate.INSUFFICIENT
+    if rep["bundle"]["engine_version"] != ENGINE_VERSION:
+        assert rep["bundle"]["bundle_sha256"] != bundle_sha(state["active"])

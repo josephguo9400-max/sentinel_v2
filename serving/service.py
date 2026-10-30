@@ -1,4 +1,4 @@
-"""Policy engine (engine 1.0.0): serves one ExecutionPolicy (contracts/policy.py) with its loaded capabilities.
+"""Policy engine (engine 1.1.0): serves one ExecutionPolicy (contracts/policy.py) with its loaded capabilities.
 
 This is the cascade service of milestone cascade-and-shadow refactored in place (D25, docs/design/capability-policy.md
 §7 migration 2): the decision path keeps its code (`_classify_active`, `stage2_order`, `_stage1_pass`, coverage,
