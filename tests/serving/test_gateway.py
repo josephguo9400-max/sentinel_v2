@@ -90,7 +90,7 @@ def test_timeout_applies_failure_policy(policy, decision):
     assert body["decision"] == decision and body["policy_applied"] == policy
     assert r.status == "timeout" and r.score is None and r.predicted_injection is None and r.truncated
     assert r.input_tokens == 2 and 40 <= r.latency_ms < 450
-    assert 'sentinel_detector_failures_total{detector_id="fake",reason="timeout",status="timeout"} 1.0' in metrics
+    assert 'sentinel_detector_failures_total{detector_id="fake",reason="timeout",role="active",status="timeout"} 1.0' in metrics
 
 
 @pytest.mark.parametrize("policy,decision", [("fail_closed", "flag"), ("fail_open", "allow")])
@@ -101,7 +101,7 @@ def test_detector_error_applies_failure_policy(policy, decision):
     (r,) = check_response(body)
     assert body["decision"] == decision and body["policy_applied"] == policy
     assert r.status == "error" and r.score is None and r.truncated
-    assert 'reason="exception",status="error"} 1.0' in metrics
+    assert 'reason="exception",role="active",status="error"} 1.0' in metrics
 
 
 def test_hung_inference_bounded_and_queue_overflow_fails_fast():
@@ -163,10 +163,10 @@ def test_metrics_exposed(client):
     text = client.get("/metrics").text
     assert 'sentinel_classify_requests_total{decision="allow",policy_applied="none"} 2.0' in text
     assert 'sentinel_classify_requests_total{decision="flag",policy_applied="none"} 1.0' in text
-    assert 'sentinel_detector_latency_seconds_count{detector_id="fake",status="ok"} 3.0' in text
-    assert 'sentinel_chunks_per_request_sum{stage="single"} 5.0' in text  # 1 + 1 + 3
+    assert 'sentinel_detector_latency_seconds_count{detector_id="fake",role="active",status="ok"} 3.0' in text
+    assert 'sentinel_chunks_per_request_sum{role="active",stage="single"} 5.0' in text  # 1 + 1 + 3
     assert "sentinel_inference_batch_size_count" in text and "sentinel_queue_depth" in text
-    assert 'sentinel_truncated_requests_total{detector_id="fake"} 1.0' in capped
+    assert 'sentinel_truncated_requests_total{detector_id="fake",role="active"} 1.0' in capped
 
 
 def test_bad_requests(client):
@@ -301,7 +301,7 @@ def test_overload_metric_and_health_report_admission():
 
     bodies, metrics, health = asyncio.run(scenario())
     assert sorted(b["results"][0]["status"] for b in bodies) == ["error", "error", "ok"]
-    assert 'reason="overloaded",status="error"} 2.0' in metrics
+    assert 'reason="overloaded",role="active",status="error"} 2.0' in metrics
     assert "sentinel_inflight_requests 0.0" in metrics
     assert health["config"]["max_inflight"] == 1 and health["inflight_requests"] == 0
 

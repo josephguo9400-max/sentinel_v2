@@ -18,17 +18,20 @@ class GatewayMetrics:
                                 "Requests decided by the coverage policy (content scored by neither stage)",
                                 ["policy"], registry=r)
         self.detector_latency = Histogram("sentinel_detector_latency_seconds",
-                                          "Detector latency per request (active path)",
-                                          ["detector_id", "status"], buckets=LATENCY_BUCKETS_S, registry=r)
-        self.detector_failures = Counter("sentinel_detector_failures", "Detector results with status != ok",
-                                         ["detector_id", "status", "reason"], registry=r)
+                                          "Detector latency per request; role=active is the decision path, "
+                                          "role=shadow the observe-only Stage 1",
+                                          ["detector_id", "status", "role"], buckets=LATENCY_BUCKETS_S, registry=r)
+        self.detector_failures = Counter("sentinel_detector_failures",
+                                         "Detector results with status != ok (role=active: decision path; "
+                                         "role=shadow: observe-only Stage 1, never part of a decision)",
+                                         ["detector_id", "status", "reason", "role"], registry=r)
         self.request_chunks = Histogram("sentinel_request_chunks", "Chunks in the request's chunk plan",
                                         buckets=(1, 2, 3, 4, 6, 8, 12, 16, 32, 64, 128), registry=r)
         self.chunks = Histogram("sentinel_chunks_per_request", "Chunks scored per request, per stage",
-                                ["stage"], buckets=(1, 2, 3, 4, 6, 8, 12, 16, 32, 64, 128), registry=r)
+                                ["stage", "role"], buckets=(1, 2, 3, 4, 6, 8, 12, 16, 32, 64, 128), registry=r)
         self.truncated = Counter("sentinel_truncated_requests",
                                  "Detector results where that detector did not score some content",
-                                 ["detector_id"], registry=r)
+                                 ["detector_id", "role"], registry=r)
         self.batch_size = Histogram("sentinel_inference_batch_size", "Chunks per Stage 2 ONNX call",
                                     buckets=(1, 2, 4, 8, 16, 32, 64), registry=r)
         # Padding cost of Stage 2 batches: computed = rows x longest row, real = sum of row lengths.
@@ -43,7 +46,7 @@ class GatewayMetrics:
         # Stage 1 (registry stage1_mode, serving/service.py)
         self.stage1_observed = Counter("sentinel_stage1_observed",
                                        "Observe-only Stage 1: what routed Stage 1 would have done "
-                                       "(would_finalize_allow / would_escalate / not_scored)", ["outcome"],
+                                       "(would_finalize_allow / would_escalate / not_scored / dropped)", ["outcome"],
                                        registry=r)
         self.stage1_deadline_hits = Counter("sentinel_stage1_deadline_hits",
                                             "Stage 1 stopped at its soft deadline with chunks left unscored",

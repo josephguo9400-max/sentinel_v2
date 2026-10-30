@@ -9,7 +9,10 @@ as a directory under `artifacts/` holding a `manifest.json` (contracts.ArtifactM
      "stage2": "baseline/deberta-pi-v2",
      "shadow": "candidates/deberta-pi-v2-int8"}
 
-`stage1_mode` (optional, default "route") says what the Stage 1 pointer may do:
+`stage1_mode` says what the Stage 1 pointer may do. It is REQUIRED whenever `stage1` is set: a registry with a Stage 1
+pointer and no `stage1_mode` gets a per-pointer rejection `stage1_mode_missing` (Stage 1 is not loaded, Stage 2
+serves alone, /health is degraded; a reload is refused). There is no default, so dropping the key can never hand
+Stage 1 the power to finalize.
 - "route":   Stage 1 clears chunks and may finalize "allow" (the cascade, serving/service.py steps 3-5).
 - "observe": Stage 1 never routes or decides. Stage 2 scores the request exactly as if Stage 1 were absent; Stage 1
              runs after the decision is fixed and its result is reported with role="shadow" (owner decision D23).
@@ -27,6 +30,7 @@ Every detector is verified before it is loaded. A detector is rejected, with a r
 - `runtime_mismatch`   see RUNTIME RULE below
 - `sha256_mismatch`    sha256 of the model bytes differs from the manifest
 - `load_failed`        onnxruntime or the tokenizer refused the verified bytes
+- `stage1_mode_missing` (stage1 only) the registry sets `stage1` without `stage1_mode`
 
 RUNTIME RULE: python and onnxruntime must match the installed versions in major.minor (3.13.x == 3.13.y,
 1.29.x == 1.29.y); patch releases are treated as compatible. Token models must declare `tokenizers`, and it
@@ -181,11 +185,12 @@ class LoadedRegistry:
 
     @property
     def stage1_mode(self) -> str:
-        return self.pointers.get("stage1_mode") or "route"
+        """The mode to serve with. None in the file (only possible with no or a rejected Stage 1) -> observe."""
+        return self.pointers.get("stage1_mode") or "observe"
 
 
 def read_registry(path: Path) -> dict[str, str | None]:
-    """The three pointers plus "stage1_mode" ("route" when the file omits it)."""
+    """The three pointers plus "stage1_mode" (None when the file omits it; load_registry then rejects stage1)."""
     try:
         raw = json.loads(Path(path).read_text())
     except FileNotFoundError as exc:
@@ -205,8 +210,8 @@ def read_registry(path: Path) -> dict[str, str | None]:
         out[p] = v
     if out["stage2"] is None:
         raise RegistryError("registry_invalid", "stage2 is required (it is the detector of last resort)")
-    mode = raw.get("stage1_mode", "route")
-    if mode not in STAGE1_MODES:
+    mode = raw.get("stage1_mode")
+    if mode is not None and mode not in STAGE1_MODES:
         raise RegistryError("registry_invalid", f"stage1_mode must be one of {list(STAGE1_MODES)}, got {mode!r}")
     out["stage1_mode"] = mode
     return out
@@ -319,6 +324,12 @@ def load_registry(registry_path: Path, artifacts_root: Path, *, intra_op_threads
     for name in POINTERS:
         rel = pointers[name]
         if rel is None:
+            continue
+        if name == "stage1" and pointers.get("stage1_mode") is None:
+            detail = (f"registry sets stage1 -> {rel} without stage1_mode; add \"stage1_mode\": \"observe\" or "
+                      f"\"route\" (there is no default)")
+            log.error("registry: rejected stage1 -> %s: stage1_mode_missing", rel)
+            out.rejections.append(Rejection(name, rel, "stage1_mode_missing", detail))
             continue
         try:
             threads = (intra_op_by_pointer or {}).get(name, intra_op_threads)
