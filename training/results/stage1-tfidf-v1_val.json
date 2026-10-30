@@ -1,0 +1,897 @@
+{
+  "split": "val",
+  "split_sha256": "47263c60ea42b20b3c916e7d7afd9abc5891514556676f3c2e2c157791a10028",
+  "backend": {
+    "backend": "local_stage1_onnx",
+    "artifact_dir": "artifacts/candidates/stage1-tfidf-v1",
+    "detector_id": "stage1-tfidf-lr",
+    "detector_version": "stage1-tfidf-v1",
+    "sha256": "9d1d59a3d5b9953a1cf6977ce60bf8586e5036df6f003678dc2274dfebc840c4",
+    "threshold": 0.440418,
+    "gray_zone": [
+      0.282715,
+      0.818603
+    ],
+    "decision_rule": "score >= threshold (Stage 1 alone; gray zone is reported, not escalated)"
+  },
+  "gate_minimums": {
+    "recall_min_positives": 200,
+    "benign_hard_min_n": 100,
+    "benign_hard_fpr_max_wilson_upper": 0.05
+  },
+  "environment": {
+    "python": "3.13.18",
+    "machine": "x86_64"
+  },
+  "command": "python -m training.eval_harness --backend local --artifact artifacts/candidates/stage1-tfidf-v1 --split val --out training/results/stage1-tfidf-v1_val.json",
+  "n_items": 3214,
+  "n_errors": 0,
+  "errors": {},
+  "slices": {
+    "overall": {
+      "n": 3214,
+      "positives": 2240,
+      "negatives": 974,
+      "confusion": {
+        "tp": 2207,
+        "fp": 67,
+        "fn": 33,
+        "tn": 907
+      },
+      "precision": {
+        "value": 0.9705364995602462,
+        "numerator": 2207,
+        "denominator": 2274,
+        "ci95": [
+          0.9627533776287411,
+          0.9767325517861802
+        ],
+        "ci_method": "wilson"
+      },
+      "recall": {
+        "value": 0.9852678571428571,
+        "numerator": 2207,
+        "denominator": 2240,
+        "ci95": [
+          0.9793833595311796,
+          0.9894907966414224
+        ],
+        "ci_method": "wilson"
+      },
+      "fpr": {
+        "value": 0.06878850102669405,
+        "numerator": 67,
+        "denominator": 974,
+        "ci95": [
+          0.054528936956362184,
+          0.0864361014732162
+        ],
+        "ci_method": "wilson"
+      },
+      "evidence": {
+        "recall": "OK"
+      },
+      "stage1_zones": {
+        "low:label=0": 853,
+        "low:label=1": 22,
+        "gray:label=0": 111,
+        "gray:label=1": 131,
+        "high:label=0": 10,
+        "high:label=1": 2087
+      }
+    },
+    "benign_hard": {
+      "n": 92,
+      "positives": 0,
+      "negatives": 92,
+      "confusion": {
+        "tp": 0,
+        "fp": 31,
+        "fn": 0,
+        "tn": 61
+      },
+      "precision": {
+        "value": 0.0,
+        "numerator": 0,
+        "denominator": 31,
+        "ci95": [
+          0.0,
+          0.11025539546043596
+        ],
+        "ci_method": "wilson"
+      },
+      "recall": {
+        "value": null,
+        "numerator": 0,
+        "denominator": 0,
+        "ci95": null,
+        "ci_method": "wilson"
+      },
+      "fpr": {
+        "value": 0.33695652173913043,
+        "numerator": 31,
+        "denominator": 92,
+        "ci95": [
+          0.24863604579205323,
+          0.43834701593151904
+        ],
+        "ci_method": "wilson"
+      },
+      "evidence": {
+        "fpr": "INSUFFICIENT_EVIDENCE"
+      },
+      "stage1_zones": {
+        "low:label=0": 49,
+        "gray:label=0": 36,
+        "high:label=0": 7
+      }
+    },
+    "benign_hard_family=calendar_ask": {
+      "n": 18,
+      "positives": 0,
+      "negatives": 18,
+      "confusion": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 0,
+        "tn": 18
+      },
+      "precision": {
+        "value": null,
+        "numerator": 0,
+        "denominator": 0,
+        "ci95": null,
+        "ci_method": "wilson"
+      },
+      "recall": {
+        "value": null,
+        "numerator": 0,
+        "denominator": 0,
+        "ci95": null,
+        "ci_method": "wilson"
+      },
+      "fpr": {
+        "value": 0.0,
+        "numerator": 0,
+        "denominator": 18,
+        "ci95": [
+          0.0,
+          0.17587922364665765
+        ],
+        "ci_method": "wilson"
+      },
+      "evidence": {
+        "fpr": "INSUFFICIENT_EVIDENCE"
+      },
+      "stage1_zones": {
+        "low:label=0": 16,
+        "gray:label=0": 2
+      }
+    },
+    "benign_hard_family=forwarding_request": {
+      "n": 18,
+      "positives": 0,
+      "negatives": 18,
+      "confusion": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 0,
+        "tn": 18
+      },
+      "precision": {
+        "value": null,
+        "numerator": 0,
+        "denominator": 0,
+        "ci95": null,
+        "ci_method": "wilson"
+      },
+      "recall": {
+        "value": null,
+        "numerator": 0,
+        "denominator": 0,
+        "ci95": null,
+        "ci_method": "wilson"
+      },
+      "fpr": {
+        "value": 0.0,
+        "numerator": 0,
+        "denominator": 18,
+        "ci95": [
+          0.0,
+          0.17587922364665765
+        ],
+        "ci_method": "wilson"
+      },
+      "evidence": {
+        "fpr": "INSUFFICIENT_EVIDENCE"
+      },
+      "stage1_zones": {
+        "low:label=0": 17,
+        "gray:label=0": 1
+      }
+    },
+    "benign_hard_family=it_notice": {
+      "n": 18,
+      "positives": 0,
+      "negatives": 18,
+      "confusion": {
+        "tp": 0,
+        "fp": 13,
+        "fn": 0,
+        "tn": 5
+      },
+      "precision": {
+        "value": 0.0,
+        "numerator": 0,
+        "denominator": 13,
+        "ci95": [
+          0.0,
+          0.22809537235419838
+        ],
+        "ci_method": "wilson"
+      },
+      "recall": {
+        "value": null,
+        "numerator": 0,
+        "denominator": 0,
+        "ci95": null,
+        "ci_method": "wilson"
+      },
+      "fpr": {
+        "value": 0.7222222222222222,
+        "numerator": 13,
+        "denominator": 18,
+        "ci95": [
+          0.4912734343970254,
+          0.8750024662044601
+        ],
+        "ci_method": "wilson"
+      },
+      "evidence": {
+        "fpr": "INSUFFICIENT_EVIDENCE"
+      },
+      "stage1_zones": {
+        "gray:label=0": 17,
+        "high:label=0": 1
+      }
+    },
+    "benign_hard_family=log_digest_long": {
+      "n": 10,
+      "positives": 0,
+      "negatives": 10,
+      "confusion": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 0,
+        "tn": 10
+      },
+      "precision": {
+        "value": null,
+        "numerator": 0,
+        "denominator": 0,
+        "ci95": null,
+        "ci_method": "wilson"
+      },
+      "recall": {
+        "value": null,
+        "numerator": 0,
+        "denominator": 0,
+        "ci95": null,
+        "ci_method": "wilson"
+      },
+      "fpr": {
+        "value": 0.0,
+        "numerator": 0,
+        "denominator": 10,
+        "ci95": [
+          0.0,
+          0.2775327998628892
+        ],
+        "ci_method": "wilson"
+      },
+      "evidence": {
+        "fpr": "INSUFFICIENT_EVIDENCE"
+      },
+      "stage1_zones": {
+        "low:label=0": 10
+      }
+    },
+    "benign_hard_family=newsletter_long": {
+      "n": 10,
+      "positives": 0,
+      "negatives": 10,
+      "confusion": {
+        "tp": 0,
+        "fp": 1,
+        "fn": 0,
+        "tn": 9
+      },
+      "precision": {
+        "value": 0.0,
+        "numerator": 0,
+        "denominator": 1,
+        "ci95": [
+          0.0,
+          0.7934506856227626
+        ],
+        "ci_method": "wilson"
+      },
+      "recall": {
+        "value": null,
+        "numerator": 0,
+        "denominator": 0,
+        "ci95": null,
+        "ci_method": "wilson"
+      },
+      "fpr": {
+        "value": 0.1,
+        "numerator": 1,
+        "denominator": 10,
+        "ci95": [
+          0.017876213095072896,
+          0.4041500267952385
+        ],
+        "ci_method": "wilson"
+      },
+      "evidence": {
+        "fpr": "INSUFFICIENT_EVIDENCE"
+      },
+      "stage1_zones": {
+        "low:label=0": 6,
+        "gray:label=0": 4
+      }
+    },
+    "benign_hard_family=policy_reminder": {
+      "n": 18,
+      "positives": 0,
+      "negatives": 18,
+      "confusion": {
+        "tp": 0,
+        "fp": 17,
+        "fn": 0,
+        "tn": 1
+      },
+      "precision": {
+        "value": 0.0,
+        "numerator": 0,
+        "denominator": 17,
+        "ci95": [
+          0.0,
+          0.1843181350088518
+        ],
+        "ci_method": "wilson"
+      },
+      "recall": {
+        "value": null,
+        "numerator": 0,
+        "denominator": 0,
+        "ci95": null,
+        "ci_method": "wilson"
+      },
+      "fpr": {
+        "value": 0.9444444444444444,
+        "numerator": 17,
+        "denominator": 18,
+        "ci95": [
+          0.7424269921812741,
+          0.990124809021697
+        ],
+        "ci_method": "wilson"
+      },
+      "evidence": {
+        "fpr": "INSUFFICIENT_EVIDENCE"
+      },
+      "stage1_zones": {
+        "gray:label=0": 12,
+        "high:label=0": 6
+      }
+    },
+    "lang=en": {
+      "n": 3150,
+      "positives": 2216,
+      "negatives": 934,
+      "confusion": {
+        "tp": 2190,
+        "fp": 66,
+        "fn": 26,
+        "tn": 868
+      },
+      "precision": {
+        "value": 0.9707446808510638,
+        "numerator": 2190,
+        "denominator": 2256,
+        "ci95": [
+          0.9629504756036874,
+          0.9769384673615488
+        ],
+        "ci_method": "wilson"
+      },
+      "recall": {
+        "value": 0.9882671480144405,
+        "numerator": 2190,
+        "denominator": 2216,
+        "ci95": [
+          0.9828637381086163,
+          0.9919806551255022
+        ],
+        "ci_method": "wilson"
+      },
+      "fpr": {
+        "value": 0.07066381156316917,
+        "numerator": 66,
+        "denominator": 934,
+        "ci95": [
+          0.0559274627243571,
+          0.08891733758070773
+        ],
+        "ci_method": "wilson"
+      },
+      "evidence": {
+        "recall": "OK"
+      },
+      "stage1_zones": {
+        "low:label=0": 814,
+        "low:label=1": 17,
+        "gray:label=0": 110,
+        "gray:label=1": 123,
+        "high:label=0": 10,
+        "high:label=1": 2076
+      }
+    },
+    "lang=non_en": {
+      "n": 64,
+      "positives": 24,
+      "negatives": 40,
+      "confusion": {
+        "tp": 17,
+        "fp": 1,
+        "fn": 7,
+        "tn": 39
+      },
+      "precision": {
+        "value": 0.9444444444444444,
+        "numerator": 17,
+        "denominator": 18,
+        "ci95": [
+          0.7424269921812741,
+          0.990124809021697
+        ],
+        "ci_method": "wilson"
+      },
+      "recall": {
+        "value": 0.7083333333333334,
+        "numerator": 17,
+        "denominator": 24,
+        "ci95": [
+          0.5083230633550337,
+          0.8508535180303913
+        ],
+        "ci_method": "wilson"
+      },
+      "fpr": {
+        "value": 0.025,
+        "numerator": 1,
+        "denominator": 40,
+        "ci95": [
+          0.0044268315026814095,
+          0.1288136896347409
+        ],
+        "ci_method": "wilson"
+      },
+      "evidence": {
+        "recall": "INSUFFICIENT_EVIDENCE"
+      },
+      "stage1_zones": {
+        "low:label=0": 39,
+        "low:label=1": 5,
+        "gray:label=0": 1,
+        "gray:label=1": 8,
+        "high:label=1": 11
+      }
+    },
+    "source=benign_hard": {
+      "n": 92,
+      "positives": 0,
+      "negatives": 92,
+      "confusion": {
+        "tp": 0,
+        "fp": 31,
+        "fn": 0,
+        "tn": 61
+      },
+      "precision": {
+        "value": 0.0,
+        "numerator": 0,
+        "denominator": 31,
+        "ci95": [
+          0.0,
+          0.11025539546043596
+        ],
+        "ci_method": "wilson"
+      },
+      "recall": {
+        "value": null,
+        "numerator": 0,
+        "denominator": 0,
+        "ci95": null,
+        "ci_method": "wilson"
+      },
+      "fpr": {
+        "value": 0.33695652173913043,
+        "numerator": 31,
+        "denominator": 92,
+        "ci95": [
+          0.24863604579205323,
+          0.43834701593151904
+        ],
+        "ci_method": "wilson"
+      },
+      "evidence": {},
+      "stage1_zones": {
+        "low:label=0": 49,
+        "gray:label=0": 36,
+        "high:label=0": 7
+      }
+    },
+    "source=deepset": {
+      "n": 112,
+      "positives": 58,
+      "negatives": 54,
+      "confusion": {
+        "tp": 39,
+        "fp": 3,
+        "fn": 19,
+        "tn": 51
+      },
+      "precision": {
+        "value": 0.9285714285714286,
+        "numerator": 39,
+        "denominator": 42,
+        "ci95": [
+          0.8099057319884169,
+          0.9754095901266941
+        ],
+        "ci_method": "wilson"
+      },
+      "recall": {
+        "value": 0.6724137931034483,
+        "numerator": 39,
+        "denominator": 58,
+        "ci95": [
+          0.544240546784708,
+          0.7791670891507392
+        ],
+        "ci_method": "wilson"
+      },
+      "fpr": {
+        "value": 0.05555555555555555,
+        "numerator": 3,
+        "denominator": 54,
+        "ci95": [
+          0.0190732684546909,
+          0.15107214318166143
+        ],
+        "ci_method": "wilson"
+      },
+      "evidence": {
+        "recall": "INSUFFICIENT_EVIDENCE"
+      },
+      "stage1_zones": {
+        "low:label=0": 51,
+        "low:label=1": 14,
+        "gray:label=0": 3,
+        "gray:label=1": 24,
+        "high:label=1": 20
+      }
+    },
+    "source=jackhhao": {
+      "n": 378,
+      "positives": 102,
+      "negatives": 276,
+      "confusion": {
+        "tp": 99,
+        "fp": 13,
+        "fn": 3,
+        "tn": 263
+      },
+      "precision": {
+        "value": 0.8839285714285714,
+        "numerator": 99,
+        "denominator": 112,
+        "ci95": [
+          0.8114943070899338,
+          0.9308996585550914
+        ],
+        "ci_method": "wilson"
+      },
+      "recall": {
+        "value": 0.9705882352941176,
+        "numerator": 99,
+        "denominator": 102,
+        "ci95": [
+          0.9170694250062327,
+          0.989947551797096
+        ],
+        "ci_method": "wilson"
+      },
+      "fpr": {
+        "value": 0.04710144927536232,
+        "numerator": 13,
+        "denominator": 276,
+        "ci95": [
+          0.027730006199251242,
+          0.07890701229847881
+        ],
+        "ci_method": "wilson"
+      },
+      "evidence": {
+        "recall": "INSUFFICIENT_EVIDENCE"
+      },
+      "stage1_zones": {
+        "low:label=0": 247,
+        "low:label=1": 3,
+        "gray:label=0": 27,
+        "gray:label=1": 15,
+        "high:label=0": 2,
+        "high:label=1": 84
+      }
+    },
+    "source=spml": {
+      "n": 2632,
+      "positives": 2080,
+      "negatives": 552,
+      "confusion": {
+        "tp": 2069,
+        "fp": 20,
+        "fn": 11,
+        "tn": 532
+      },
+      "precision": {
+        "value": 0.990426041168023,
+        "numerator": 2069,
+        "denominator": 2089,
+        "ci95": [
+          0.9852579123350074,
+          0.9937937933563552
+        ],
+        "ci_method": "wilson"
+      },
+      "recall": {
+        "value": 0.9947115384615385,
+        "numerator": 2069,
+        "denominator": 2080,
+        "ci95": [
+          0.9905546952819828,
+          0.9970444290605578
+        ],
+        "ci_method": "wilson"
+      },
+      "fpr": {
+        "value": 0.036231884057971016,
+        "numerator": 20,
+        "denominator": 552,
+        "ci95": [
+          0.023575068213689737,
+          0.05529896704397301
+        ],
+        "ci_method": "wilson"
+      },
+      "evidence": {
+        "recall": "OK"
+      },
+      "stage1_zones": {
+        "low:label=0": 506,
+        "low:label=1": 5,
+        "gray:label=0": 45,
+        "gray:label=1": 92,
+        "high:label=0": 1,
+        "high:label=1": 1983
+      }
+    },
+    "stage2_overlap=confirmed": {
+      "n": 378,
+      "positives": 102,
+      "negatives": 276,
+      "confusion": {
+        "tp": 99,
+        "fp": 13,
+        "fn": 3,
+        "tn": 263
+      },
+      "precision": {
+        "value": 0.8839285714285714,
+        "numerator": 99,
+        "denominator": 112,
+        "ci95": [
+          0.8114943070899338,
+          0.9308996585550914
+        ],
+        "ci_method": "wilson"
+      },
+      "recall": {
+        "value": 0.9705882352941176,
+        "numerator": 99,
+        "denominator": 102,
+        "ci95": [
+          0.9170694250062327,
+          0.989947551797096
+        ],
+        "ci_method": "wilson"
+      },
+      "fpr": {
+        "value": 0.04710144927536232,
+        "numerator": 13,
+        "denominator": 276,
+        "ci95": [
+          0.027730006199251242,
+          0.07890701229847881
+        ],
+        "ci_method": "wilson"
+      },
+      "evidence": {
+        "recall": "INSUFFICIENT_EVIDENCE"
+      },
+      "stage1_zones": {
+        "low:label=0": 247,
+        "low:label=1": 3,
+        "gray:label=0": 27,
+        "gray:label=1": 15,
+        "high:label=0": 2,
+        "high:label=1": 84
+      }
+    },
+    "stage2_overlap=none_known": {
+      "n": 2632,
+      "positives": 2080,
+      "negatives": 552,
+      "confusion": {
+        "tp": 2069,
+        "fp": 20,
+        "fn": 11,
+        "tn": 532
+      },
+      "precision": {
+        "value": 0.990426041168023,
+        "numerator": 2069,
+        "denominator": 2089,
+        "ci95": [
+          0.9852579123350074,
+          0.9937937933563552
+        ],
+        "ci_method": "wilson"
+      },
+      "recall": {
+        "value": 0.9947115384615385,
+        "numerator": 2069,
+        "denominator": 2080,
+        "ci95": [
+          0.9905546952819828,
+          0.9970444290605578
+        ],
+        "ci_method": "wilson"
+      },
+      "fpr": {
+        "value": 0.036231884057971016,
+        "numerator": 20,
+        "denominator": 552,
+        "ci95": [
+          0.023575068213689737,
+          0.05529896704397301
+        ],
+        "ci_method": "wilson"
+      },
+      "evidence": {
+        "recall": "OK"
+      },
+      "stage1_zones": {
+        "low:label=0": 506,
+        "low:label=1": 5,
+        "gray:label=0": 45,
+        "gray:label=1": 92,
+        "high:label=0": 1,
+        "high:label=1": 1983
+      }
+    },
+    "stage2_overlap=none_synthetic": {
+      "n": 92,
+      "positives": 0,
+      "negatives": 92,
+      "confusion": {
+        "tp": 0,
+        "fp": 31,
+        "fn": 0,
+        "tn": 61
+      },
+      "precision": {
+        "value": 0.0,
+        "numerator": 0,
+        "denominator": 31,
+        "ci95": [
+          0.0,
+          0.11025539546043596
+        ],
+        "ci_method": "wilson"
+      },
+      "recall": {
+        "value": null,
+        "numerator": 0,
+        "denominator": 0,
+        "ci95": null,
+        "ci_method": "wilson"
+      },
+      "fpr": {
+        "value": 0.33695652173913043,
+        "numerator": 31,
+        "denominator": 92,
+        "ci95": [
+          0.24863604579205323,
+          0.43834701593151904
+        ],
+        "ci_method": "wilson"
+      },
+      "evidence": {},
+      "stage1_zones": {
+        "low:label=0": 49,
+        "gray:label=0": 36,
+        "high:label=0": 7
+      }
+    },
+    "stage2_overlap=suspected": {
+      "n": 112,
+      "positives": 58,
+      "negatives": 54,
+      "confusion": {
+        "tp": 39,
+        "fp": 3,
+        "fn": 19,
+        "tn": 51
+      },
+      "precision": {
+        "value": 0.9285714285714286,
+        "numerator": 39,
+        "denominator": 42,
+        "ci95": [
+          0.8099057319884169,
+          0.9754095901266941
+        ],
+        "ci_method": "wilson"
+      },
+      "recall": {
+        "value": 0.6724137931034483,
+        "numerator": 39,
+        "denominator": 58,
+        "ci95": [
+          0.544240546784708,
+          0.7791670891507392
+        ],
+        "ci_method": "wilson"
+      },
+      "fpr": {
+        "value": 0.05555555555555555,
+        "numerator": 3,
+        "denominator": 54,
+        "ci95": [
+          0.0190732684546909,
+          0.15107214318166143
+        ],
+        "ci_method": "wilson"
+      },
+      "evidence": {
+        "recall": "INSUFFICIENT_EVIDENCE"
+      },
+      "stage1_zones": {
+        "low:label=0": 51,
+        "low:label=1": 14,
+        "gray:label=0": 3,
+        "gray:label=1": 24,
+        "high:label=1": 20
+      }
+    }
+  },
+  "client_latency_ms": {
+    "n": 3214,
+    "p50": 0.23702599992247997,
+    "p95": 0.419873499595269,
+    "p99": 0.7390480396134016
+  }
+}

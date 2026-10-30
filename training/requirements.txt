@@ -1,0 +1,11 @@
+# Versions used to produce the committed splits, artifacts and results (2026-10-29).
+scikit-learn==1.9.1
+skl2onnx==1.20.0
+onnxruntime==1.29.0
+onnx
+numpy
+pandas
+pyarrow
+datasketch==2.0.0
+huggingface_hub
+langdetect==1.0.9
