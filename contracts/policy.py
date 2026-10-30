@@ -19,6 +19,7 @@ Differences from the design text (all recorded in the design doc §12):
   empty.
 - Coverage deep_scan requires a single decide stage (engine 1.0.0).
 - A decide member's FALLBACK must not target a decide member.
+- Parallel members have equal max_chunks (they score the same chunk selection).
 
 Owned by the project owner. Agents must not edit this file; file a request in docs/contract_requests.md.
 """
@@ -161,6 +162,8 @@ class DecideStage(BaseModel):
             raise ValueError("[decide_shape] parallel needs exactly 2 members and an aggregate")
         if len({m.detector.key for m in self.members}) != len(self.members):
             raise ValueError("[decide_distinct] decide members must be distinct detectors")
+        if len({m.max_chunks for m in self.members}) != 1:
+            raise ValueError("[parallel_selection] parallel members score the same chunk selection: equal max_chunks")
         return self
 
 

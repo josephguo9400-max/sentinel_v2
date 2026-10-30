@@ -126,6 +126,7 @@ def structural_cases():
         ("decide_shape", _with(policy(caps, parallel="any_flag"), ["decide", "members"], [member(caps["decide"])])),
         ("decide_distinct", _with(policy(caps, parallel="any_flag"), ["decide", "members"],
                                   [member(caps["decide"]), member(caps["decide"])])),
+        ("parallel_selection", _with(policy(caps, parallel="any_flag"), ["decide", "members", 1, "max_chunks"], 8)),
         ("async_only", _with(policy(caps), ["decide", "members", 0, "on_failure"], {"mode": "ASYNC_ONLY"})),
         ("async_only", _with(g(), ["gate", "on_failure"], {"mode": "ASYNC_ONLY"})),
         ("async_only", _with(policy(caps, observe=True), ["observe", 0, "on_failure"], {"mode": "FAIL_OPEN"})),

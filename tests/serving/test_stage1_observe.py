@@ -1,9 +1,9 @@
 """Observe-only Stage 1 (registry stage1_mode="observe", owner decision D23) and the anytime Stage 1 deadline.
 
 Observe mode contract under test:
-- Stage 1 never finalizes, clears or reorders anything: the response minus its role="shadow" result is the
+- Stage 1 never finalizes, clears or reorders anything: the response minus its role="observe" result is the
   response of a gateway built without Stage 1 (every field except latency_ms), and Stage 2 scores the same rows.
-- Stage 1 still runs and is reported as one DetectorResult(stage="stage1", role="shadow") after the active results;
+- Stage 1 still runs and is reported as one DetectorResult(stage="stage1", role="observe") after the active results;
   stages_run does not list it.
 - A Stage 1 timeout, exception or hang in observe mode changes neither the decision nor the coverage outcome.
 
@@ -113,9 +113,12 @@ def run(texts, *, stage1, mode, config=None, language=None, stage2=None, **spec_
 
 
 def active_view(out) -> dict:
-    """The response without role="shadow" results and without latency_ms."""
+    """The response without role="observe" results, latency_ms and the bundle identity (a policy with an observe
+    step is a different bundle from the same policy without one)."""
     d = out.as_response()
-    d["results"] = [{k: v for k, v in r.items() if k != "latency_ms"} for r in d["results"] if r["role"] != "shadow"]
+    for k in ("bundle_sha256", "policy_version"):
+        d.pop(k)
+    d["results"] = [{k: v for k, v in r.items() if k != "latency_ms"} for r in d["results"] if r["role"] != "observe"]
     return d
 
 
@@ -130,7 +133,7 @@ def test_observe_stage1_never_finalizes_and_is_reported_as_shadow():
     (o,), det, _ = run(["w1 w2 w3"], stage1=FakeStage1(), mode="observe")
     assert o.decision == "allow" and o.decided_by == "fake" and o.stages_run == ["stage2"]
     assert det.calls_started == 1  # Stage 2 scored it although Stage 1 would have finalized allow
-    assert [(r.stage, r.role) for r in o.results] == [("stage2", "active"), ("stage1", "shadow")]
+    assert [(r.stage, r.role) for r in o.results] == [("stage2", "active"), ("stage1", "observe")]
     s1 = o.results[1]
     assert s1.status == "ok" and s1.score == pytest.approx(0.01) and s1.detector_id == "fake-s1"
     assert o.info["stage1_observe"]["outcome"] == "would_finalize_allow"
@@ -148,7 +151,7 @@ def test_observe_decisions_equal_gateway_without_stage1(coverage):
     assert det_obs.rows == det_ref.rows  # same chunks, same order, same Stage 2 calls
     for o in obs:
         assert o.stages_run == [r.stage for r in o.results if r.role == "active"]
-        assert [r.role for r in o.results].count("shadow") == 1 and o.results[-1].stage == "stage1"
+        assert [r.role for r in o.results].count("observe") == 1 and o.results[-1].stage == "stage1"
     # Long inputs really are truncated by the Stage 2 budget (so coverage policy is exercised), and route mode
     # makes different routing choices on this set.
     assert any(o.coverage_policy_applied is not None for o in obs)
@@ -185,7 +188,7 @@ def test_observe_stage1_adds_at_most_its_budget_after_the_decision():
     t = time.perf_counter()
     (o,), _, svc = run(["w1 w2 w3"], stage1=stage1, mode="observe", s1_timeout_ms=50)
     elapsed = time.perf_counter() - t
-    assert o.decision == "allow" and o.results[-1].status == "timeout" and o.results[-1].role == "shadow"
+    assert o.decision == "allow" and o.results[-1].status == "timeout" and o.results[-1].role == "observe"
     assert o.results[-1].latency_ms < 500
     assert svc.request_budget_ms == 5000 + 50
     assert elapsed < 2.0 + 1.0  # stop() does not wait for the abandoned thread; generous bound for CI
@@ -209,7 +212,7 @@ def test_observe_overloaded_request_reports_stage1_after_stage2():
     ClassifyResponse.model_validate(o.as_response())
     assert o.stages_run == ["stage2"] and o.policy_applied == "fail_closed"
     assert [(r.stage, r.role, r.failure_reason) for r in o.results] == [
-        ("stage2", "active", "overloaded"), ("stage1", "shadow", "overloaded")]
+        ("stage2", "active", "overloaded"), ("stage1", "observe", "overloaded")]
 
 
 def test_observe_mode_metrics_and_health_via_injected_app():
@@ -220,7 +223,7 @@ def test_observe_mode_metrics_and_health_via_injected_app():
         h = c.get("/health").json()
         m = c.get("/metrics").text
     resp = ClassifyResponse.model_validate(body)
-    assert resp.stages_run == ["single"] and [r.role for r in resp.results] == ["active", "shadow"]
+    assert resp.stages_run == ["single"] and [r.role for r in resp.results] == ["active", "observe"]
     assert h["stage1_mode"] == "observe" and h["config"]["timeout_ms"] == 5000 + h["config"]["stage1_timeout_ms"]
     assert 'sentinel_stage1_observed_total{outcome="would_finalize_allow"} 1.0' in m
 
@@ -337,7 +340,7 @@ def test_gateway_from_registry_in_observe_mode(tmp_path):
     assert h["stage1_mode"] == "observe" and h["registry"]["pointers"]["stage1_mode"] == "observe"
     resp = ClassifyResponse.model_validate(body)
     assert resp.stages_run == ["stage2"] and resp.decided_by == "tiny-token"
-    assert [(r.stage, r.role) for r in resp.results] == [("stage2", "active"), ("stage1", "shadow")]
+    assert [(r.stage, r.role) for r in resp.results] == [("stage2", "active"), ("stage1", "observe")]
     assert ClassifyResponse.model_validate(routed).stages_run[0] == "stage1"
 
 
@@ -380,7 +383,7 @@ def test_observe_stage1_does_not_hold_admission_against_other_requests():
     assert obs[0].results[-1].status == "ok" and obs[0].info["stage1_observe"]["outcome"] == "would_finalize_allow"
     # A's observation still holds the single observe slot when B is decided: B's is dropped, not queued.
     assert obs[1].info["stage1_observe"]["outcome"] == "dropped"
-    assert obs[1].results[-1].failure_reason == "overloaded" and obs[1].results[-1].role == "shadow"
+    assert obs[1].results[-1].failure_reason == "overloaded" and obs[1].results[-1].role == "observe"
 
 
 def test_observe_work_is_bounded_and_drops_instead_of_queueing():
@@ -400,6 +403,6 @@ def test_observe_failures_are_labelled_shadow_in_metrics():
     with TestClient(app) as c:
         c.post("/classify", json={"text": "w1 w2", "request_id": "x"})
         m = c.get("/metrics").text
-    assert ('sentinel_detector_failures_total{detector_id="fake-s1",reason="exception",role="shadow",'
+    assert ('sentinel_detector_failures_total{detector_id="fake-s1",reason="exception",role="observe",'
             'status="error"} 1.0') in m
     assert 'role="active",status="error"' not in m

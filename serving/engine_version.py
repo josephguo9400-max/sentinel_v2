@@ -37,17 +37,24 @@ def check() -> list[str]:
         out.append(f"serving/engine_version.json records {rec['engine_version']}, ENGINE_VERSION is {ENGINE_VERSION}")
     now = file_hashes(sorted(rec["files"]))
     for path, sha in sorted(rec["files"].items()):
-        if now[path] != sha:
+        if not sha:
+            out.append(f"{path} has no recorded hash: run python -m serving.engine_version --record")
+        elif now[path] != sha:
             out.append(f"{path} changed since engine {rec['engine_version']} was recorded: bump ENGINE_VERSION and run "
                        f"python -m serving.engine_version --record")
     return out
 
 
 def record() -> dict:
+    """Record the current hashes. Refuses to overwrite a changed file list under an unchanged version, so a
+    behaviour change cannot be recorded without a bump. An entry with an empty hash is new (first recording of a
+    file) and may be filled in at any version."""
     rec = load_record()
     now = file_hashes(sorted(rec["files"]))
-    if rec["engine_version"] == ENGINE_VERSION and now != rec["files"]:
-        raise SystemExit(f"decision-path files changed but ENGINE_VERSION is still {ENGINE_VERSION}: bump it first")
+    changed = {k for k, v in rec["files"].items() if v and now[k] != v}
+    if rec["engine_version"] == ENGINE_VERSION and changed:
+        raise SystemExit(f"decision-path files changed but ENGINE_VERSION is still {ENGINE_VERSION} "
+                         f"({', '.join(sorted(changed))}): bump it first")
     rec.update(engine_version=ENGINE_VERSION, files=now)
     RECORD.write_text(json.dumps(rec, indent=1, sort_keys=True) + "\n", encoding="utf-8")
     return rec

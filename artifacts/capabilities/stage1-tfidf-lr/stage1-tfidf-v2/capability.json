@@ -1,0 +1,55 @@
+{
+ "artifact_format": "onnx",
+ "calibration": {
+  "calibrated_with": {
+   "aggregation": "max",
+   "score_segment_pieces": false,
+   "subwindow_stride": null,
+   "subwindow_tokens": 0
+  },
+  "chosen_on": "splits-v2:val:d84853ecc84cc87e",
+  "evidence_path": "candidates/stage1-tfidf-v2/evaluation.json",
+  "notes": "D25.6: the threshold was chosen on the training-side score (max over 512-regex-token windows of the whole text, stride 384: training/stage1_onnx.py score; rule in training/train_stage1.py choose_threshold). The gateway scores per chunk, per packed segment piece and over 64/32-token sub-windows (`scoring`). Not re-calibrated: Stage 1 is observe-only under D23, so the mismatch has no decision impact; a gate band on this capability is chosen on its served scores, not on this threshold.",
+  "rule": "maximize F1 on val (pooled); training/train_stage1.py choose_threshold",
+  "threshold": 0.505068
+ },
+ "created_at": "2026-10-30T02:05:00Z",
+ "detector_id": "stage1-tfidf-lr",
+ "detector_version": "stage1-tfidf-v2",
+ "files": {
+  "candidates/stage1-tfidf-v2/model.onnx": "2a5df39a27e300b0a74d0f9565d4fee13e9862c2afa79fcc2af26e205f4b6af3"
+ },
+ "input": {
+  "kind": "text",
+  "max_input_tokens": 512,
+  "preprocessing": "tfidf-v1",
+  "tokenizer": "regex:[\\p{L}\\p{N}_]{2,}",
+  "validated_languages": null
+ },
+ "label_mapping": {
+  "0": "benign",
+  "1": "injection"
+ },
+ "limits": {
+  "latency_evidence_path": null,
+  "max_batch": 1,
+  "recommended_timeout_ms": 50
+ },
+ "model_file": "candidates/stage1-tfidf-v2/model.onnx",
+ "runtime": {
+  "onnxruntime": "1.29.0",
+  "python": "3.13.18",
+  "skl2onnx": "1.20.0",
+  "sklearn": "1.9.1",
+  "tokenizers": null
+ },
+ "schema_version": "2.0",
+ "scoring": {
+  "aggregation": "max",
+  "score_segment_pieces": true,
+  "subwindow_stride": 32,
+  "subwindow_tokens": 64
+ },
+ "tokenizer_file": null,
+ "training_data_version": "splits-v2:train:1454319588ca1f94"
+}
