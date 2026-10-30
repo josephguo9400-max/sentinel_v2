@@ -1,0 +1,5 @@
+# Gateway runtime and load-test dependencies (on top of the root requirements.txt).
+fastapi>=0.110
+uvicorn>=0.29
+httpx>=0.27
+prometheus_client>=0.20
