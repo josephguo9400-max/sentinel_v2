@@ -146,9 +146,7 @@ uvicorn = pytest.importorskip("uvicorn")
 pytest.importorskip("fastapi")
 
 
-def test_runner_against_real_serving_app_head_only_detector():
-    """The current gateway, served for real: a head-only detector flags nothing because both
-    placements hide the full instruction past the scored chunks; validates ClassifyResponse on the wire."""
+def _serve_and_probe(cfg_kwargs):
     import socket
     import threading
     import time
@@ -165,7 +163,7 @@ def test_runner_against_real_serving_app_head_only_detector():
         def infer(self, batch):
             return [0.95 if 3 in row else 0.02 for row in batch]
 
-    app = create_app(GatewayConfig(verify_model_sha256=False, max_chunks=4), HeadDetector())
+    app = create_app(GatewayConfig(verify_model_sha256=False, max_chunks=4, **cfg_kwargs), HeadDetector())
     with socket.socket() as s:
         s.bind(("127.0.0.1", 0))
         port = s.getsockname()[1]
@@ -178,11 +176,26 @@ def test_runner_against_real_serving_app_head_only_detector():
             assert time.monotonic() < deadline
             time.sleep(0.02)
         with GatewayClient(f"http://127.0.0.1:{port}", on_unavailable="allow") as c:
-            rep = run_probes(c, PROBES)
+            return run_probes(c, PROBES)
     finally:
         server.should_exit = True
         t.join(5)
+
+
+def test_runner_against_real_serving_app_coverage_allow_reproduces_old_miss():
+    """With coverage_policy=allow (the pre-cascade behavior: unscored content allowed), the dropped middle
+    hides the injection and nothing is flagged; validates ClassifyResponse on the wire."""
+    rep = _serve_and_probe({"coverage_policy": "allow"})
     mid = rep["placements"]["middle_overlong"]
-    # Real chunking drops the middle, so the 'invalid' address token is never scored -> allow.
     assert mid["detection_rate_as_served"]["n"] == 6 and mid["detection_rate_as_served"]["rate"] == 0.0
-    assert mid["attack_truncated"]["rate"] == 1.0  # the gateway reports the middle probes truncated
+    assert mid["attack_truncated"]["rate"] == 1.0
+
+
+def test_runner_against_real_serving_app_default_coverage_flags_unscored_middle():
+    """Default coverage_policy=flag: the same probes are flagged as served, and the runner attributes them to
+    the coverage policy, not to a classifier score."""
+    rep = _serve_and_probe({})
+    mid = rep["placements"]["middle_overlong"]
+    assert mid["detection_rate_as_served"]["rate"] == 1.0
+    assert mid["coverage_policy_flags"]["k"] == 6
+    assert mid["classifier_score_flags"]["k"] == 0
