@@ -85,10 +85,17 @@ class GoalResult:
             "stopped_reason": self.stopped_reason,
             "witness": self.witness,
             "curve": self.curve,
-            "queries_meta": [{k: q.get(k) for k in (
+            # The full mutation (placement, carrier_scale and the framing fields lead_in, trailer,
+            # frame, split, noise) is carried here so a committed summary can be audited without the
+            # gitignored bodies. Review r2 m5: the first redesign kept only placement and
+            # carrier_scale, so nobody could tell from committed output which candidates used quoting
+            # or zero-width noise. The fields are indices into the fixed tables in mutators.py; no
+            # body text is written.
+            "queries_meta": [{**{k: q.get(k) for k in (
                 "query", "core_id", "family", "carrier_idx", "placement", "placement_reached",
                 "carrier_scale", "score", "classifier_allowed", "is_harmful", "mode_b_attack_success",
-                "accepted", "best_score_after", "flag_cause", "was_cached")} for q in self.queries],
+                "accepted", "best_score_after", "flag_cause", "was_cached")},
+                "mutation": q.get("mutation")} for q in self.queries],
         }
 
 
