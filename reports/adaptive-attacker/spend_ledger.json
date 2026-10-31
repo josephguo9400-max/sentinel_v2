@@ -1,0 +1,53 @@
+{
+  "ledger": "adaptive-attacker milestone API spend",
+  "note": "Cumulative API spend across all adaptive-attacker runs. The dollar cap reads prior_total_usd from here so the cap is milestone-wide, not per invocation (review m5). No key, header or request content is ever stored.",
+  "total_usd": 0.015716,
+  "n_entries": 3,
+  "entries": [
+    {
+      "label": "build_carriers",
+      "time": "2026-10-31T18:27:56Z",
+      "spent_usd": 0.002191,
+      "input_tokens": 2217,
+      "output_tokens": 3938,
+      "n_calls": 12,
+      "by_model": {
+        "claude-haiku-5-5": {
+          "usd": 0.002191,
+          "n_calls": 12
+        }
+      },
+      "note": "benign carrier pool generation"
+    },
+    {
+      "label": "live_victim:eval_decision",
+      "time": "2026-10-31T18:35:59Z",
+      "spent_usd": 0.009148,
+      "input_tokens": 91475,
+      "output_tokens": 0,
+      "n_calls": 6,
+      "by_model": {
+        "claude-haiku-5-5": {
+          "usd": 0.009148,
+          "n_calls": 6
+        }
+      },
+      "note": "live claude-haiku-5-5 victim spot check (mode B/C)"
+    },
+    {
+      "label": "author_refusal_probe",
+      "time": "2026-10-31T18:37:06Z",
+      "spent_usd": 0.004377,
+      "input_tokens": 6528,
+      "output_tokens": 7449,
+      "n_calls": 12,
+      "by_model": {
+        "claude-haiku-5-5": {
+          "usd": 0.004377,
+          "n_calls": 12
+        }
+      },
+      "note": "author-mode refusal probe"
+    }
+  ]
+}

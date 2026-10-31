@@ -87,11 +87,11 @@ class AnthropicAttackerClient:
                               output_tokens=hit["output_tokens"], model=self.model, cached=True)
         # Budget preflight with a conservative upper bound BEFORE any network call.
         self.spend.preflight(self.model, _estimate_tokens(system, messages), max_tokens)
-        # The v2 Messages API does not accept a top-level `temperature`; sampling uses the API default.
-        # `temperature` is kept in the cache key (so a flag change yields a distinct run) but not sent.
-        # Candidate diversity comes from the varied prompt (seed angle + growing feedback history).
+        # temperature is both recorded in the cache key AND sent, so the metadata matches the request
+        # that was actually made (review m2).
         resp = self._client.messages.create(  # pragma: no cover - needs a key
-            model=self.model, system=system, messages=messages, max_tokens=max_tokens)
+            model=self.model, system=system, messages=messages, max_tokens=max_tokens,
+            temperature=temperature)
         text = "\n".join(b.text for b in resp.content if getattr(b, "type", None) == "text")
         in_tok = getattr(resp.usage, "input_tokens", 0)
         out_tok = getattr(resp.usage, "output_tokens", 0)
