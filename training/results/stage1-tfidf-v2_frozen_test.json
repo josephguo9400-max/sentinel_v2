@@ -1,0 +1,981 @@
+{
+  "split": "frozen_test",
+  "split_sha256": "2a4e011f13250ca65d335bb12939a63f682254a2c6d1566ee78fc7686bb845ba",
+  "backend": {
+    "backend": "local_stage1_onnx",
+    "artifact_dir": "artifacts/candidates/stage1-tfidf-v2",
+    "detector_id": "stage1-tfidf-lr",
+    "detector_version": "stage1-tfidf-v2",
+    "sha256": "2a5df39a27e300b0a74d0f9565d4fee13e9862c2afa79fcc2af26e205f4b6af3",
+    "threshold": 0.505068,
+    "gray_zone": [
+      0.282715,
+      0.764614
+    ],
+    "decision_rule": "score >= threshold (Stage 1 alone; gray zone is reported, not escalated)"
+  },
+  "gate_minimums": {
+    "recall_min_positives": 200,
+    "benign_hard_min_n": 100,
+    "benign_hard_fpr_max_wilson_upper": 0.05
+  },
+  "environment": {
+    "python": "3.13.18",
+    "machine": "x86_64"
+  },
+  "command": "python -m training.eval_harness --backend local --artifact artifacts/candidates/stage1-tfidf-v2 --split frozen_test --out training/results/stage1-tfidf-v2_frozen_test.json --latency-conditions local ONNX, sequential, one text per call; shared 2-core host where other agents' CPU-heavy load tests may have been running; not a benchmark",
+  "latency_conditions": "local ONNX, sequential, one text per call; shared 2-core host where other agents' CPU-heavy load tests may have been running; not a benchmark",
+  "complete": true,
+  "aborted": null,
+  "n_items": 6276,
+  "n_processed": 6276,
+  "n_model_predictions": 6276,
+  "n_policy_decisions": 0,
+  "n_errors": 0,
+  "errors": {},
+  "slices": {
+    "overall": {
+      "n": 6276,
+      "positives": 5137,
+      "negatives": 1139,
+      "confusion": {
+        "tp": 4289,
+        "fp": 103,
+        "fn": 848,
+        "tn": 1036
+      },
+      "precision": {
+        "value": 0.9765482695810564,
+        "numerator": 4289,
+        "denominator": 4392,
+        "ci95": [
+          0.9716388360675657,
+          0.980624806562305
+        ],
+        "ci_method": "wilson"
+      },
+      "recall": {
+        "value": 0.834923106871715,
+        "numerator": 4289,
+        "denominator": 5137,
+        "ci95": [
+          0.8245213572382424,
+          0.844824318477142
+        ],
+        "ci_method": "wilson"
+      },
+      "fpr": {
+        "value": 0.09043020193151888,
+        "numerator": 103,
+        "denominator": 1139,
+        "ci95": [
+          0.0751223918622121,
+          0.10849140443568468
+        ],
+        "ci_method": "wilson"
+      },
+      "evidence": {
+        "recall": "OK"
+      },
+      "stage1_zones": {
+        "low:label=0": 894,
+        "low:label=1": 605,
+        "gray:label=0": 221,
+        "gray:label=1": 552,
+        "high:label=0": 24,
+        "high:label=1": 3980
+      },
+      "n_items": 6276,
+      "n_errors": 0,
+      "policy_decisions": {
+        "n": 0,
+        "by_status": {},
+        "by_policy_applied": {},
+        "by_decision_and_label": {}
+      }
+    },
+    "benign_hard": {
+      "n": 276,
+      "positives": 0,
+      "negatives": 276,
+      "confusion": {
+        "tp": 0,
+        "fp": 78,
+        "fn": 0,
+        "tn": 198
+      },
+      "precision": {
+        "value": 0.0,
+        "numerator": 0,
+        "denominator": 78,
+        "ci95": [
+          0.0,
+          0.04693780971219429
+        ],
+        "ci_method": "wilson"
+      },
+      "recall": {
+        "value": null,
+        "numerator": 0,
+        "denominator": 0,
+        "ci95": null,
+        "ci_method": "wilson"
+      },
+      "fpr": {
+        "value": 0.2826086956521739,
+        "numerator": 78,
+        "denominator": 276,
+        "ci95": [
+          0.23275363959999526,
+          0.33843212927891514
+        ],
+        "ci_method": "wilson"
+      },
+      "evidence": {
+        "fpr": "FAIL",
+        "fpr_rule": "Wilson 95% upper bound 0.3384 <= 0.05"
+      },
+      "stage1_zones": {
+        "low:label=0": 104,
+        "gray:label=0": 154,
+        "high:label=0": 18
+      },
+      "n_items": 276,
+      "n_errors": 0,
+      "policy_decisions": {
+        "n": 0,
+        "by_status": {},
+        "by_policy_applied": {},
+        "by_decision_and_label": {}
+      }
+    },
+    "benign_hard_family=calendar_ask": {
+      "n": 54,
+      "positives": 0,
+      "negatives": 54,
+      "confusion": {
+        "tp": 0,
+        "fp": 11,
+        "fn": 0,
+        "tn": 43
+      },
+      "precision": {
+        "value": 0.0,
+        "numerator": 0,
+        "denominator": 11,
+        "ci95": [
+          0.0,
+          0.2588329669680317
+        ],
+        "ci_method": "wilson"
+      },
+      "recall": {
+        "value": null,
+        "numerator": 0,
+        "denominator": 0,
+        "ci95": null,
+        "ci_method": "wilson"
+      },
+      "fpr": {
+        "value": 0.2037037037037037,
+        "numerator": 11,
+        "denominator": 54,
+        "ci95": [
+          0.11774054087421391,
+          0.3290230668833543
+        ],
+        "ci_method": "wilson"
+      },
+      "evidence": {
+        "fpr": "INSUFFICIENT_EVIDENCE"
+      },
+      "stage1_zones": {
+        "low:label=0": 27,
+        "gray:label=0": 24,
+        "high:label=0": 3
+      },
+      "n_items": 54,
+      "n_errors": 0,
+      "policy_decisions": {
+        "n": 0,
+        "by_status": {},
+        "by_policy_applied": {},
+        "by_decision_and_label": {}
+      }
+    },
+    "benign_hard_family=forwarding_request": {
+      "n": 54,
+      "positives": 0,
+      "negatives": 54,
+      "confusion": {
+        "tp": 0,
+        "fp": 17,
+        "fn": 0,
+        "tn": 37
+      },
+      "precision": {
+        "value": 0.0,
+        "numerator": 0,
+        "denominator": 17,
+        "ci95": [
+          0.0,
+          0.1843181350088518
+        ],
+        "ci_method": "wilson"
+      },
+      "recall": {
+        "value": null,
+        "numerator": 0,
+        "denominator": 0,
+        "ci95": null,
+        "ci_method": "wilson"
+      },
+      "fpr": {
+        "value": 0.3148148148148148,
+        "numerator": 17,
+        "denominator": 54,
+        "ci95": [
+          0.20679280660052918,
+          0.44743444824795103
+        ],
+        "ci_method": "wilson"
+      },
+      "evidence": {
+        "fpr": "INSUFFICIENT_EVIDENCE"
+      },
+      "stage1_zones": {
+        "low:label=0": 11,
+        "gray:label=0": 40,
+        "high:label=0": 3
+      },
+      "n_items": 54,
+      "n_errors": 0,
+      "policy_decisions": {
+        "n": 0,
+        "by_status": {},
+        "by_policy_applied": {},
+        "by_decision_and_label": {}
+      }
+    },
+    "benign_hard_family=it_notice": {
+      "n": 54,
+      "positives": 0,
+      "negatives": 54,
+      "confusion": {
+        "tp": 0,
+        "fp": 18,
+        "fn": 0,
+        "tn": 36
+      },
+      "precision": {
+        "value": 0.0,
+        "numerator": 0,
+        "denominator": 18,
+        "ci95": [
+          0.0,
+          0.17587922364665765
+        ],
+        "ci_method": "wilson"
+      },
+      "recall": {
+        "value": null,
+        "numerator": 0,
+        "denominator": 0,
+        "ci95": null,
+        "ci_method": "wilson"
+      },
+      "fpr": {
+        "value": 0.3333333333333333,
+        "numerator": 18,
+        "denominator": 54,
+        "ci95": [
+          0.22241416537492573,
+          0.46639036398870637
+        ],
+        "ci_method": "wilson"
+      },
+      "evidence": {
+        "fpr": "INSUFFICIENT_EVIDENCE"
+      },
+      "stage1_zones": {
+        "low:label=0": 17,
+        "gray:label=0": 36,
+        "high:label=0": 1
+      },
+      "n_items": 54,
+      "n_errors": 0,
+      "policy_decisions": {
+        "n": 0,
+        "by_status": {},
+        "by_policy_applied": {},
+        "by_decision_and_label": {}
+      }
+    },
+    "benign_hard_family=log_digest_long": {
+      "n": 30,
+      "positives": 0,
+      "negatives": 30,
+      "confusion": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 0,
+        "tn": 30
+      },
+      "precision": {
+        "value": null,
+        "numerator": 0,
+        "denominator": 0,
+        "ci95": null,
+        "ci_method": "wilson"
+      },
+      "recall": {
+        "value": null,
+        "numerator": 0,
+        "denominator": 0,
+        "ci95": null,
+        "ci_method": "wilson"
+      },
+      "fpr": {
+        "value": 0.0,
+        "numerator": 0,
+        "denominator": 30,
+        "ci95": [
+          0.0,
+          0.11351339317396876
+        ],
+        "ci_method": "wilson"
+      },
+      "evidence": {
+        "fpr": "INSUFFICIENT_EVIDENCE"
+      },
+      "stage1_zones": {
+        "low:label=0": 30
+      },
+      "n_items": 30,
+      "n_errors": 0,
+      "policy_decisions": {
+        "n": 0,
+        "by_status": {},
+        "by_policy_applied": {},
+        "by_decision_and_label": {}
+      }
+    },
+    "benign_hard_family=newsletter_long": {
+      "n": 30,
+      "positives": 0,
+      "negatives": 30,
+      "confusion": {
+        "tp": 0,
+        "fp": 2,
+        "fn": 0,
+        "tn": 28
+      },
+      "precision": {
+        "value": 0.0,
+        "numerator": 0,
+        "denominator": 2,
+        "ci95": [
+          0.0,
+          0.6576197724933469
+        ],
+        "ci_method": "wilson"
+      },
+      "recall": {
+        "value": null,
+        "numerator": 0,
+        "denominator": 0,
+        "ci95": null,
+        "ci_method": "wilson"
+      },
+      "fpr": {
+        "value": 0.06666666666666667,
+        "numerator": 2,
+        "denominator": 30,
+        "ci95": [
+          0.018477023791270378,
+          0.2132345836261692
+        ],
+        "ci_method": "wilson"
+      },
+      "evidence": {
+        "fpr": "INSUFFICIENT_EVIDENCE"
+      },
+      "stage1_zones": {
+        "low:label=0": 11,
+        "gray:label=0": 19
+      },
+      "n_items": 30,
+      "n_errors": 0,
+      "policy_decisions": {
+        "n": 0,
+        "by_status": {},
+        "by_policy_applied": {},
+        "by_decision_and_label": {}
+      }
+    },
+    "benign_hard_family=policy_reminder": {
+      "n": 54,
+      "positives": 0,
+      "negatives": 54,
+      "confusion": {
+        "tp": 0,
+        "fp": 30,
+        "fn": 0,
+        "tn": 24
+      },
+      "precision": {
+        "value": 0.0,
+        "numerator": 0,
+        "denominator": 30,
+        "ci95": [
+          0.0,
+          0.11351339317396876
+        ],
+        "ci_method": "wilson"
+      },
+      "recall": {
+        "value": null,
+        "numerator": 0,
+        "denominator": 0,
+        "ci95": null,
+        "ci_method": "wilson"
+      },
+      "fpr": {
+        "value": 0.5555555555555556,
+        "numerator": 30,
+        "denominator": 54,
+        "ci95": [
+          0.42375646526775257,
+          0.6799753582777035
+        ],
+        "ci_method": "wilson"
+      },
+      "evidence": {
+        "fpr": "INSUFFICIENT_EVIDENCE"
+      },
+      "stage1_zones": {
+        "low:label=0": 8,
+        "gray:label=0": 35,
+        "high:label=0": 11
+      },
+      "n_items": 54,
+      "n_errors": 0,
+      "policy_decisions": {
+        "n": 0,
+        "by_status": {},
+        "by_policy_applied": {},
+        "by_decision_and_label": {}
+      }
+    },
+    "lang=en": {
+      "n": 5593,
+      "positives": 4455,
+      "negatives": 1138,
+      "confusion": {
+        "tp": 4169,
+        "fp": 103,
+        "fn": 286,
+        "tn": 1035
+      },
+      "precision": {
+        "value": 0.9758895131086143,
+        "numerator": 4169,
+        "denominator": 4272,
+        "ci95": [
+          0.9708444333728705,
+          0.9800795050281175
+        ],
+        "ci_method": "wilson"
+      },
+      "recall": {
+        "value": 0.9358024691358025,
+        "numerator": 4169,
+        "denominator": 4455,
+        "ci95": [
+          0.928222921808568,
+          0.9426310961826889
+        ],
+        "ci_method": "wilson"
+      },
+      "fpr": {
+        "value": 0.09050966608084358,
+        "numerator": 103,
+        "denominator": 1138,
+        "ci95": [
+          0.07518890449401947,
+          0.10858569678681035
+        ],
+        "ci_method": "wilson"
+      },
+      "evidence": {
+        "recall": "OK"
+      },
+      "stage1_zones": {
+        "low:label=0": 893,
+        "low:label=1": 137,
+        "gray:label=0": 221,
+        "gray:label=1": 408,
+        "high:label=0": 24,
+        "high:label=1": 3910
+      },
+      "n_items": 5593,
+      "n_errors": 0,
+      "policy_decisions": {
+        "n": 0,
+        "by_status": {},
+        "by_policy_applied": {},
+        "by_decision_and_label": {}
+      }
+    },
+    "lang=non_en": {
+      "n": 683,
+      "positives": 682,
+      "negatives": 1,
+      "confusion": {
+        "tp": 120,
+        "fp": 0,
+        "fn": 562,
+        "tn": 1
+      },
+      "precision": {
+        "value": 1.0,
+        "numerator": 120,
+        "denominator": 120,
+        "ci95": [
+          0.9689808335812966,
+          1.0
+        ],
+        "ci_method": "wilson"
+      },
+      "recall": {
+        "value": 0.17595307917888564,
+        "numerator": 120,
+        "denominator": 682,
+        "ci95": [
+          0.14921260045838677,
+          0.2063235889693857
+        ],
+        "ci_method": "wilson"
+      },
+      "fpr": {
+        "value": 0.0,
+        "numerator": 0,
+        "denominator": 1,
+        "ci95": [
+          0.0,
+          0.7934506856227626
+        ],
+        "ci_method": "wilson"
+      },
+      "evidence": {
+        "recall": "OK"
+      },
+      "stage1_zones": {
+        "low:label=0": 1,
+        "low:label=1": 468,
+        "gray:label=1": 144,
+        "high:label=1": 70
+      },
+      "n_items": 683,
+      "n_errors": 0,
+      "policy_decisions": {
+        "n": 0,
+        "by_status": {},
+        "by_policy_applied": {},
+        "by_decision_and_label": {}
+      }
+    },
+    "source=benign_hard": {
+      "n": 276,
+      "positives": 0,
+      "negatives": 276,
+      "confusion": {
+        "tp": 0,
+        "fp": 78,
+        "fn": 0,
+        "tn": 198
+      },
+      "precision": {
+        "value": 0.0,
+        "numerator": 0,
+        "denominator": 78,
+        "ci95": [
+          0.0,
+          0.04693780971219429
+        ],
+        "ci_method": "wilson"
+      },
+      "recall": {
+        "value": null,
+        "numerator": 0,
+        "denominator": 0,
+        "ci95": null,
+        "ci_method": "wilson"
+      },
+      "fpr": {
+        "value": 0.2826086956521739,
+        "numerator": 78,
+        "denominator": 276,
+        "ci95": [
+          0.23275363959999526,
+          0.33843212927891514
+        ],
+        "ci_method": "wilson"
+      },
+      "evidence": {},
+      "stage1_zones": {
+        "low:label=0": 104,
+        "gray:label=0": 154,
+        "high:label=0": 18
+      },
+      "n_items": 276,
+      "n_errors": 0,
+      "policy_decisions": {
+        "n": 0,
+        "by_status": {},
+        "by_policy_applied": {},
+        "by_decision_and_label": {}
+      }
+    },
+    "source=gandalf": {
+      "n": 996,
+      "positives": 996,
+      "negatives": 0,
+      "confusion": {
+        "tp": 911,
+        "fp": 0,
+        "fn": 85,
+        "tn": 0
+      },
+      "precision": {
+        "value": 1.0,
+        "numerator": 911,
+        "denominator": 911,
+        "ci95": [
+          0.9958009567847461,
+          1.0
+        ],
+        "ci_method": "wilson"
+      },
+      "recall": {
+        "value": 0.9146586345381527,
+        "numerator": 911,
+        "denominator": 996,
+        "ci95": [
+          0.8956745969119084,
+          0.9304563788672529
+        ],
+        "ci_method": "wilson"
+      },
+      "fpr": {
+        "value": null,
+        "numerator": 0,
+        "denominator": 0,
+        "ci95": null,
+        "ci_method": "wilson"
+      },
+      "evidence": {
+        "recall": "OK"
+      },
+      "stage1_zones": {
+        "low:label=1": 33,
+        "gray:label=1": 167,
+        "high:label=1": 796
+      },
+      "n_items": 996,
+      "n_errors": 0,
+      "policy_decisions": {
+        "n": 0,
+        "by_status": {},
+        "by_policy_applied": {},
+        "by_decision_and_label": {}
+      }
+    },
+    "source=spml": {
+      "n": 4053,
+      "positives": 3190,
+      "negatives": 863,
+      "confusion": {
+        "tp": 3164,
+        "fp": 25,
+        "fn": 26,
+        "tn": 838
+      },
+      "precision": {
+        "value": 0.9921605518971465,
+        "numerator": 3164,
+        "denominator": 3189,
+        "ci95": [
+          0.9884525313065851,
+          0.9946842891352978
+        ],
+        "ci_method": "wilson"
+      },
+      "recall": {
+        "value": 0.9918495297805643,
+        "numerator": 3164,
+        "denominator": 3190,
+        "ci95": [
+          0.9880841146224154,
+          0.9944317805650328
+        ],
+        "ci_method": "wilson"
+      },
+      "fpr": {
+        "value": 0.028968713789107765,
+        "numerator": 25,
+        "denominator": 863,
+        "ci95": [
+          0.019697643859350918,
+          0.04241458932103187
+        ],
+        "ci_method": "wilson"
+      },
+      "evidence": {
+        "recall": "OK"
+      },
+      "stage1_zones": {
+        "low:label=0": 790,
+        "low:label=1": 9,
+        "gray:label=0": 67,
+        "gray:label=1": 86,
+        "high:label=0": 6,
+        "high:label=1": 3095
+      },
+      "n_items": 4053,
+      "n_errors": 0,
+      "policy_decisions": {
+        "n": 0,
+        "by_status": {},
+        "by_policy_applied": {},
+        "by_decision_and_label": {}
+      }
+    },
+    "source=yanis": {
+      "n": 951,
+      "positives": 951,
+      "negatives": 0,
+      "confusion": {
+        "tp": 214,
+        "fp": 0,
+        "fn": 737,
+        "tn": 0
+      },
+      "precision": {
+        "value": 1.0,
+        "numerator": 214,
+        "denominator": 214,
+        "ci95": [
+          0.9823658047394183,
+          1.0
+        ],
+        "ci_method": "wilson"
+      },
+      "recall": {
+        "value": 0.22502628811777076,
+        "numerator": 214,
+        "denominator": 951,
+        "ci95": [
+          0.1996218562091595,
+          0.25264323432644936
+        ],
+        "ci_method": "wilson"
+      },
+      "fpr": {
+        "value": null,
+        "numerator": 0,
+        "denominator": 0,
+        "ci95": null,
+        "ci_method": "wilson"
+      },
+      "evidence": {
+        "recall": "OK"
+      },
+      "stage1_zones": {
+        "low:label=1": 563,
+        "gray:label=1": 299,
+        "high:label=1": 89
+      },
+      "n_items": 951,
+      "n_errors": 0,
+      "policy_decisions": {
+        "n": 0,
+        "by_status": {},
+        "by_policy_applied": {},
+        "by_decision_and_label": {}
+      }
+    },
+    "stage2_overlap=none_known": {
+      "n": 5004,
+      "positives": 4141,
+      "negatives": 863,
+      "confusion": {
+        "tp": 3378,
+        "fp": 25,
+        "fn": 763,
+        "tn": 838
+      },
+      "precision": {
+        "value": 0.9926535409932412,
+        "numerator": 3378,
+        "denominator": 3403,
+        "ci95": [
+          0.9891771846593824,
+          0.9950188927127264
+        ],
+        "ci_method": "wilson"
+      },
+      "recall": {
+        "value": 0.8157449891330596,
+        "numerator": 3378,
+        "denominator": 4141,
+        "ci95": [
+          0.8036460382418786,
+          0.8272586721023449
+        ],
+        "ci_method": "wilson"
+      },
+      "fpr": {
+        "value": 0.028968713789107765,
+        "numerator": 25,
+        "denominator": 863,
+        "ci95": [
+          0.019697643859350918,
+          0.04241458932103187
+        ],
+        "ci_method": "wilson"
+      },
+      "evidence": {
+        "recall": "OK"
+      },
+      "stage1_zones": {
+        "low:label=0": 790,
+        "low:label=1": 572,
+        "gray:label=0": 67,
+        "gray:label=1": 385,
+        "high:label=0": 6,
+        "high:label=1": 3184
+      },
+      "n_items": 5004,
+      "n_errors": 0,
+      "policy_decisions": {
+        "n": 0,
+        "by_status": {},
+        "by_policy_applied": {},
+        "by_decision_and_label": {}
+      }
+    },
+    "stage2_overlap=none_synthetic": {
+      "n": 276,
+      "positives": 0,
+      "negatives": 276,
+      "confusion": {
+        "tp": 0,
+        "fp": 78,
+        "fn": 0,
+        "tn": 198
+      },
+      "precision": {
+        "value": 0.0,
+        "numerator": 0,
+        "denominator": 78,
+        "ci95": [
+          0.0,
+          0.04693780971219429
+        ],
+        "ci_method": "wilson"
+      },
+      "recall": {
+        "value": null,
+        "numerator": 0,
+        "denominator": 0,
+        "ci95": null,
+        "ci_method": "wilson"
+      },
+      "fpr": {
+        "value": 0.2826086956521739,
+        "numerator": 78,
+        "denominator": 276,
+        "ci95": [
+          0.23275363959999526,
+          0.33843212927891514
+        ],
+        "ci_method": "wilson"
+      },
+      "evidence": {},
+      "stage1_zones": {
+        "low:label=0": 104,
+        "gray:label=0": 154,
+        "high:label=0": 18
+      },
+      "n_items": 276,
+      "n_errors": 0,
+      "policy_decisions": {
+        "n": 0,
+        "by_status": {},
+        "by_policy_applied": {},
+        "by_decision_and_label": {}
+      }
+    },
+    "stage2_overlap=suspected": {
+      "n": 996,
+      "positives": 996,
+      "negatives": 0,
+      "confusion": {
+        "tp": 911,
+        "fp": 0,
+        "fn": 85,
+        "tn": 0
+      },
+      "precision": {
+        "value": 1.0,
+        "numerator": 911,
+        "denominator": 911,
+        "ci95": [
+          0.9958009567847461,
+          1.0
+        ],
+        "ci_method": "wilson"
+      },
+      "recall": {
+        "value": 0.9146586345381527,
+        "numerator": 911,
+        "denominator": 996,
+        "ci95": [
+          0.8956745969119084,
+          0.9304563788672529
+        ],
+        "ci_method": "wilson"
+      },
+      "fpr": {
+        "value": null,
+        "numerator": 0,
+        "denominator": 0,
+        "ci95": null,
+        "ci_method": "wilson"
+      },
+      "evidence": {
+        "recall": "OK"
+      },
+      "stage1_zones": {
+        "low:label=1": 33,
+        "gray:label=1": 167,
+        "high:label=1": 796
+      },
+      "n_items": 996,
+      "n_errors": 0,
+      "policy_decisions": {
+        "n": 0,
+        "by_status": {},
+        "by_policy_applied": {},
+        "by_decision_and_label": {}
+      }
+    }
+  },
+  "client_latency_ms": {
+    "n": 6276,
+    "p50": 0.22541049975188798,
+    "p95": 0.4118822498639929,
+    "p99": 0.6568472501840006
+  }
+}

@@ -1,0 +1,107 @@
+{
+  "env": {
+    "cpu": "Intel(R) Xeon(R) Processor @ 2.10GHz",
+    "logical_cores": 2,
+    "python": "3.13.18",
+    "onnxruntime": "1.29.0",
+    "tokenizers": "0.23.3",
+    "intra_op_threads": "default",
+    "model_sha256": "f0ea7f239f765aedbde7c9e163a7cb38a79c5b8853d3f76db5152172047b228c",
+    "id2label": {
+      "0": "SAFE",
+      "1": "INJECTION"
+    },
+    "max_len": 512,
+    "stride": 384,
+    "timing_includes_tokenization": true
+  },
+  "sanity": {
+    "benign": 0.0,
+    "benign-instruction-like": 0.0005,
+    "injection": 1.0
+  },
+  "truncation_test": {
+    "email_content_tokens": 705,
+    "benign_email_truncated": 0.0185,
+    "injection_at_end_content_tokens": 724,
+    "injection_at_end_truncated": 0.0185,
+    "injection_at_end_chunked": 0.9966,
+    "injection_at_end_n_chunks": 2,
+    "injection_at_start_truncated": 0.999,
+    "benign_email_chunked": 0.3718
+  },
+  "repeated_sentence_length_sweep": {
+    "120": 0.0096,
+    "256": 0.0467,
+    "400": 0.1117,
+    "510": 0.3163
+  },
+  "latency": [
+    {
+      "batch": 1,
+      "content_tokens": 64,
+      "iters": 100,
+      "p50_ms": 80.1,
+      "p95_ms": 118.1,
+      "p99_ms": 192.9,
+      "max_ms": 196.0,
+      "per_item_p50_ms": 80.1,
+      "p99_is_max": false
+    },
+    {
+      "batch": 1,
+      "content_tokens": 128,
+      "iters": 100,
+      "p50_ms": 137.6,
+      "p95_ms": 161.8,
+      "p99_ms": 177.4,
+      "max_ms": 184.1,
+      "per_item_p50_ms": 137.6,
+      "p99_is_max": false
+    },
+    {
+      "batch": 1,
+      "content_tokens": 256,
+      "iters": 100,
+      "p50_ms": 285.8,
+      "p95_ms": 334.5,
+      "p99_ms": 349.5,
+      "max_ms": 379.3,
+      "per_item_p50_ms": 285.8,
+      "p99_is_max": false
+    },
+    {
+      "batch": 1,
+      "content_tokens": 510,
+      "iters": 50,
+      "p50_ms": 714.9,
+      "p95_ms": 773.6,
+      "p99_ms": 801.6,
+      "max_ms": 801.6,
+      "per_item_p50_ms": 714.9,
+      "p99_is_max": true
+    },
+    {
+      "batch": 8,
+      "content_tokens": 256,
+      "iters": 30,
+      "p50_ms": 2485.3,
+      "p95_ms": 2623.5,
+      "p99_ms": 2650.2,
+      "max_ms": 2650.2,
+      "per_item_p50_ms": 310.7,
+      "p99_is_max": true
+    },
+    {
+      "batch": 32,
+      "content_tokens": 128,
+      "iters": 20,
+      "p50_ms": 4588.0,
+      "p95_ms": 4768.1,
+      "p99_ms": 4770.1,
+      "max_ms": 4770.1,
+      "per_item_p50_ms": 143.4,
+      "p99_is_max": true
+    }
+  ]
+}

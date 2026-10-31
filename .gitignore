@@ -3,7 +3,7 @@ __pycache__/
 .pytest_cache/
 .venv/
 .env
-models
+/models
 data/raw/
 *.onnx
 !artifacts/candidates/**/*.onnx

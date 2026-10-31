@@ -1,7 +1,9 @@
 """Trace event v1.1 — every observable step of a sandbox run. proposed / blocked / executed are never conflated."""
 from typing import Any, Literal
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict, field_validator, model_validator
+
+from ._validators import utc_timestamp
 
 EventType = Literal[
     "tool_proposed",
@@ -15,9 +17,12 @@ EventType = Literal[
     "content_quarantined",
     "attempt_completed",
 ]
+TOOL_EVENTS = {"tool_proposed", "tool_blocked", "tool_executed", "tool_failed"}
 
 
 class TraceEvent(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
     schema_version: Literal["1.1"] = "1.1"
     event_id: str
     run_id: str
@@ -31,3 +36,18 @@ class TraceEvent(BaseModel):
     policy_reason: str | None = None
     detector_version: str | None = None
     detail: dict[str, Any] | None = None
+
+    @field_validator("timestamp")
+    @classmethod
+    def _timestamp(cls, v: str) -> str:
+        return utc_timestamp(v)
+
+    @model_validator(mode="after")
+    def _required_by_type(self) -> "TraceEvent":
+        if self.event_type in TOOL_EVENTS and not self.tool_name:
+            raise ValueError(f"{self.event_type} requires tool_name")
+        if self.event_type in ("tool_blocked", "content_quarantined") and not self.policy_reason:
+            raise ValueError(f"{self.event_type} requires policy_reason")
+        if self.event_type in ("detector_prediction", "detector_timeout") and not self.detector_version:
+            raise ValueError(f"{self.event_type} requires detector_version")
+        return self

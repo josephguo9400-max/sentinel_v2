@@ -1,0 +1,529 @@
+{
+  "generated_by": "python -m training.language_mix",
+  "langdetect": "1.0.9, DetectorFactory.seed=0",
+  "min_share_for_own_column": 0.01,
+  "splits": {
+    "what": "lang field of every committed split record (post-dedup)",
+    "split_sha256": {
+      "train": "1454319588ca1f9494085b76cfec1f648cdbe9681babd88d2de4c2fd67e7a686",
+      "val": "d84853ecc84cc87e50ef28ffa88a72ae7a7959049d9aec8f3a4ea01388ed7f05",
+      "frozen_test": "2a4e011f13250ca65d335bb12939a63f682254a2c6d1566ee78fc7686bb845ba"
+    },
+    "by_source": {
+      "benign_hard": {
+        "n": 368,
+        "en": 368,
+        "non_en": 0,
+        "pct_en": 100.0,
+        "pct": {
+          "en": 100.0
+        },
+        "counts": {
+          "en": 368
+        }
+      },
+      "deepset": {
+        "n": 639,
+        "en": 343,
+        "non_en": 296,
+        "pct_en": 53.7,
+        "pct": {
+          "en": 53.7,
+          "de": 39.7,
+          "es": 1.1,
+          "other": 5.5
+        },
+        "counts": {
+          "en": 343,
+          "de": 254,
+          "es": 7,
+          "af": 6,
+          "nl": 5,
+          "id": 4,
+          "da": 3,
+          "ro": 3,
+          "sv": 3,
+          "fr": 2,
+          "hr": 2,
+          "cy": 1,
+          "it": 1,
+          "lt": 1,
+          "ru": 1,
+          "sl": 1,
+          "tl": 1,
+          "unknown": 1
+        }
+      },
+      "gandalf": {
+        "n": 996,
+        "en": 947,
+        "non_en": 49,
+        "pct_en": 95.1,
+        "pct": {
+          "en": 95.1,
+          "fr": 2.9,
+          "other": 2.0
+        },
+        "counts": {
+          "en": 947,
+          "fr": 29,
+          "it": 6,
+          "de": 4,
+          "da": 3,
+          "es": 2,
+          "id": 1,
+          "nl": 1,
+          "no": 1,
+          "ru": 1,
+          "tl": 1
+        }
+      },
+      "jackhhao": {
+        "n": 1843,
+        "en": 1811,
+        "non_en": 32,
+        "pct_en": 98.3,
+        "pct": {
+          "en": 98.3,
+          "other": 1.7
+        },
+        "counts": {
+          "en": 1811,
+          "fr": 4,
+          "ro": 4,
+          "tr": 4,
+          "de": 3,
+          "fi": 2,
+          "pt": 2,
+          "ru": 2,
+          "af": 1,
+          "cs": 1,
+          "es": 1,
+          "hr": 1,
+          "it": 1,
+          "nl": 1,
+          "no": 1,
+          "pa": 1,
+          "sl": 1,
+          "sq": 1,
+          "unknown": 1
+        }
+      },
+      "spml": {
+        "n": 15842,
+        "en": 15823,
+        "non_en": 19,
+        "pct_en": 99.9,
+        "pct": {
+          "en": 99.9,
+          "other": 0.1
+        },
+        "counts": {
+          "en": 15823,
+          "es": 5,
+          "fr": 5,
+          "ca": 3,
+          "da": 2,
+          "it": 1,
+          "no": 1,
+          "so": 1,
+          "tl": 1
+        }
+      },
+      "yanis": {
+        "n": 951,
+        "en": 319,
+        "non_en": 632,
+        "pct_en": 33.5,
+        "pct": {
+          "en": 33.5,
+          "fr": 14.5,
+          "es": 13.8,
+          "it": 12.9,
+          "pt": 12.2,
+          "de": 11.9,
+          "other": 1.2
+        },
+        "counts": {
+          "en": 319,
+          "fr": 138,
+          "es": 131,
+          "it": 123,
+          "pt": 116,
+          "de": 113,
+          "ro": 7,
+          "ca": 4
+        }
+      }
+    },
+    "by_split_and_source": {
+      "train": {
+        "deepset": {
+          "n": 527,
+          "en": 281,
+          "non_en": 246,
+          "pct_en": 53.3,
+          "pct": {
+            "en": 53.3,
+            "de": 39.7,
+            "other": 7.0
+          },
+          "counts": {
+            "en": 281,
+            "de": 209,
+            "af": 5,
+            "es": 5,
+            "id": 4,
+            "nl": 4,
+            "da": 3,
+            "ro": 3,
+            "sv": 3,
+            "fr": 2,
+            "hr": 2,
+            "cy": 1,
+            "lt": 1,
+            "ru": 1,
+            "sl": 1,
+            "tl": 1,
+            "unknown": 1
+          }
+        },
+        "jackhhao": {
+          "n": 1465,
+          "en": 1443,
+          "non_en": 22,
+          "pct_en": 98.5,
+          "pct": {
+            "en": 98.5,
+            "other": 1.5
+          },
+          "counts": {
+            "en": 1443,
+            "ro": 4,
+            "tr": 3,
+            "de": 2,
+            "fr": 2,
+            "pt": 2,
+            "af": 1,
+            "es": 1,
+            "fi": 1,
+            "it": 1,
+            "nl": 1,
+            "pa": 1,
+            "ru": 1,
+            "sq": 1,
+            "unknown": 1
+          }
+        },
+        "spml": {
+          "n": 9157,
+          "en": 9144,
+          "non_en": 13,
+          "pct_en": 99.9,
+          "pct": {
+            "en": 99.9,
+            "other": 0.1
+          },
+          "counts": {
+            "en": 9144,
+            "es": 5,
+            "da": 2,
+            "fr": 2,
+            "ca": 1,
+            "no": 1,
+            "so": 1,
+            "tl": 1
+          }
+        }
+      },
+      "val": {
+        "benign_hard": {
+          "n": 92,
+          "en": 92,
+          "non_en": 0,
+          "pct_en": 100.0,
+          "pct": {
+            "en": 100.0
+          },
+          "counts": {
+            "en": 92
+          }
+        },
+        "deepset": {
+          "n": 112,
+          "en": 62,
+          "non_en": 50,
+          "pct_en": 55.4,
+          "pct": {
+            "en": 55.4,
+            "de": 40.2,
+            "es": 1.8,
+            "other": 2.7
+          },
+          "counts": {
+            "en": 62,
+            "de": 45,
+            "es": 2,
+            "af": 1,
+            "it": 1,
+            "nl": 1
+          }
+        },
+        "jackhhao": {
+          "n": 378,
+          "en": 368,
+          "non_en": 10,
+          "pct_en": 97.4,
+          "pct": {
+            "en": 97.4,
+            "other": 2.6
+          },
+          "counts": {
+            "en": 368,
+            "fr": 2,
+            "cs": 1,
+            "de": 1,
+            "fi": 1,
+            "hr": 1,
+            "no": 1,
+            "ru": 1,
+            "sl": 1,
+            "tr": 1
+          }
+        },
+        "spml": {
+          "n": 2632,
+          "en": 2628,
+          "non_en": 4,
+          "pct_en": 99.8,
+          "pct": {
+            "en": 99.8,
+            "other": 0.2
+          },
+          "counts": {
+            "en": 2628,
+            "ca": 2,
+            "fr": 1,
+            "it": 1
+          }
+        }
+      },
+      "frozen_test": {
+        "benign_hard": {
+          "n": 276,
+          "en": 276,
+          "non_en": 0,
+          "pct_en": 100.0,
+          "pct": {
+            "en": 100.0
+          },
+          "counts": {
+            "en": 276
+          }
+        },
+        "gandalf": {
+          "n": 996,
+          "en": 947,
+          "non_en": 49,
+          "pct_en": 95.1,
+          "pct": {
+            "en": 95.1,
+            "fr": 2.9,
+            "other": 2.0
+          },
+          "counts": {
+            "en": 947,
+            "fr": 29,
+            "it": 6,
+            "de": 4,
+            "da": 3,
+            "es": 2,
+            "id": 1,
+            "nl": 1,
+            "no": 1,
+            "ru": 1,
+            "tl": 1
+          }
+        },
+        "spml": {
+          "n": 4053,
+          "en": 4051,
+          "non_en": 2,
+          "pct_en": 100.0,
+          "pct": {
+            "en": 100.0,
+            "other": 0.0
+          },
+          "counts": {
+            "en": 4051,
+            "fr": 2
+          }
+        },
+        "yanis": {
+          "n": 951,
+          "en": 319,
+          "non_en": 632,
+          "pct_en": 33.5,
+          "pct": {
+            "en": 33.5,
+            "fr": 14.5,
+            "es": 13.8,
+            "it": 12.9,
+            "pt": 12.2,
+            "de": 11.9,
+            "other": 1.2
+          },
+          "counts": {
+            "en": 319,
+            "fr": 138,
+            "es": 131,
+            "it": 123,
+            "pt": 116,
+            "de": 113,
+            "ro": 7,
+            "ca": 4
+          }
+        }
+      }
+    }
+  },
+  "raw": {
+    "available": true,
+    "what": "every raw record per source as loaded by training.sources (sha256-verified), before dedup; langdetect 1.0.9, seed 0, first 2,000 characters",
+    "by_source": {
+      "deepset": {
+        "n": 662,
+        "en": 355,
+        "non_en": 307,
+        "pct_en": 53.6,
+        "pct": {
+          "en": 53.6,
+          "de": 40.0,
+          "es": 1.1,
+          "other": 5.3
+        },
+        "counts": {
+          "en": 355,
+          "de": 265,
+          "es": 7,
+          "af": 6,
+          "nl": 5,
+          "id": 4,
+          "da": 3,
+          "ro": 3,
+          "sv": 3,
+          "fr": 2,
+          "hr": 2,
+          "cy": 1,
+          "it": 1,
+          "lt": 1,
+          "ru": 1,
+          "sl": 1,
+          "tl": 1,
+          "unknown": 1
+        }
+      },
+      "spml": {
+        "n": 16011,
+        "en": 15992,
+        "non_en": 19,
+        "pct_en": 99.9,
+        "pct": {
+          "en": 99.9,
+          "other": 0.1
+        },
+        "counts": {
+          "en": 15992,
+          "es": 5,
+          "fr": 5,
+          "ca": 3,
+          "da": 2,
+          "it": 1,
+          "no": 1,
+          "so": 1,
+          "tl": 1
+        }
+      },
+      "yanis": {
+        "n": 1034,
+        "en": 322,
+        "non_en": 712,
+        "pct_en": 31.1,
+        "pct": {
+          "en": 31.1,
+          "fr": 14.3,
+          "es": 13.9,
+          "it": 13.9,
+          "pt": 13.4,
+          "de": 12.2,
+          "other": 1.1
+        },
+        "counts": {
+          "en": 322,
+          "fr": 148,
+          "es": 144,
+          "it": 144,
+          "pt": 139,
+          "de": 126,
+          "ro": 7,
+          "ca": 4
+        }
+      },
+      "gandalf": {
+        "n": 1000,
+        "en": 951,
+        "non_en": 49,
+        "pct_en": 95.1,
+        "pct": {
+          "en": 95.1,
+          "fr": 2.9,
+          "other": 2.0
+        },
+        "counts": {
+          "en": 951,
+          "fr": 29,
+          "it": 6,
+          "de": 4,
+          "da": 3,
+          "es": 2,
+          "id": 1,
+          "nl": 1,
+          "no": 1,
+          "ru": 1,
+          "tl": 1
+        }
+      },
+      "jackhhao": {
+        "n": 1998,
+        "en": 1966,
+        "non_en": 32,
+        "pct_en": 98.4,
+        "pct": {
+          "en": 98.4,
+          "other": 1.6
+        },
+        "counts": {
+          "en": 1966,
+          "fr": 4,
+          "ro": 4,
+          "tr": 4,
+          "de": 3,
+          "fi": 2,
+          "pt": 2,
+          "ru": 2,
+          "af": 1,
+          "cs": 1,
+          "es": 1,
+          "hr": 1,
+          "it": 1,
+          "nl": 1,
+          "no": 1,
+          "pa": 1,
+          "sl": 1,
+          "sq": 1,
+          "unknown": 1
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,420 @@
+{
+  "detector_version": "stage1-tfidf-v2",
+  "data": {
+    "train": {
+      "n": 11149,
+      "sha256": "1454319588ca1f9494085b76cfec1f648cdbe9681babd88d2de4c2fd67e7a686"
+    },
+    "val": {
+      "n": 3214,
+      "sha256": "d84853ecc84cc87e50ef28ffa88a72ae7a7959049d9aec8f3a4ea01388ed7f05"
+    },
+    "frozen_test": "not read by training"
+  },
+  "preprocessing": {
+    "version": "tfidf-v1",
+    "lowercase": "ASCII A-Z only",
+    "token_pattern_python": "[^\\W]{2,}",
+    "token_pattern_re2": "[\\p{L}\\p{N}_]{2,}",
+    "onnx_locale": "C",
+    "chunking": {
+      "max_tokens": 512,
+      "stride": 384,
+      "aggregation": "max"
+    }
+  },
+  "model": {
+    "vectorizer": {
+      "min_df": 2,
+      "max_features": 50000,
+      "sublinear_tf": false,
+      "ngram_range": [
+        1,
+        2
+      ],
+      "analyzer": "word",
+      "vocabulary_rule": "min_df/max_features, then drop n-grams with out-of-vocabulary words (ONNX parity)",
+      "vocabulary_size": 49976
+    },
+    "classifier": {
+      "type": "LogisticRegression",
+      "C": 10.0,
+      "class_weight": null
+    }
+  },
+  "selection": {
+    "criterion": "max mean per-source ROC-AUC on val (sources with both classes); pooled AUC tiebreak",
+    "trials": [
+      {
+        "ngram_range": [
+          1,
+          1
+        ],
+        "C": 0.3,
+        "class_weight": null,
+        "val_mean_source_auc": 0.937288066114944,
+        "val_pooled_auc": 0.9850836022293928,
+        "val_auc_by_source": {
+          "deepset": 0.85727969348659,
+          "jackhhao": 0.9575518613242399,
+          "spml": 0.9970326435340022
+        },
+        "fit_s": 3.3
+      },
+      {
+        "ngram_range": [
+          1,
+          1
+        ],
+        "C": 0.3,
+        "class_weight": "balanced",
+        "val_mean_source_auc": 0.9346065707954846,
+        "val_pooled_auc": 0.9844937114989734,
+        "val_auc_by_source": {
+          "deepset": 0.8496168582375478,
+          "jackhhao": 0.9570900824097756,
+          "spml": 0.9971127717391304
+        },
+        "fit_s": 3.1
+      },
+      {
+        "ngram_range": [
+          1,
+          1
+        ],
+        "C": 1.0,
+        "class_weight": null,
+        "val_mean_source_auc": 0.9499545769263852,
+        "val_pooled_auc": 0.9907056688178352,
+        "val_auc_by_source": {
+          "deepset": 0.8770753512132822,
+          "jackhhao": 0.974850809889173,
+          "spml": 0.9979375696767002
+        },
+        "fit_s": 3.3
+      },
+      {
+        "ngram_range": [
+          1,
+          1
+        ],
+        "C": 1.0,
+        "class_weight": "balanced",
+        "val_mean_source_auc": 0.9476168557197436,
+        "val_pooled_auc": 0.9905296641243767,
+        "val_auc_by_source": {
+          "deepset": 0.8703703703703705,
+          "jackhhao": 0.9744955953395851,
+          "spml": 0.9979846014492753
+        },
+        "fit_s": 3.9
+      },
+      {
+        "ngram_range": [
+          1,
+          1
+        ],
+        "C": 3.0,
+        "class_weight": null,
+        "val_mean_source_auc": 0.9587433490577277,
+        "val_pooled_auc": 0.9930171054561454,
+        "val_auc_by_source": {
+          "deepset": 0.8952745849297573,
+          "jackhhao": 0.9827365728900256,
+          "spml": 0.9982188893534002
+        },
+        "fit_s": 3.2
+      },
+      {
+        "ngram_range": [
+          1,
+          1
+        ],
+        "C": 3.0,
+        "class_weight": "balanced",
+        "val_mean_source_auc": 0.9565108948400988,
+        "val_pooled_auc": 0.9928938105016133,
+        "val_auc_by_source": {
+          "deepset": 0.888888888888889,
+          "jackhhao": 0.9823813583404376,
+          "spml": 0.9982624372909699
+        },
+        "fit_s": 3.4
+      },
+      {
+        "ngram_range": [
+          1,
+          1
+        ],
+        "C": 10.0,
+        "class_weight": null,
+        "val_mean_source_auc": 0.964263883316742,
+        "val_pooled_auc": 0.993947088589029,
+        "val_auc_by_source": {
+          "deepset": 0.9086845466155811,
+          "jackhhao": 0.9859335038363172,
+          "spml": 0.9981735994983277
+        },
+        "fit_s": 3.6
+      },
+      {
+        "ngram_range": [
+          1,
+          1
+        ],
+        "C": 10.0,
+        "class_weight": "balanced",
+        "val_mean_source_auc": 0.9623011210086467,
+        "val_pooled_auc": 0.9935854539454386,
+        "val_auc_by_source": {
+          "deepset": 0.9035759897828862,
+          "jackhhao": 0.9851520318272236,
+          "spml": 0.9981753414158305
+        },
+        "fit_s": 3.2
+      },
+      {
+        "ngram_range": [
+          1,
+          2
+        ],
+        "C": 0.3,
+        "class_weight": null,
+        "val_mean_source_auc": 0.9431593471950132,
+        "val_pooled_auc": 0.98594529187445,
+        "val_auc_by_source": {
+          "deepset": 0.8643039591315453,
+          "jackhhao": 0.9676754759874965,
+          "spml": 0.9974986064659978
+        },
+        "fit_s": 5.5
+      },
+      {
+        "ngram_range": [
+          1,
+          2
+        ],
+        "C": 0.3,
+        "class_weight": "balanced",
+        "val_mean_source_auc": 0.9429657924960136,
+        "val_pooled_auc": 0.9860621699911998,
+        "val_auc_by_source": {
+          "deepset": 0.8627075351213281,
+          "jackhhao": 0.96845694799659,
+          "spml": 0.9977328943701226
+        },
+        "fit_s": 5.7
+      },
+      {
+        "ngram_range": [
+          1,
+          2
+        ],
+        "C": 1.0,
+        "class_weight": null,
+        "val_mean_source_auc": 0.9554663031889034,
+        "val_pooled_auc": 0.9914880646817248,
+        "val_auc_by_source": {
+          "deepset": 0.8860153256704981,
+          "jackhhao": 0.9818485365160556,
+          "spml": 0.9985350473801562
+        },
+        "fit_s": 5.7
+      },
+      {
+        "ngram_range": [
+          1,
+          2
+        ],
+        "C": 1.0,
+        "class_weight": "balanced",
+        "val_mean_source_auc": 0.9542099598793907,
+        "val_pooled_auc": 0.9911278050748019,
+        "val_auc_by_source": {
+          "deepset": 0.8828224776500638,
+          "jackhhao": 0.9812801932367149,
+          "spml": 0.9985272087513934
+        },
+        "fit_s": 5.6
+      },
+      {
+        "ngram_range": [
+          1,
+          2
+        ],
+        "C": 3.0,
+        "class_weight": null,
+        "val_mean_source_auc": 0.961462142820935,
+        "val_pooled_auc": 0.9938008763567028,
+        "val_auc_by_source": {
+          "deepset": 0.896551724137931,
+          "jackhhao": 0.9889173060528559,
+          "spml": 0.9989173982720179
+        },
+        "fit_s": 5.3
+      },
+      {
+        "ngram_range": [
+          1,
+          2
+        ],
+        "C": 3.0,
+        "class_weight": "balanced",
+        "val_mean_source_auc": 0.9619463778276147,
+        "val_pooled_auc": 0.9934873679964799,
+        "val_auc_by_source": {
+          "deepset": 0.8994252873563219,
+          "jackhhao": 0.9874964478545041,
+          "spml": 0.9989173982720179
+        },
+        "fit_s": 6.1
+      },
+      {
+        "ngram_range": [
+          1,
+          2
+        ],
+        "C": 10.0,
+        "class_weight": null,
+        "val_mean_source_auc": 0.9677866197070518,
+        "val_pooled_auc": 0.9946928168084482,
+        "val_auc_by_source": {
+          "deepset": 0.9147509578544061,
+          "jackhhao": 0.9895922136970731,
+          "spml": 0.9990166875696767
+        },
+        "fit_s": 6.0
+      },
+      {
+        "ngram_range": [
+          1,
+          2
+        ],
+        "C": 10.0,
+        "class_weight": "balanced",
+        "val_mean_source_auc": 0.9654368230508928,
+        "val_pooled_auc": 0.9945585215605749,
+        "val_auc_by_source": {
+          "deepset": 0.9070881226053641,
+          "jackhhao": 0.9901960784313726,
+          "spml": 0.9990262681159421
+        },
+        "fit_s": 5.9
+      }
+    ],
+    "best": {
+      "ngram_range": [
+        1,
+        2
+      ],
+      "C": 10.0,
+      "class_weight": null,
+      "val_mean_source_auc": 0.9677866197070518,
+      "val_pooled_auc": 0.9946928168084482,
+      "val_auc_by_source": {
+        "deepset": 0.9147509578544061,
+        "jackhhao": 0.9895922136970731,
+        "spml": 0.9990166875696767
+      },
+      "fit_s": 6.0
+    }
+  },
+  "threshold": {
+    "threshold": 0.505068,
+    "val_f1": 0.9783723522853958,
+    "rule": "maximize F1 on val (pooled)"
+  },
+  "gray_zone": {
+    "gray_zone": [
+      0.282715,
+      0.764614
+    ],
+    "rule": "low = score below which at most 1% of val positives fall; high = score above which at most 1% of val negatives fall; widened to contain the threshold. Provisional: the cascade-and-shadow milestone sweeps it against Stage 2.",
+    "val_escalated": {
+      "numerator": 209,
+      "denominator": 3214
+    },
+    "val_final_benign_positives": {
+      "numerator": 22,
+      "denominator": 2240
+    },
+    "val_final_injection_negatives": {
+      "numerator": 10,
+      "denominator": 974
+    }
+  },
+  "failure_policy_rationale": "fail_open: Stage 1 is a cost filter in front of Stage 2, not the security boundary; provisional, owner may override in the routing config",
+  "timeout_ms_rationale": "p99 single-item latency on val is far below 50 ms on this CPU (see latency)",
+  "onnx_parity_val": {
+    "n": 3214,
+    "max_abs_diff_whole_text": 5.960464477539062e-07,
+    "max_abs_diff_chunked": 7.152557373046875e-07,
+    "mean_abs_diff_chunked": 3.771226176228223e-08,
+    "decision_flips_at_threshold": 0,
+    "flipped_items_abs_distance_to_threshold_sklearn": [],
+    "min_abs_distance_to_threshold_sklearn": 4.213638306049816e-07,
+    "note": "sklearn in float64 on ascii_lower(text) vs onnxruntime float32 graph with StringNormalizer(LOWER, locale=C) + RE2 Tokenizer"
+  },
+  "onnx_parity_ablations": {
+    "n_val": 3214,
+    "vocabulary_before_onnx_safe_filter": 50000,
+    "ngrams_dropped_by_onnx_safe_filter": 24,
+    "variants": {
+      "sublinear_tf=True": {
+        "max_abs_diff_whole_text": 0.030948877334594727,
+        "n_diff_over_1e-4": 1850
+      },
+      "without_onnx_safe_vocabulary": {
+        "max_abs_diff_whole_text": 0.0035370588302612305,
+        "n_diff_over_1e-4": 4
+      }
+    }
+  },
+  "latency": {
+    "n": 3214,
+    "p50_ms": 0.23803399972166517,
+    "p95_ms": 0.4442324498086236,
+    "p99_ms": 0.7388230296965045,
+    "max_ms": 2.7945249994445476,
+    "mean_ms": 0.27872041817331533,
+    "by_length": {
+      "<=64 tokens": {
+        "n": 1954,
+        "p50_ms": 0.21671700005754246,
+        "p95_ms": 0.3106934994320909,
+        "p99_ms": 0.36287676004576497
+      },
+      "65-256 tokens": {
+        "n": 1006,
+        "p50_ms": 0.3160114997626806,
+        "p95_ms": 0.45791325032951136,
+        "p99_ms": 0.5604428501555958
+      },
+      "257-512 tokens": {
+        "n": 229,
+        "p50_ms": 0.4073939999216236,
+        "p95_ms": 0.6266713999139029,
+        "p99_ms": 0.6976578403191525
+      },
+      ">512 tokens (chunked)": {
+        "n": 25,
+        "p50_ms": 0.9506770002190024,
+        "p95_ms": 1.7718829996738343,
+        "p99_ms": 2.561697159508183
+      }
+    },
+    "max_chunks": 5,
+    "conditions": {
+      "what": "Stage1Onnx.score(): chunking at token boundaries + onnxruntime inference + max aggregation, one text per call, sequential, after warmup",
+      "inputs": "every val text, in file order",
+      "warmup_calls": 50,
+      "cpu": "Intel(R) Xeon(R) Processor @ 2.10GHz",
+      "cpu_count": 2,
+      "onnxruntime_threads": "default (CPUExecutionProvider)",
+      "python": "3.13.18",
+      "onnxruntime": "1.29.0",
+      "host_load": "shared host; other CPU-heavy jobs (load tests) may have been running at the same time; not a benchmark"
+    }
+  },
+  "val_metrics_note": "precision/recall/FPR with CIs are produced by training.eval_harness from this artifact"
+}

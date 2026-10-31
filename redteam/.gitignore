@@ -1,0 +1,2 @@
+# Trace output from redteam runs (default --runs-dir is runs/ relative to the working directory).
+runs/

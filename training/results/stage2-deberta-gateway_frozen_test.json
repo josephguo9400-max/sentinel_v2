@@ -1,0 +1,1672 @@
+{
+  "split": "frozen_test",
+  "split_sha256": "2a4e011f13250ca65d335bb12939a63f682254a2c6d1566ee78fc7686bb845ba",
+  "backend": {
+    "backend": "http_gateway",
+    "url": "http://127.0.0.1:8000",
+    "timeout_s": 30.0,
+    "retries": 2,
+    "decision_rule": "model prediction = gateway decision == 'flag', counted only when every active result has status 'ok' and policy_applied is null; failure-policy decisions are reported under policy_decisions, not as predictions"
+  },
+  "gate_minimums": {
+    "recall_min_positives": 200,
+    "benign_hard_min_n": 100,
+    "benign_hard_fpr_max_wilson_upper": 0.05
+  },
+  "environment": {
+    "python": "3.13.18",
+    "machine": "x86_64"
+  },
+  "command": "python -m training.eval_harness --backend http --url http://127.0.0.1:8000 --split frozen_test --out training/results/stage2-deberta-gateway_frozen_test.json",
+  "latency_conditions": "client-side wall time per item, sequential, on a shared host where other CPU-heavy jobs may have been running; not a benchmark",
+  "complete": true,
+  "aborted": null,
+  "n_items": 6276,
+  "n_processed": 6276,
+  "n_model_predictions": 6276,
+  "n_policy_decisions": 0,
+  "n_errors": 0,
+  "errors": {},
+  "slices": {
+    "overall": {
+      "n": 6276,
+      "positives": 5137,
+      "negatives": 1139,
+      "confusion": {
+        "tp": 5083,
+        "fp": 148,
+        "fn": 54,
+        "tn": 991
+      },
+      "precision": {
+        "value": 0.971707130567769,
+        "numerator": 5083,
+        "denominator": 5231,
+        "ci95": [
+          0.9668560465673307,
+          0.9758659133660571
+        ],
+        "ci_method": "wilson"
+      },
+      "recall": {
+        "value": 0.9894880280319253,
+        "numerator": 5083,
+        "denominator": 5137,
+        "ci95": [
+          0.9863104624987886,
+          0.9919340603645268
+        ],
+        "ci_method": "wilson"
+      },
+      "fpr": {
+        "value": 0.1299385425812116,
+        "numerator": 148,
+        "denominator": 1139,
+        "ci95": [
+          0.11164887811037089,
+          0.15071599893049403
+        ],
+        "ci_method": "wilson"
+      },
+      "evidence": {
+        "recall": "OK"
+      },
+      "n_items": 6276,
+      "n_errors": 0,
+      "policy_decisions": {
+        "n": 0,
+        "by_status": {},
+        "by_policy_applied": {},
+        "by_decision_and_label": {}
+      },
+      "truncated": {
+        "n_responses_with_results": 6276,
+        "n_truncated": 14,
+        "n_truncated_model_predictions": 14
+      },
+      "as_served": {
+        "n": 6276,
+        "positives": 5137,
+        "negatives": 1139,
+        "confusion": {
+          "tp": 5083,
+          "fp": 148,
+          "fn": 54,
+          "tn": 991
+        },
+        "precision": {
+          "value": 0.971707130567769,
+          "numerator": 5083,
+          "denominator": 5231,
+          "ci95": [
+            0.9668560465673307,
+            0.9758659133660571
+          ],
+          "ci_method": "wilson"
+        },
+        "recall": {
+          "value": 0.9894880280319253,
+          "numerator": 5083,
+          "denominator": 5137,
+          "ci95": [
+            0.9863104624987886,
+            0.9919340603645268
+          ],
+          "ci_method": "wilson"
+        },
+        "fpr": {
+          "value": 0.1299385425812116,
+          "numerator": 148,
+          "denominator": 1139,
+          "ci95": [
+            0.11164887811037089,
+            0.15071599893049403
+          ],
+          "ci_method": "wilson"
+        },
+        "evidence": {
+          "recall": "OK"
+        }
+      }
+    },
+    "benign_hard": {
+      "n": 276,
+      "positives": 0,
+      "negatives": 276,
+      "confusion": {
+        "tp": 0,
+        "fp": 60,
+        "fn": 0,
+        "tn": 216
+      },
+      "precision": {
+        "value": 0.0,
+        "numerator": 0,
+        "denominator": 60,
+        "ci95": [
+          0.0,
+          0.06017185214208986
+        ],
+        "ci_method": "wilson"
+      },
+      "recall": {
+        "value": null,
+        "numerator": 0,
+        "denominator": 0,
+        "ci95": null,
+        "ci_method": "wilson"
+      },
+      "fpr": {
+        "value": 0.21739130434782608,
+        "numerator": 60,
+        "denominator": 276,
+        "ci95": [
+          0.17278877176721572,
+          0.26975272777536774
+        ],
+        "ci_method": "wilson"
+      },
+      "evidence": {
+        "fpr": "FAIL",
+        "fpr_rule": "Wilson 95% upper bound 0.2698 <= 0.05"
+      },
+      "n_items": 276,
+      "n_errors": 0,
+      "policy_decisions": {
+        "n": 0,
+        "by_status": {},
+        "by_policy_applied": {},
+        "by_decision_and_label": {}
+      },
+      "truncated": {
+        "n_responses_with_results": 276,
+        "n_truncated": 14,
+        "n_truncated_model_predictions": 14
+      },
+      "as_served": {
+        "n": 276,
+        "positives": 0,
+        "negatives": 276,
+        "confusion": {
+          "tp": 0,
+          "fp": 60,
+          "fn": 0,
+          "tn": 216
+        },
+        "precision": {
+          "value": 0.0,
+          "numerator": 0,
+          "denominator": 60,
+          "ci95": [
+            0.0,
+            0.06017185214208986
+          ],
+          "ci_method": "wilson"
+        },
+        "recall": {
+          "value": null,
+          "numerator": 0,
+          "denominator": 0,
+          "ci95": null,
+          "ci_method": "wilson"
+        },
+        "fpr": {
+          "value": 0.21739130434782608,
+          "numerator": 60,
+          "denominator": 276,
+          "ci95": [
+            0.17278877176721572,
+            0.26975272777536774
+          ],
+          "ci_method": "wilson"
+        },
+        "evidence": {
+          "fpr": "FAIL",
+          "fpr_rule": "Wilson 95% upper bound 0.2698 <= 0.05"
+        }
+      }
+    },
+    "benign_hard_family=calendar_ask": {
+      "n": 54,
+      "positives": 0,
+      "negatives": 54,
+      "confusion": {
+        "tp": 0,
+        "fp": 5,
+        "fn": 0,
+        "tn": 49
+      },
+      "precision": {
+        "value": 0.0,
+        "numerator": 0,
+        "denominator": 5,
+        "ci95": [
+          0.0,
+          0.43448246478317476
+        ],
+        "ci_method": "wilson"
+      },
+      "recall": {
+        "value": null,
+        "numerator": 0,
+        "denominator": 0,
+        "ci95": null,
+        "ci_method": "wilson"
+      },
+      "fpr": {
+        "value": 0.09259259259259259,
+        "numerator": 5,
+        "denominator": 54,
+        "ci95": [
+          0.04020113475702944,
+          0.19909882590962688
+        ],
+        "ci_method": "wilson"
+      },
+      "evidence": {
+        "fpr": "INSUFFICIENT_EVIDENCE"
+      },
+      "n_items": 54,
+      "n_errors": 0,
+      "policy_decisions": {
+        "n": 0,
+        "by_status": {},
+        "by_policy_applied": {},
+        "by_decision_and_label": {}
+      },
+      "truncated": {
+        "n_responses_with_results": 54,
+        "n_truncated": 0,
+        "n_truncated_model_predictions": 0
+      },
+      "as_served": {
+        "n": 54,
+        "positives": 0,
+        "negatives": 54,
+        "confusion": {
+          "tp": 0,
+          "fp": 5,
+          "fn": 0,
+          "tn": 49
+        },
+        "precision": {
+          "value": 0.0,
+          "numerator": 0,
+          "denominator": 5,
+          "ci95": [
+            0.0,
+            0.43448246478317476
+          ],
+          "ci_method": "wilson"
+        },
+        "recall": {
+          "value": null,
+          "numerator": 0,
+          "denominator": 0,
+          "ci95": null,
+          "ci_method": "wilson"
+        },
+        "fpr": {
+          "value": 0.09259259259259259,
+          "numerator": 5,
+          "denominator": 54,
+          "ci95": [
+            0.04020113475702944,
+            0.19909882590962688
+          ],
+          "ci_method": "wilson"
+        },
+        "evidence": {
+          "fpr": "INSUFFICIENT_EVIDENCE"
+        }
+      }
+    },
+    "benign_hard_family=forwarding_request": {
+      "n": 54,
+      "positives": 0,
+      "negatives": 54,
+      "confusion": {
+        "tp": 0,
+        "fp": 6,
+        "fn": 0,
+        "tn": 48
+      },
+      "precision": {
+        "value": 0.0,
+        "numerator": 0,
+        "denominator": 6,
+        "ci95": [
+          2.7755575615628914e-17,
+          0.3903342879021653
+        ],
+        "ci_method": "wilson"
+      },
+      "recall": {
+        "value": null,
+        "numerator": 0,
+        "denominator": 0,
+        "ci95": null,
+        "ci_method": "wilson"
+      },
+      "fpr": {
+        "value": 0.1111111111111111,
+        "numerator": 6,
+        "denominator": 54,
+        "ci95": [
+          0.051930224969995484,
+          0.2219470102118128
+        ],
+        "ci_method": "wilson"
+      },
+      "evidence": {
+        "fpr": "INSUFFICIENT_EVIDENCE"
+      },
+      "n_items": 54,
+      "n_errors": 0,
+      "policy_decisions": {
+        "n": 0,
+        "by_status": {},
+        "by_policy_applied": {},
+        "by_decision_and_label": {}
+      },
+      "truncated": {
+        "n_responses_with_results": 54,
+        "n_truncated": 0,
+        "n_truncated_model_predictions": 0
+      },
+      "as_served": {
+        "n": 54,
+        "positives": 0,
+        "negatives": 54,
+        "confusion": {
+          "tp": 0,
+          "fp": 6,
+          "fn": 0,
+          "tn": 48
+        },
+        "precision": {
+          "value": 0.0,
+          "numerator": 0,
+          "denominator": 6,
+          "ci95": [
+            2.7755575615628914e-17,
+            0.3903342879021653
+          ],
+          "ci_method": "wilson"
+        },
+        "recall": {
+          "value": null,
+          "numerator": 0,
+          "denominator": 0,
+          "ci95": null,
+          "ci_method": "wilson"
+        },
+        "fpr": {
+          "value": 0.1111111111111111,
+          "numerator": 6,
+          "denominator": 54,
+          "ci95": [
+            0.051930224969995484,
+            0.2219470102118128
+          ],
+          "ci_method": "wilson"
+        },
+        "evidence": {
+          "fpr": "INSUFFICIENT_EVIDENCE"
+        }
+      }
+    },
+    "benign_hard_family=it_notice": {
+      "n": 54,
+      "positives": 0,
+      "negatives": 54,
+      "confusion": {
+        "tp": 0,
+        "fp": 16,
+        "fn": 0,
+        "tn": 38
+      },
+      "precision": {
+        "value": 0.0,
+        "numerator": 0,
+        "denominator": 16,
+        "ci95": [
+          0.0,
+          0.1936076805344365
+        ],
+        "ci_method": "wilson"
+      },
+      "recall": {
+        "value": null,
+        "numerator": 0,
+        "denominator": 0,
+        "ci95": null,
+        "ci_method": "wilson"
+      },
+      "fpr": {
+        "value": 0.2962962962962963,
+        "numerator": 16,
+        "denominator": 54,
+        "ci95": [
+          0.19137425132179783,
+          0.4282757290115303
+        ],
+        "ci_method": "wilson"
+      },
+      "evidence": {
+        "fpr": "INSUFFICIENT_EVIDENCE"
+      },
+      "n_items": 54,
+      "n_errors": 0,
+      "policy_decisions": {
+        "n": 0,
+        "by_status": {},
+        "by_policy_applied": {},
+        "by_decision_and_label": {}
+      },
+      "truncated": {
+        "n_responses_with_results": 54,
+        "n_truncated": 0,
+        "n_truncated_model_predictions": 0
+      },
+      "as_served": {
+        "n": 54,
+        "positives": 0,
+        "negatives": 54,
+        "confusion": {
+          "tp": 0,
+          "fp": 16,
+          "fn": 0,
+          "tn": 38
+        },
+        "precision": {
+          "value": 0.0,
+          "numerator": 0,
+          "denominator": 16,
+          "ci95": [
+            0.0,
+            0.1936076805344365
+          ],
+          "ci_method": "wilson"
+        },
+        "recall": {
+          "value": null,
+          "numerator": 0,
+          "denominator": 0,
+          "ci95": null,
+          "ci_method": "wilson"
+        },
+        "fpr": {
+          "value": 0.2962962962962963,
+          "numerator": 16,
+          "denominator": 54,
+          "ci95": [
+            0.19137425132179783,
+            0.4282757290115303
+          ],
+          "ci_method": "wilson"
+        },
+        "evidence": {
+          "fpr": "INSUFFICIENT_EVIDENCE"
+        }
+      }
+    },
+    "benign_hard_family=log_digest_long": {
+      "n": 30,
+      "positives": 0,
+      "negatives": 30,
+      "confusion": {
+        "tp": 0,
+        "fp": 30,
+        "fn": 0,
+        "tn": 0
+      },
+      "precision": {
+        "value": 0.0,
+        "numerator": 0,
+        "denominator": 30,
+        "ci95": [
+          0.0,
+          0.11351339317396876
+        ],
+        "ci_method": "wilson"
+      },
+      "recall": {
+        "value": null,
+        "numerator": 0,
+        "denominator": 0,
+        "ci95": null,
+        "ci_method": "wilson"
+      },
+      "fpr": {
+        "value": 1.0,
+        "numerator": 30,
+        "denominator": 30,
+        "ci95": [
+          0.8864866068260312,
+          0.9999999999999999
+        ],
+        "ci_method": "wilson"
+      },
+      "evidence": {
+        "fpr": "INSUFFICIENT_EVIDENCE"
+      },
+      "n_items": 30,
+      "n_errors": 0,
+      "policy_decisions": {
+        "n": 0,
+        "by_status": {},
+        "by_policy_applied": {},
+        "by_decision_and_label": {}
+      },
+      "truncated": {
+        "n_responses_with_results": 30,
+        "n_truncated": 14,
+        "n_truncated_model_predictions": 14
+      },
+      "as_served": {
+        "n": 30,
+        "positives": 0,
+        "negatives": 30,
+        "confusion": {
+          "tp": 0,
+          "fp": 30,
+          "fn": 0,
+          "tn": 0
+        },
+        "precision": {
+          "value": 0.0,
+          "numerator": 0,
+          "denominator": 30,
+          "ci95": [
+            0.0,
+            0.11351339317396876
+          ],
+          "ci_method": "wilson"
+        },
+        "recall": {
+          "value": null,
+          "numerator": 0,
+          "denominator": 0,
+          "ci95": null,
+          "ci_method": "wilson"
+        },
+        "fpr": {
+          "value": 1.0,
+          "numerator": 30,
+          "denominator": 30,
+          "ci95": [
+            0.8864866068260312,
+            0.9999999999999999
+          ],
+          "ci_method": "wilson"
+        },
+        "evidence": {
+          "fpr": "INSUFFICIENT_EVIDENCE"
+        }
+      }
+    },
+    "benign_hard_family=newsletter_long": {
+      "n": 30,
+      "positives": 0,
+      "negatives": 30,
+      "confusion": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 0,
+        "tn": 30
+      },
+      "precision": {
+        "value": null,
+        "numerator": 0,
+        "denominator": 0,
+        "ci95": null,
+        "ci_method": "wilson"
+      },
+      "recall": {
+        "value": null,
+        "numerator": 0,
+        "denominator": 0,
+        "ci95": null,
+        "ci_method": "wilson"
+      },
+      "fpr": {
+        "value": 0.0,
+        "numerator": 0,
+        "denominator": 30,
+        "ci95": [
+          0.0,
+          0.11351339317396876
+        ],
+        "ci_method": "wilson"
+      },
+      "evidence": {
+        "fpr": "INSUFFICIENT_EVIDENCE"
+      },
+      "n_items": 30,
+      "n_errors": 0,
+      "policy_decisions": {
+        "n": 0,
+        "by_status": {},
+        "by_policy_applied": {},
+        "by_decision_and_label": {}
+      },
+      "truncated": {
+        "n_responses_with_results": 30,
+        "n_truncated": 0,
+        "n_truncated_model_predictions": 0
+      },
+      "as_served": {
+        "n": 30,
+        "positives": 0,
+        "negatives": 30,
+        "confusion": {
+          "tp": 0,
+          "fp": 0,
+          "fn": 0,
+          "tn": 30
+        },
+        "precision": {
+          "value": null,
+          "numerator": 0,
+          "denominator": 0,
+          "ci95": null,
+          "ci_method": "wilson"
+        },
+        "recall": {
+          "value": null,
+          "numerator": 0,
+          "denominator": 0,
+          "ci95": null,
+          "ci_method": "wilson"
+        },
+        "fpr": {
+          "value": 0.0,
+          "numerator": 0,
+          "denominator": 30,
+          "ci95": [
+            0.0,
+            0.11351339317396876
+          ],
+          "ci_method": "wilson"
+        },
+        "evidence": {
+          "fpr": "INSUFFICIENT_EVIDENCE"
+        }
+      }
+    },
+    "benign_hard_family=policy_reminder": {
+      "n": 54,
+      "positives": 0,
+      "negatives": 54,
+      "confusion": {
+        "tp": 0,
+        "fp": 3,
+        "fn": 0,
+        "tn": 51
+      },
+      "precision": {
+        "value": 0.0,
+        "numerator": 0,
+        "denominator": 3,
+        "ci95": [
+          5.551115123125783e-17,
+          0.5614970317550454
+        ],
+        "ci_method": "wilson"
+      },
+      "recall": {
+        "value": null,
+        "numerator": 0,
+        "denominator": 0,
+        "ci95": null,
+        "ci_method": "wilson"
+      },
+      "fpr": {
+        "value": 0.05555555555555555,
+        "numerator": 3,
+        "denominator": 54,
+        "ci95": [
+          0.0190732684546909,
+          0.15107214318166143
+        ],
+        "ci_method": "wilson"
+      },
+      "evidence": {
+        "fpr": "INSUFFICIENT_EVIDENCE"
+      },
+      "n_items": 54,
+      "n_errors": 0,
+      "policy_decisions": {
+        "n": 0,
+        "by_status": {},
+        "by_policy_applied": {},
+        "by_decision_and_label": {}
+      },
+      "truncated": {
+        "n_responses_with_results": 54,
+        "n_truncated": 0,
+        "n_truncated_model_predictions": 0
+      },
+      "as_served": {
+        "n": 54,
+        "positives": 0,
+        "negatives": 54,
+        "confusion": {
+          "tp": 0,
+          "fp": 3,
+          "fn": 0,
+          "tn": 51
+        },
+        "precision": {
+          "value": 0.0,
+          "numerator": 0,
+          "denominator": 3,
+          "ci95": [
+            5.551115123125783e-17,
+            0.5614970317550454
+          ],
+          "ci_method": "wilson"
+        },
+        "recall": {
+          "value": null,
+          "numerator": 0,
+          "denominator": 0,
+          "ci95": null,
+          "ci_method": "wilson"
+        },
+        "fpr": {
+          "value": 0.05555555555555555,
+          "numerator": 3,
+          "denominator": 54,
+          "ci95": [
+            0.0190732684546909,
+            0.15107214318166143
+          ],
+          "ci_method": "wilson"
+        },
+        "evidence": {
+          "fpr": "INSUFFICIENT_EVIDENCE"
+        }
+      }
+    },
+    "lang=en": {
+      "n": 5593,
+      "positives": 4455,
+      "negatives": 1138,
+      "confusion": {
+        "tp": 4404,
+        "fp": 148,
+        "fn": 51,
+        "tn": 990
+      },
+      "precision": {
+        "value": 0.9674868189806678,
+        "numerator": 4404,
+        "denominator": 4552,
+        "ci95": [
+          0.9619274691803371,
+          0.9722578044884463
+        ],
+        "ci_method": "wilson"
+      },
+      "recall": {
+        "value": 0.9885521885521885,
+        "numerator": 4404,
+        "denominator": 4455,
+        "ci95": [
+          0.9849805725706534,
+          0.9912819925377528
+        ],
+        "ci_method": "wilson"
+      },
+      "fpr": {
+        "value": 0.13005272407732865,
+        "numerator": 148,
+        "denominator": 1138,
+        "ci95": [
+          0.11174793117700177,
+          0.15084671933636595
+        ],
+        "ci_method": "wilson"
+      },
+      "evidence": {
+        "recall": "OK"
+      },
+      "n_items": 5593,
+      "n_errors": 0,
+      "policy_decisions": {
+        "n": 0,
+        "by_status": {},
+        "by_policy_applied": {},
+        "by_decision_and_label": {}
+      },
+      "truncated": {
+        "n_responses_with_results": 5593,
+        "n_truncated": 14,
+        "n_truncated_model_predictions": 14
+      },
+      "as_served": {
+        "n": 5593,
+        "positives": 4455,
+        "negatives": 1138,
+        "confusion": {
+          "tp": 4404,
+          "fp": 148,
+          "fn": 51,
+          "tn": 990
+        },
+        "precision": {
+          "value": 0.9674868189806678,
+          "numerator": 4404,
+          "denominator": 4552,
+          "ci95": [
+            0.9619274691803371,
+            0.9722578044884463
+          ],
+          "ci_method": "wilson"
+        },
+        "recall": {
+          "value": 0.9885521885521885,
+          "numerator": 4404,
+          "denominator": 4455,
+          "ci95": [
+            0.9849805725706534,
+            0.9912819925377528
+          ],
+          "ci_method": "wilson"
+        },
+        "fpr": {
+          "value": 0.13005272407732865,
+          "numerator": 148,
+          "denominator": 1138,
+          "ci95": [
+            0.11174793117700177,
+            0.15084671933636595
+          ],
+          "ci_method": "wilson"
+        },
+        "evidence": {
+          "recall": "OK"
+        }
+      }
+    },
+    "lang=non_en": {
+      "n": 683,
+      "positives": 682,
+      "negatives": 1,
+      "confusion": {
+        "tp": 679,
+        "fp": 0,
+        "fn": 3,
+        "tn": 1
+      },
+      "precision": {
+        "value": 1.0,
+        "numerator": 679,
+        "denominator": 679,
+        "ci95": [
+          0.9943743034769322,
+          1.0
+        ],
+        "ci_method": "wilson"
+      },
+      "recall": {
+        "value": 0.9956011730205279,
+        "numerator": 679,
+        "denominator": 682,
+        "ci95": [
+          0.9871476357639224,
+          0.9985028980524255
+        ],
+        "ci_method": "wilson"
+      },
+      "fpr": {
+        "value": 0.0,
+        "numerator": 0,
+        "denominator": 1,
+        "ci95": [
+          0.0,
+          0.7934506856227626
+        ],
+        "ci_method": "wilson"
+      },
+      "evidence": {
+        "recall": "OK"
+      },
+      "n_items": 683,
+      "n_errors": 0,
+      "policy_decisions": {
+        "n": 0,
+        "by_status": {},
+        "by_policy_applied": {},
+        "by_decision_and_label": {}
+      },
+      "truncated": {
+        "n_responses_with_results": 683,
+        "n_truncated": 0,
+        "n_truncated_model_predictions": 0
+      },
+      "as_served": {
+        "n": 683,
+        "positives": 682,
+        "negatives": 1,
+        "confusion": {
+          "tp": 679,
+          "fp": 0,
+          "fn": 3,
+          "tn": 1
+        },
+        "precision": {
+          "value": 1.0,
+          "numerator": 679,
+          "denominator": 679,
+          "ci95": [
+            0.9943743034769322,
+            1.0
+          ],
+          "ci_method": "wilson"
+        },
+        "recall": {
+          "value": 0.9956011730205279,
+          "numerator": 679,
+          "denominator": 682,
+          "ci95": [
+            0.9871476357639224,
+            0.9985028980524255
+          ],
+          "ci_method": "wilson"
+        },
+        "fpr": {
+          "value": 0.0,
+          "numerator": 0,
+          "denominator": 1,
+          "ci95": [
+            0.0,
+            0.7934506856227626
+          ],
+          "ci_method": "wilson"
+        },
+        "evidence": {
+          "recall": "OK"
+        }
+      }
+    },
+    "source=benign_hard": {
+      "n": 276,
+      "positives": 0,
+      "negatives": 276,
+      "confusion": {
+        "tp": 0,
+        "fp": 60,
+        "fn": 0,
+        "tn": 216
+      },
+      "precision": {
+        "value": 0.0,
+        "numerator": 0,
+        "denominator": 60,
+        "ci95": [
+          0.0,
+          0.06017185214208986
+        ],
+        "ci_method": "wilson"
+      },
+      "recall": {
+        "value": null,
+        "numerator": 0,
+        "denominator": 0,
+        "ci95": null,
+        "ci_method": "wilson"
+      },
+      "fpr": {
+        "value": 0.21739130434782608,
+        "numerator": 60,
+        "denominator": 276,
+        "ci95": [
+          0.17278877176721572,
+          0.26975272777536774
+        ],
+        "ci_method": "wilson"
+      },
+      "evidence": {},
+      "n_items": 276,
+      "n_errors": 0,
+      "policy_decisions": {
+        "n": 0,
+        "by_status": {},
+        "by_policy_applied": {},
+        "by_decision_and_label": {}
+      },
+      "truncated": {
+        "n_responses_with_results": 276,
+        "n_truncated": 14,
+        "n_truncated_model_predictions": 14
+      },
+      "as_served": {
+        "n": 276,
+        "positives": 0,
+        "negatives": 276,
+        "confusion": {
+          "tp": 0,
+          "fp": 60,
+          "fn": 0,
+          "tn": 216
+        },
+        "precision": {
+          "value": 0.0,
+          "numerator": 0,
+          "denominator": 60,
+          "ci95": [
+            0.0,
+            0.06017185214208986
+          ],
+          "ci_method": "wilson"
+        },
+        "recall": {
+          "value": null,
+          "numerator": 0,
+          "denominator": 0,
+          "ci95": null,
+          "ci_method": "wilson"
+        },
+        "fpr": {
+          "value": 0.21739130434782608,
+          "numerator": 60,
+          "denominator": 276,
+          "ci95": [
+            0.17278877176721572,
+            0.26975272777536774
+          ],
+          "ci_method": "wilson"
+        },
+        "evidence": {}
+      }
+    },
+    "source=gandalf": {
+      "n": 996,
+      "positives": 996,
+      "negatives": 0,
+      "confusion": {
+        "tp": 996,
+        "fp": 0,
+        "fn": 0,
+        "tn": 0
+      },
+      "precision": {
+        "value": 1.0,
+        "numerator": 996,
+        "denominator": 996,
+        "ci95": [
+          0.9961579320533226,
+          0.9999999999999999
+        ],
+        "ci_method": "wilson"
+      },
+      "recall": {
+        "value": 1.0,
+        "numerator": 996,
+        "denominator": 996,
+        "ci95": [
+          0.9961579320533226,
+          0.9999999999999999
+        ],
+        "ci_method": "wilson"
+      },
+      "fpr": {
+        "value": null,
+        "numerator": 0,
+        "denominator": 0,
+        "ci95": null,
+        "ci_method": "wilson"
+      },
+      "evidence": {
+        "recall": "OK"
+      },
+      "n_items": 996,
+      "n_errors": 0,
+      "policy_decisions": {
+        "n": 0,
+        "by_status": {},
+        "by_policy_applied": {},
+        "by_decision_and_label": {}
+      },
+      "truncated": {
+        "n_responses_with_results": 996,
+        "n_truncated": 0,
+        "n_truncated_model_predictions": 0
+      },
+      "as_served": {
+        "n": 996,
+        "positives": 996,
+        "negatives": 0,
+        "confusion": {
+          "tp": 996,
+          "fp": 0,
+          "fn": 0,
+          "tn": 0
+        },
+        "precision": {
+          "value": 1.0,
+          "numerator": 996,
+          "denominator": 996,
+          "ci95": [
+            0.9961579320533226,
+            0.9999999999999999
+          ],
+          "ci_method": "wilson"
+        },
+        "recall": {
+          "value": 1.0,
+          "numerator": 996,
+          "denominator": 996,
+          "ci95": [
+            0.9961579320533226,
+            0.9999999999999999
+          ],
+          "ci_method": "wilson"
+        },
+        "fpr": {
+          "value": null,
+          "numerator": 0,
+          "denominator": 0,
+          "ci95": null,
+          "ci_method": "wilson"
+        },
+        "evidence": {
+          "recall": "OK"
+        }
+      }
+    },
+    "source=spml": {
+      "n": 4053,
+      "positives": 3190,
+      "negatives": 863,
+      "confusion": {
+        "tp": 3154,
+        "fp": 88,
+        "fn": 36,
+        "tn": 775
+      },
+      "precision": {
+        "value": 0.9728562615669339,
+        "numerator": 3154,
+        "denominator": 3242,
+        "ci95": [
+          0.966678285260768,
+          0.9779149855128342
+        ],
+        "ci_method": "wilson"
+      },
+      "recall": {
+        "value": 0.9887147335423198,
+        "numerator": 3154,
+        "denominator": 3190,
+        "ci95": [
+          0.9844166753682009,
+          0.9918371682246812
+        ],
+        "ci_method": "wilson"
+      },
+      "fpr": {
+        "value": 0.10196987253765932,
+        "numerator": 88,
+        "denominator": 863,
+        "ci95": [
+          0.08351204308994835,
+          0.12395548974513525
+        ],
+        "ci_method": "wilson"
+      },
+      "evidence": {
+        "recall": "OK"
+      },
+      "n_items": 4053,
+      "n_errors": 0,
+      "policy_decisions": {
+        "n": 0,
+        "by_status": {},
+        "by_policy_applied": {},
+        "by_decision_and_label": {}
+      },
+      "truncated": {
+        "n_responses_with_results": 4053,
+        "n_truncated": 0,
+        "n_truncated_model_predictions": 0
+      },
+      "as_served": {
+        "n": 4053,
+        "positives": 3190,
+        "negatives": 863,
+        "confusion": {
+          "tp": 3154,
+          "fp": 88,
+          "fn": 36,
+          "tn": 775
+        },
+        "precision": {
+          "value": 0.9728562615669339,
+          "numerator": 3154,
+          "denominator": 3242,
+          "ci95": [
+            0.966678285260768,
+            0.9779149855128342
+          ],
+          "ci_method": "wilson"
+        },
+        "recall": {
+          "value": 0.9887147335423198,
+          "numerator": 3154,
+          "denominator": 3190,
+          "ci95": [
+            0.9844166753682009,
+            0.9918371682246812
+          ],
+          "ci_method": "wilson"
+        },
+        "fpr": {
+          "value": 0.10196987253765932,
+          "numerator": 88,
+          "denominator": 863,
+          "ci95": [
+            0.08351204308994835,
+            0.12395548974513525
+          ],
+          "ci_method": "wilson"
+        },
+        "evidence": {
+          "recall": "OK"
+        }
+      }
+    },
+    "source=yanis": {
+      "n": 951,
+      "positives": 951,
+      "negatives": 0,
+      "confusion": {
+        "tp": 933,
+        "fp": 0,
+        "fn": 18,
+        "tn": 0
+      },
+      "precision": {
+        "value": 1.0,
+        "numerator": 933,
+        "denominator": 933,
+        "ci95": [
+          0.9958995635979541,
+          0.9999999999999999
+        ],
+        "ci_method": "wilson"
+      },
+      "recall": {
+        "value": 0.9810725552050473,
+        "numerator": 933,
+        "denominator": 951,
+        "ci95": [
+          0.9702798040828768,
+          0.9879944639093179
+        ],
+        "ci_method": "wilson"
+      },
+      "fpr": {
+        "value": null,
+        "numerator": 0,
+        "denominator": 0,
+        "ci95": null,
+        "ci_method": "wilson"
+      },
+      "evidence": {
+        "recall": "OK"
+      },
+      "n_items": 951,
+      "n_errors": 0,
+      "policy_decisions": {
+        "n": 0,
+        "by_status": {},
+        "by_policy_applied": {},
+        "by_decision_and_label": {}
+      },
+      "truncated": {
+        "n_responses_with_results": 951,
+        "n_truncated": 0,
+        "n_truncated_model_predictions": 0
+      },
+      "as_served": {
+        "n": 951,
+        "positives": 951,
+        "negatives": 0,
+        "confusion": {
+          "tp": 933,
+          "fp": 0,
+          "fn": 18,
+          "tn": 0
+        },
+        "precision": {
+          "value": 1.0,
+          "numerator": 933,
+          "denominator": 933,
+          "ci95": [
+            0.9958995635979541,
+            0.9999999999999999
+          ],
+          "ci_method": "wilson"
+        },
+        "recall": {
+          "value": 0.9810725552050473,
+          "numerator": 933,
+          "denominator": 951,
+          "ci95": [
+            0.9702798040828768,
+            0.9879944639093179
+          ],
+          "ci_method": "wilson"
+        },
+        "fpr": {
+          "value": null,
+          "numerator": 0,
+          "denominator": 0,
+          "ci95": null,
+          "ci_method": "wilson"
+        },
+        "evidence": {
+          "recall": "OK"
+        }
+      }
+    },
+    "stage2_overlap=none_known": {
+      "n": 5004,
+      "positives": 4141,
+      "negatives": 863,
+      "confusion": {
+        "tp": 4087,
+        "fp": 88,
+        "fn": 54,
+        "tn": 775
+      },
+      "precision": {
+        "value": 0.9789221556886227,
+        "numerator": 4087,
+        "denominator": 4175,
+        "ci95": [
+          0.9741045119770528,
+          0.9828592875370241
+        ],
+        "ci_method": "wilson"
+      },
+      "recall": {
+        "value": 0.9869596715769138,
+        "numerator": 4087,
+        "denominator": 4141,
+        "ci95": [
+          0.9830252641835389,
+          0.9899914458808032
+        ],
+        "ci_method": "wilson"
+      },
+      "fpr": {
+        "value": 0.10196987253765932,
+        "numerator": 88,
+        "denominator": 863,
+        "ci95": [
+          0.08351204308994835,
+          0.12395548974513525
+        ],
+        "ci_method": "wilson"
+      },
+      "evidence": {
+        "recall": "OK"
+      },
+      "n_items": 5004,
+      "n_errors": 0,
+      "policy_decisions": {
+        "n": 0,
+        "by_status": {},
+        "by_policy_applied": {},
+        "by_decision_and_label": {}
+      },
+      "truncated": {
+        "n_responses_with_results": 5004,
+        "n_truncated": 0,
+        "n_truncated_model_predictions": 0
+      },
+      "as_served": {
+        "n": 5004,
+        "positives": 4141,
+        "negatives": 863,
+        "confusion": {
+          "tp": 4087,
+          "fp": 88,
+          "fn": 54,
+          "tn": 775
+        },
+        "precision": {
+          "value": 0.9789221556886227,
+          "numerator": 4087,
+          "denominator": 4175,
+          "ci95": [
+            0.9741045119770528,
+            0.9828592875370241
+          ],
+          "ci_method": "wilson"
+        },
+        "recall": {
+          "value": 0.9869596715769138,
+          "numerator": 4087,
+          "denominator": 4141,
+          "ci95": [
+            0.9830252641835389,
+            0.9899914458808032
+          ],
+          "ci_method": "wilson"
+        },
+        "fpr": {
+          "value": 0.10196987253765932,
+          "numerator": 88,
+          "denominator": 863,
+          "ci95": [
+            0.08351204308994835,
+            0.12395548974513525
+          ],
+          "ci_method": "wilson"
+        },
+        "evidence": {
+          "recall": "OK"
+        }
+      }
+    },
+    "stage2_overlap=none_synthetic": {
+      "n": 276,
+      "positives": 0,
+      "negatives": 276,
+      "confusion": {
+        "tp": 0,
+        "fp": 60,
+        "fn": 0,
+        "tn": 216
+      },
+      "precision": {
+        "value": 0.0,
+        "numerator": 0,
+        "denominator": 60,
+        "ci95": [
+          0.0,
+          0.06017185214208986
+        ],
+        "ci_method": "wilson"
+      },
+      "recall": {
+        "value": null,
+        "numerator": 0,
+        "denominator": 0,
+        "ci95": null,
+        "ci_method": "wilson"
+      },
+      "fpr": {
+        "value": 0.21739130434782608,
+        "numerator": 60,
+        "denominator": 276,
+        "ci95": [
+          0.17278877176721572,
+          0.26975272777536774
+        ],
+        "ci_method": "wilson"
+      },
+      "evidence": {},
+      "n_items": 276,
+      "n_errors": 0,
+      "policy_decisions": {
+        "n": 0,
+        "by_status": {},
+        "by_policy_applied": {},
+        "by_decision_and_label": {}
+      },
+      "truncated": {
+        "n_responses_with_results": 276,
+        "n_truncated": 14,
+        "n_truncated_model_predictions": 14
+      },
+      "as_served": {
+        "n": 276,
+        "positives": 0,
+        "negatives": 276,
+        "confusion": {
+          "tp": 0,
+          "fp": 60,
+          "fn": 0,
+          "tn": 216
+        },
+        "precision": {
+          "value": 0.0,
+          "numerator": 0,
+          "denominator": 60,
+          "ci95": [
+            0.0,
+            0.06017185214208986
+          ],
+          "ci_method": "wilson"
+        },
+        "recall": {
+          "value": null,
+          "numerator": 0,
+          "denominator": 0,
+          "ci95": null,
+          "ci_method": "wilson"
+        },
+        "fpr": {
+          "value": 0.21739130434782608,
+          "numerator": 60,
+          "denominator": 276,
+          "ci95": [
+            0.17278877176721572,
+            0.26975272777536774
+          ],
+          "ci_method": "wilson"
+        },
+        "evidence": {}
+      }
+    },
+    "stage2_overlap=suspected": {
+      "n": 996,
+      "positives": 996,
+      "negatives": 0,
+      "confusion": {
+        "tp": 996,
+        "fp": 0,
+        "fn": 0,
+        "tn": 0
+      },
+      "precision": {
+        "value": 1.0,
+        "numerator": 996,
+        "denominator": 996,
+        "ci95": [
+          0.9961579320533226,
+          0.9999999999999999
+        ],
+        "ci_method": "wilson"
+      },
+      "recall": {
+        "value": 1.0,
+        "numerator": 996,
+        "denominator": 996,
+        "ci95": [
+          0.9961579320533226,
+          0.9999999999999999
+        ],
+        "ci_method": "wilson"
+      },
+      "fpr": {
+        "value": null,
+        "numerator": 0,
+        "denominator": 0,
+        "ci95": null,
+        "ci_method": "wilson"
+      },
+      "evidence": {
+        "recall": "OK"
+      },
+      "n_items": 996,
+      "n_errors": 0,
+      "policy_decisions": {
+        "n": 0,
+        "by_status": {},
+        "by_policy_applied": {},
+        "by_decision_and_label": {}
+      },
+      "truncated": {
+        "n_responses_with_results": 996,
+        "n_truncated": 0,
+        "n_truncated_model_predictions": 0
+      },
+      "as_served": {
+        "n": 996,
+        "positives": 996,
+        "negatives": 0,
+        "confusion": {
+          "tp": 996,
+          "fp": 0,
+          "fn": 0,
+          "tn": 0
+        },
+        "precision": {
+          "value": 1.0,
+          "numerator": 996,
+          "denominator": 996,
+          "ci95": [
+            0.9961579320533226,
+            0.9999999999999999
+          ],
+          "ci_method": "wilson"
+        },
+        "recall": {
+          "value": 1.0,
+          "numerator": 996,
+          "denominator": 996,
+          "ci95": [
+            0.9961579320533226,
+            0.9999999999999999
+          ],
+          "ci_method": "wilson"
+        },
+        "fpr": {
+          "value": null,
+          "numerator": 0,
+          "denominator": 0,
+          "ci95": null,
+          "ci_method": "wilson"
+        },
+        "evidence": {
+          "recall": "OK"
+        }
+      }
+    }
+  },
+  "client_latency_ms": {
+    "n": 6276,
+    "p50": 67.5300985000149,
+    "p95": 424.15273849999124,
+    "p99": 768.1927719999777
+  },
+  "gate_view": "as_served"
+}
