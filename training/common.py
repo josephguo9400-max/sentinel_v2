@@ -139,6 +139,36 @@ def read_jsonl(path: Path) -> Iterator[dict]:
                 yield json.loads(line)
 
 
+class DoNotTrainError(RuntimeError):
+    """Raised when something marked do_not_train is about to be used as training data (review n1)."""
+
+
+def read_training_jsonl(path: Path) -> list[dict]:
+    """Load rows for TRAINING, refusing anything marked do_not_train.
+
+    Refuses if the file itself is a do_not_train-marked artifact (a JSON object with a truthy
+    top-level ``do_not_train``, e.g. a red-team probe set or the adaptive core library), or if any row
+    carries a truthy ``do_not_train``. This makes the do_not_train label binding on the loader rather
+    than relying only on where files happen to live."""
+    p = Path(path)
+    # Guard against a do_not_train artifact (whole-object JSON) being pointed at the trainer.
+    with p.open(encoding="utf-8") as f:
+        head = f.read(4096).lstrip()
+    if head.startswith("{"):
+        try:
+            obj = json.loads(p.read_text(encoding="utf-8"))
+        except json.JSONDecodeError:
+            obj = None
+        if isinstance(obj, dict) and obj.get("do_not_train"):
+            raise DoNotTrainError(f"{p} is marked do_not_train and must not be used for training")
+    rows = list(read_jsonl(p))
+    bad = [r.get("id", i) for i, r in enumerate(rows) if r.get("do_not_train")]
+    if bad:
+        raise DoNotTrainError(f"{p} contains {len(bad)} do_not_train row(s) (e.g. {bad[:3]}); refusing "
+                              f"to use them as training data")
+    return rows
+
+
 def stable_unit(value: str, salt: str = str(SEED)) -> float:
     """Deterministic pseudo-random number in [0, 1) derived from a string (no global RNG state)."""
     d = hashlib.sha256(f"{salt}:{value}".encode("utf-8")).digest()
