@@ -63,6 +63,7 @@ class SpendTracker:
     after the call with the real usage from the response. A cache hit records nothing (it is free)."""
 
     cap_usd: float
+    prior_usd: float = 0.0  # cumulative spend from earlier milestone runs (read from the ledger)
     spent_usd: float = 0.0
     n_calls: int = 0
     n_cache_hits: int = 0
@@ -73,14 +74,21 @@ class SpendTracker:
     def __post_init__(self) -> None:
         if self.cap_usd <= 0:
             raise ValueError("cap_usd must be positive")
+        if self.prior_usd < 0:
+            raise ValueError("prior_usd must be non-negative")
+
+    @property
+    def total_usd(self) -> float:
+        """Cumulative milestone spend: prior runs (ledger) plus this run."""
+        return self.prior_usd + self.spent_usd
 
     @property
     def remaining_usd(self) -> float:
-        return self.cap_usd - self.spent_usd
+        return self.cap_usd - self.total_usd
 
     def would_exceed(self, model: str, est_input_tokens: int, est_max_output_tokens: int) -> bool:
         est = cost_usd(model, est_input_tokens, est_max_output_tokens)
-        return self.spent_usd + est > self.cap_usd
+        return self.total_usd + est > self.cap_usd
 
     def preflight(self, model: str, est_input_tokens: int, est_max_output_tokens: int) -> None:
         """Raise BudgetExceeded if a call with this (upper-bound) usage could exceed the cap."""
@@ -90,7 +98,8 @@ class SpendTracker:
             est = cost_usd(model, est_input_tokens, est_max_output_tokens)
             raise BudgetExceeded(
                 f"next call (~{est_input_tokens} in / <= {est_max_output_tokens} out tokens, "
-                f"~${est:.4f}) would exceed cap ${self.cap_usd:.2f} (spent ${self.spent_usd:.4f})")
+                f"~${est:.4f}) would exceed cap ${self.cap_usd:.2f} (milestone spent "
+                f"${self.total_usd:.4f} = ${self.prior_usd:.4f} prior + ${self.spent_usd:.4f} this run)")
 
     def record(self, model: str, input_tokens: int, output_tokens: int) -> float:
         cost = cost_usd(model, input_tokens, output_tokens)
@@ -111,7 +120,9 @@ class SpendTracker:
     def as_dict(self) -> dict:
         return {
             "cap_usd": self.cap_usd,
+            "prior_usd": round(self.prior_usd, 6),
             "spent_usd": round(self.spent_usd, 6),
+            "total_usd": round(self.total_usd, 6),
             "remaining_usd": round(self.remaining_usd, 6),
             "n_calls": self.n_calls,
             "n_cache_hits": self.n_cache_hits,

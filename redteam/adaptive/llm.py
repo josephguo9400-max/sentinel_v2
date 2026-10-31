@@ -43,13 +43,18 @@ class AttackerClient(Protocol):
 
 
 def _estimate_tokens(system: str, messages: list[dict[str, Any]]) -> int:
-    """Conservative (over-)estimate of input tokens for a budget preflight: ~chars/3 (real tokenizers
-    give ~chars/4, so this over-counts, which is the safe direction for a cap)."""
-    chars = len(system)
+    """Conservative upper-bound estimate of input tokens for a budget preflight.
+
+    English BPE gives ~chars/4, so chars/3 over-counts ASCII (the safe direction). For non-ASCII
+    scripts a token can be ~1 char, so chars/3 would UNDER-count (review m5); we therefore count
+    non-ASCII characters as one token each, keeping the estimate a strict upper bound either way."""
+    text = system
     for m in messages:
         c = m.get("content", "")
-        chars += len(c) if isinstance(c, str) else len(str(c))
-    return max(1, chars // 3)
+        text += c if isinstance(c, str) else str(c)
+    ascii_chars = sum(1 for ch in text if ord(ch) < 128)
+    non_ascii = len(text) - ascii_chars
+    return max(1, ascii_chars // 3 + non_ascii)
 
 
 class AnthropicAttackerClient:
