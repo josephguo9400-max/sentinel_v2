@@ -93,6 +93,11 @@ def test_adaptive_asr_is_surfaced_report_only_and_flags_bundle_mismatch():
     # Absent: unchanged NOT_EVALUATED with no reported block.
     c3 = checks_for(rows)["adaptive_asr"]
     assert c3["verdict"] == gate.NOT_EVALUATED and "reported" not in c3
+    # review m8: a missing bundle hash must NOT be treated as a match; it is "unknown" -> does not apply.
+    c4 = gate.checks(rows, gate.slice_metrics(rows), None, None, _Policy(None),
+                     adaptive_asr={**aa, "measured_against_bundle_sha256": None},
+                     bundle_sha256=BUNDLE)["adaptive_asr"]
+    assert c4["applies_to_this_bundle"] is False and "unknown" in c4["why"] and "does not apply" in c4["why"]
 
 
 def test_benign_hard_fpr_rule():

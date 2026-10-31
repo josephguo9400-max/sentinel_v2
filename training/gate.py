@@ -280,13 +280,23 @@ def checks(records: list[dict], slices: dict, paired: dict | None, comparison: s
         # report-only (verdict unchanged at NOT_EVALUATED); the owner decides the gate semantics
         # (docs/design/adaptive-attacker.md §8-9).
         measured_sha = adaptive_asr.get("measured_against_bundle_sha256")
-        applies = bundle_sha256 is None or measured_sha is None or measured_sha == bundle_sha256
+        # review m8: a missing bundle hash is NOT a match. applies is True only when both hashes are
+        # present and equal; a None on either side is "unknown", treated as a mismatch (does not apply).
+        applies = bool(bundle_sha256) and bool(measured_sha) and measured_sha == bundle_sha256
         aa["reported"] = adaptive_asr
         aa["applies_to_this_bundle"] = applies
+        if applies:
+            detail = "measured on this bundle."
+        elif not measured_sha:
+            detail = ("WARNING: the adaptive input carries no measured_against_bundle_sha256; the bundle "
+                      "it was measured on is unknown, so the number does not apply here.")
+        elif not bundle_sha256:
+            detail = ("WARNING: this report has no bundle hash to compare against; applicability is "
+                      "unknown, so the number does not apply here.")
+        else:
+            detail = f"WARNING: measured on bundle {measured_sha}, not this one; number does not apply."
         aa["why"] = ("adaptive ASR reported from redteam/adaptive (report-only: the RFC rule is relative, "
-                     "D23 has no previous bundle, no absolute threshold is defined). "
-                     + ("measured on this bundle." if applies else
-                        f"WARNING: measured on bundle {measured_sha}, not this one; number does not apply."))
+                     "D23 has no previous bundle, no absolute threshold is defined). " + detail)
     out["adaptive_asr"] = aa
     return out
 
