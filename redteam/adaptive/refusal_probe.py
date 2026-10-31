@@ -35,6 +35,9 @@ def run(attempts: int, *, cap_usd: float = 10.0) -> dict:
         raise RuntimeError("ANTHROPIC_API_KEY not set (load /root/.sentinel/.env)")
     ledger = SpendLedger.load()
     spend = SpendTracker(cap_usd=cap_usd, prior_usd=ledger.prior_total_usd)
+    # Ledger entry exists before the first call and is rewritten after every call (review r2 m3).
+    ledger_run = ledger.begin(label="author_refusal_probe", note="author-mode refusal probe")
+    spend.on_record = ledger_run.update
     cache = ResponseCache()
     client = AnthropicAttackerClient(MODEL, spend, cache)
     goals = enumerate_goals()
@@ -62,9 +65,7 @@ def run(attempts: int, *, cap_usd: float = 10.0) -> dict:
                  "safety finding, not a classifier measurement. Soft refusals are counted (review m4)."),
         "spend": spend.as_dict(), "rows": rows,
     }
-    ledger.record(label="author_refusal_probe", spent_usd=spend.spent_usd,
-                  input_tokens=spend.input_tokens, output_tokens=spend.output_tokens,
-                  n_calls=spend.n_calls, by_model=spend.by_model, note="author-mode refusal probe")
+    ledger_run.finish(spend)
     return out
 
 

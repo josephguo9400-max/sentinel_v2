@@ -12,6 +12,7 @@ under-counted, though our prompts sit far below that break.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from typing import Callable, Optional
 
 PRICES_AS_OF = "2026-10-23"
 PRICES_SOURCE = "Anthropic published pricing, third-party reported; owner to verify against billing"
@@ -70,6 +71,9 @@ class SpendTracker:
     input_tokens: int = 0
     output_tokens: int = 0
     by_model: dict[str, dict] = field(default_factory=dict)
+    # Called with this tracker after every ``record`` so the milestone ledger is written after each
+    # billable call, not only at the end of a run (review r2 m3: a crashed run left no entry).
+    on_record: Optional[Callable[["SpendTracker"], None]] = field(default=None, repr=False, compare=False)
 
     def __post_init__(self) -> None:
         if self.cap_usd <= 0:
@@ -102,6 +106,10 @@ class SpendTracker:
                 f"${self.total_usd:.4f} = ${self.prior_usd:.4f} prior + ${self.spent_usd:.4f} this run)")
 
     def record(self, model: str, input_tokens: int, output_tokens: int) -> float:
+        """Record one billable call. Input and output tokens are priced at their own rates; never pass
+        a combined total as ``input_tokens`` (review r2 m3 found output priced as input)."""
+        if input_tokens < 0 or output_tokens < 0:
+            raise ValueError("token counts must be non-negative")
         cost = cost_usd(model, input_tokens, output_tokens)
         self.spent_usd += cost
         self.n_calls += 1
@@ -112,6 +120,8 @@ class SpendTracker:
         m["input_tokens"] += input_tokens
         m["output_tokens"] += output_tokens
         m["usd"] += cost
+        if self.on_record is not None:
+            self.on_record(self)
         return cost
 
     def record_cache_hit(self) -> None:

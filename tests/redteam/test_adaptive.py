@@ -70,6 +70,91 @@ def test_ledger_roundtrip_and_no_secret_fields(tmp_path):
         led._safe({"api_key": "secret"})  # a key/header-shaped field is refused
 
 
+def test_record_prices_output_at_output_rate():
+    # review r2 m3: the live victim passed combined tokens as input. Output must cost the output rate.
+    s = SpendTracker(cap_usd=1.0)
+    s.record("claude-haiku-5-5", 1_000, 2_000)
+    assert s.spent_usd == pytest.approx(1_000 / 1e6 * 0.10 + 2_000 / 1e6 * 0.50)
+    assert s.by_model["claude-haiku-5-5"]["output_tokens"] == 2_000
+    with pytest.raises(ValueError):
+        s.record("claude-haiku-5-5", -1, 0)
+
+
+def test_ledger_entry_written_before_first_call_and_after_every_call(tmp_path):
+    path = tmp_path / "ledger.json"
+    led = SpendLedger(path=path, entries=[{"label": "old", "spent_usd": 0.5}])
+    s = SpendTracker(cap_usd=1.0, prior_usd=led.prior_total_usd)
+    run = led.begin(label="run2", note="n")
+    s.on_record = run.update
+    on_disk = lambda: json.loads(path.read_text())  # noqa: E731
+    assert on_disk()["entries"][-1]["status"] == "in_progress"
+    s.record("claude-haiku-5-5", 100, 50)
+    e = on_disk()["entries"][-1]
+    assert (e["n_calls"], e["input_tokens"], e["output_tokens"]) == (1, 100, 50)
+    assert e["spent_usd"] == pytest.approx(cost_usd("claude-haiku-5-5", 100, 50), abs=1e-6)
+    assert e["by_model"]["claude-haiku-5-5"]["output_tokens"] == 50
+    s.record("claude-haiku-5-5", 100, 50)
+    # A run that dies here still left a counted entry; a reload sees the spend against the cap.
+    assert SpendLedger.load(path).prior_total_usd == pytest.approx(0.5 + 2 * cost_usd("claude-haiku-5-5", 100, 50),
+                                                                   abs=1e-6)
+    assert on_disk()["entries"][-1]["status"] == "in_progress"
+    run.finish(s)
+    assert on_disk()["entries"][-1]["status"] == "complete"
+    assert on_disk()["entries"][-1]["n_calls"] == 2
+
+
+def test_ledger_keeps_accounting_notes(tmp_path):
+    led = SpendLedger(path=tmp_path / "l.json", accounting_notes=["backfilled from dc0aa1e"])
+    led.flush()
+    assert SpendLedger.load(tmp_path / "l.json").accounting_notes == ["backfilled from dc0aa1e"]
+
+
+def test_metered_victim_client_preflights_every_call_and_records_split_usage(tmp_path):
+    from redteam.adaptive.live_victim import MeteredLLMClient
+    from redteam.llm_defender import LLMResponse, Usage
+
+    class _Inner:
+        n = 0
+
+        def create(self, *, system, messages, tools, max_tokens):
+            self.n += 1
+            return LLMResponse("ok", (), "end_turn", Usage(300, 40))
+
+    led = SpendLedger(path=tmp_path / "l.json")
+    s = SpendTracker(cap_usd=1.0)
+    run = led.begin(label="live")
+    s.on_record = run.update
+    inner = _Inner()
+    c = MeteredLLMClient(inner, s)
+    for _ in range(3):
+        c.create(system="sys", messages=[{"role": "user", "content": "hi"}], tools=[], max_tokens=64)
+    assert inner.n == 3 and s.n_calls == 3
+    assert (s.input_tokens, s.output_tokens) == (900, 120)
+    assert json.loads((tmp_path / "l.json").read_text())["entries"][-1]["n_calls"] == 3
+    # Preflight is per call: once the remaining cap cannot cover one more call, it raises BEFORE the
+    # inner client is reached.
+    tight = SpendTracker(cap_usd=1.0, prior_usd=1.0 - 1e-7)
+    blocked = MeteredLLMClient(inner, tight)
+    with pytest.raises(BudgetExceeded):
+        blocked.create(system="sys", messages=[{"role": "user", "content": "hi"}], tools=[], max_tokens=4096)
+    assert inner.n == 3 and tight.n_calls == 0
+
+
+def test_committed_ledger_prices_every_token_count_correctly():
+    # Every ledger entry with an input/output split is priced at its own rates; the live-victim entry,
+    # whose split was not kept, carries the all-output-rate upper bound (review r2 m3).
+    led = SpendLedger.load()
+    for e in led.entries:
+        if e.get("input_tokens") is not None:
+            assert e["spent_usd"] == pytest.approx(cost_usd("claude-haiku-5-5", e["input_tokens"],
+                                                            e["output_tokens"]), abs=1e-6)
+        else:
+            assert e["spent_usd"] == pytest.approx(cost_usd("claude-haiku-5-5", 0, e["combined_tokens"]),
+                                                   abs=1e-6)
+            assert e["spent_usd_lower_bound"] == pytest.approx(
+                cost_usd("claude-haiku-5-5", e["combined_tokens"], 0), abs=1e-6)
+
+
 # ------------------------------------------------------------------ cache
 
 def test_request_hash_is_header_free_and_stable():

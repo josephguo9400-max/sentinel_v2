@@ -53,7 +53,8 @@
       }
     },
     "prices_as_of": "2026-10-23",
-    "prices_source": "Anthropic published pricing, third-party reported; owner to verify against billing"
+    "prices_source": "Anthropic published pricing, third-party reported; owner to verify against billing",
+    "correction_2026_10_31": "This block is as recorded by the first redesign and under-states spend: the 91,475 tokens are the victim's combined input+output count, priced at the input rate, and n_calls counts samples (6), not API calls. Corrected range $0.009148-$0.045738; the ledger (reports/adaptive-attacker/spend_ledger.json) now carries the $0.045738 upper bound. Review r2 m3, verify/adaptive-attacker-r2 a10160f."
   },
   "rows": [
     {

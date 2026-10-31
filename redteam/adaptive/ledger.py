@@ -11,7 +11,14 @@ and rewrites the file with the updated total.
 
     ledger = SpendLedger.load()           # reports/adaptive-attacker/spend_ledger.json
     ledger.prior_total_usd                # spend from earlier runs
-    ledger.record(label=..., spend=tracker.as_dict())
+    run = ledger.begin(label=..., note=...)   # entry written before the first call
+    spend.on_record = run.update              # entry rewritten after EVERY billable call
+    ...
+    run.finish(spend)                         # marks the entry complete
+
+``begin``/``update`` exist because the first redesign wrote the ledger only when a run finished, so a
+crashed or aborted run left no entry (review r2 m3). An entry whose ``status`` is still
+``in_progress`` therefore records a run that stopped early; its spend still counts toward the cap.
 """
 from __future__ import annotations
 
@@ -29,13 +36,16 @@ _BANNED_KEYS = ("headers", "authorization", "x-api-key", "api_key", "apikey", "k
 class SpendLedger:
     path: Path = DEFAULT_LEDGER_PATH
     entries: list[dict] = field(default_factory=list)
+    # Free-text accounting notes kept across rewrites (e.g. spend that has no token counts on record).
+    accounting_notes: list[str] = field(default_factory=list)
 
     @classmethod
     def load(cls, path: Path | None = None) -> "SpendLedger":
         p = Path(path) if path is not None else DEFAULT_LEDGER_PATH
         if p.is_file():
             data = json.loads(p.read_text(encoding="utf-8"))
-            return cls(path=p, entries=list(data.get("entries", [])))
+            return cls(path=p, entries=list(data.get("entries", [])),
+                       accounting_notes=list(data.get("accounting_notes", [])))
         return cls(path=p, entries=[])
 
     @property
@@ -46,6 +56,8 @@ class SpendLedger:
         """Keep only spend-describing fields; refuse anything key/header-shaped."""
         out = {}
         for k, v in entry.items():
+            if isinstance(v, dict):
+                self._safe(v)
             kl = k.lower()
             if any(b == kl for b in _BANNED_KEYS):
                 raise ValueError(f"refusing to write ledger field {k!r}")
@@ -61,13 +73,25 @@ class SpendLedger:
             "input_tokens": input_tokens,
             "output_tokens": output_tokens,
             "n_calls": n_calls,
-            "by_model": {m: {"usd": round(v.get("usd", 0.0), 6), "n_calls": v.get("n_calls", 0)}
-                         for m, v in by_model.items()},
+            "by_model": _by_model(by_model),
             "note": note,
         })
         self.entries.append(entry)
         self.flush()
         return entry
+
+    def begin(self, *, label: str, note: str = "") -> "LedgerRun":
+        """Open an entry for a run before its first billable call and write it to disk."""
+        entry = self._safe({
+            "label": label,
+            "time": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+            "status": "in_progress",
+            "spent_usd": 0.0, "input_tokens": 0, "output_tokens": 0, "n_calls": 0,
+            "by_model": {}, "note": note,
+        })
+        self.entries.append(entry)
+        self.flush()
+        return LedgerRun(self, len(self.entries) - 1)
 
     def flush(self) -> None:
         self.path.parent.mkdir(parents=True, exist_ok=True)
@@ -78,6 +102,39 @@ class SpendLedger:
                      "(review m5). No key, header or request content is ever stored."),
             "total_usd": self.prior_total_usd,
             "n_entries": len(self.entries),
+            "accounting_notes": self.accounting_notes,
             "entries": self.entries,
         }
-        self.path.write_text(json.dumps(payload, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+        tmp = self.path.with_suffix(self.path.suffix + ".tmp")
+        tmp.write_text(json.dumps(payload, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+        tmp.replace(self.path)  # atomic: a crash mid-write never truncates the ledger
+
+
+def _by_model(by_model: dict) -> dict:
+    return {m: {"usd": round(v.get("usd", 0.0), 6), "n_calls": v.get("n_calls", 0),
+                "input_tokens": v.get("input_tokens", 0), "output_tokens": v.get("output_tokens", 0)}
+            for m, v in by_model.items()}
+
+
+@dataclass
+class LedgerRun:
+    """Handle on one in-progress ledger entry. ``update`` is meant as ``SpendTracker.on_record``."""
+
+    ledger: SpendLedger
+    index: int
+
+    def update(self, spend) -> None:
+        e = self.ledger.entries[self.index]
+        e.update({
+            "spent_usd": round(spend.spent_usd, 6),
+            "input_tokens": spend.input_tokens,
+            "output_tokens": spend.output_tokens,
+            "n_calls": spend.n_calls,
+            "by_model": _by_model(spend.by_model),
+        })
+        self.ledger.flush()
+
+    def finish(self, spend) -> None:
+        self.update(spend)
+        self.ledger.entries[self.index]["status"] = "complete"
+        self.ledger.flush()

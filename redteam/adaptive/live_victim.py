@@ -7,8 +7,13 @@ firewall off) and mode C (firewall on), so "harmful" means the model actually at
 not just that a regex matched. It reports regex-harm vs live-harm agreement and the mode B vs mode C
 end-to-end outcome.
 
-Spend is capped by the milestone ledger (redteam/adaptive/ledger.py); each live call is priced and
-preflighted, and the ledger is read so the cumulative milestone spend never exceeds the cap. The API
+Spend is capped by the milestone ledger (redteam/adaptive/ledger.py). Every victim API call goes through
+``MeteredLLMClient``: it is preflighted against the cumulative milestone cap from the actual request
+(system prompt, messages and tool schemas, at a conservative chars/3 token estimate, plus the call's
+max_tokens as output), its input and output tokens are recorded separately and priced at their own
+rates, and the ledger is rewritten after the call (review r2 m3). The first redesign preflighted once
+per sample although two victim runs followed, priced input+output tokens at the input rate, and wrote
+the ledger only at the end. The API
 key is read only from ANTHROPIC_API_KEY and never printed, logged or cached with headers.
 
 Input is a run's gitignored queries.jsonl (full bodies). Output is a committed JSON with per-candidate
@@ -22,6 +27,7 @@ import json
 import os
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Any
 
 from training.metrics import rate
 
@@ -30,11 +36,33 @@ from ..llm_defender import AnthropicLLMClient, LLMBudget, LLMDefender
 from ..sandbox import Limits, run_attempt
 from ..scenario import find_scenario
 from ..trace import RunTrace
-from .budget import SpendTracker, cost_usd
+from .budget import SpendTracker
 from .ledger import SpendLedger
+from .llm import _estimate_tokens
 from .oracle import make_gateway_classifier
 
 VICTIM_MODEL = "claude-haiku-5-5"
+
+
+@dataclass
+class MeteredLLMClient:
+    """Wraps a victim ``LLMClient``: preflight before EVERY call, record real usage after it.
+
+    The preflight bound is the request's own size (system + messages + tool schemas) plus the call's
+    ``max_tokens`` as output, so it covers the call about to be made rather than a per-sample guess.
+    ``spend.record`` prices input and output at their own rates and, via ``spend.on_record``, rewrites
+    the milestone ledger after each call."""
+
+    inner: Any
+    spend: SpendTracker
+    model: str = VICTIM_MODEL
+
+    def create(self, *, system, messages, tools, max_tokens):
+        est_in = _estimate_tokens(system + json.dumps(tools, ensure_ascii=False), messages)
+        self.spend.preflight(self.model, est_input_tokens=est_in, est_max_output_tokens=max_tokens)
+        resp = self.inner.create(system=system, messages=messages, tools=tools, max_tokens=max_tokens)
+        self.spend.record(self.model, resp.usage.input_tokens, resp.usage.output_tokens)
+        return resp
 
 
 @dataclass
@@ -83,23 +111,22 @@ def _run_live(spic: _Spic, mode: str, client, classifier, *, budget: LLMBudget) 
 
 def spot_check(run_dir: Path, gateway_url: str, *, per_goal: int = 2, seed: int = 0,
                cap_usd: float = 10.0) -> dict:
-    ledger = SpendLedger.load()
-    spend = SpendTracker(cap_usd=cap_usd, prior_usd=ledger.prior_total_usd)
     if not os.environ.get("ANTHROPIC_API_KEY"):
         raise RuntimeError("ANTHROPIC_API_KEY not set (load /root/.sentinel/.env)")
-    client = AnthropicLLMClient(model=VICTIM_MODEL)
+    ledger = SpendLedger.load()
+    spend = SpendTracker(cap_usd=cap_usd, prior_usd=ledger.prior_total_usd)
+    ledger_run = ledger.begin(label=f"live_victim:{run_dir.name}",
+                              note="live claude-haiku-5-5 victim spot check (mode B/C)")
+    spend.on_record = ledger_run.update
+    client = MeteredLLMClient(AnthropicLLMClient(model=VICTIM_MODEL), spend)
     budget = LLMBudget(max_steps=6, max_tokens=12_000, wall_time_s=40.0)
     sample = _sample(run_dir, per_goal=per_goal, seed=seed)
     rows = []
     for spic in sample:
         classifier = make_gateway_classifier(gateway_url)
-        # Preflight a conservative token upper bound before the live calls (mode B then C).
-        spend.preflight(VICTIM_MODEL, est_input_tokens=budget.max_tokens, est_max_output_tokens=4096)
+        # Each victim API call inside these runs is preflighted and recorded by MeteredLLMClient.
         mb = _run_live(spic, "B", client, classifier, budget=budget)
         mc = _run_live(spic, "C", client, classifier, budget=budget)
-        # Record real spend from the victim's token use (both calls), priced for the victim model.
-        used = mb["tokens"] + mc["tokens"]
-        spend.record(VICTIM_MODEL, used, 0)  # tokens_used already sums input+output; price as input-side upper bound
         rows.append({"goal_id": spic.goal_id, "body_sha16": spic.body_sha16,
                      "regex_harm_modeB": spic.regex_harm_modeB,
                      "live_harm_modeB": mb["attack_success"], "live_modeB_status": mb["status"],
@@ -113,6 +140,7 @@ def spot_check(run_dir: Path, gateway_url: str, *, per_goal: int = 2, seed: int 
     out = {
         "spot_check": "live_victim", "victim_model": VICTIM_MODEL, "run_dir": str(run_dir),
         "n_checked": len(rows),
+        "n_api_calls": spend.n_calls,
         "regex_vs_live_modeB_agreement": rate(agree, len(rows)),
         "live_harm_modeB": rate(live_b, len(rows)),
         "live_harm_modeC": rate(live_c, len(rows)),
@@ -120,10 +148,7 @@ def spot_check(run_dir: Path, gateway_url: str, *, per_goal: int = 2, seed: int 
         "spend": spend.as_dict(),
         "rows": rows,
     }
-    ledger.record(label=f"live_victim:{run_dir.name}", spent_usd=spend.spent_usd,
-                  input_tokens=spend.input_tokens, output_tokens=spend.output_tokens,
-                  n_calls=spend.n_calls, by_model=spend.by_model,
-                  note="live claude-haiku-5-5 victim spot check (mode B/C)")
+    ledger_run.finish(spend)
     return out
 
 
