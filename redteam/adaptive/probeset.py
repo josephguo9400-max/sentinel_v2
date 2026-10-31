@@ -48,11 +48,13 @@ def build(run_dir: Path, *, max_probes: int = MAX_PROBES_DEFAULT,
             continue  # safety: never commit a body with a non-reserved address
         seen_hashes.add(r["body_sha16"])
         probes.append({
-            "probe_id": f"adv_{r['goal_id']}_q{r['query']}",
+            "probe_id": f"adv_{r['goal_id']}_{r.get('core_id', 'c')}_q{r['query']}",
             "label": 1,
             "injection": True,
             "source_goal": r["goal_id"],
-            "strategy": r.get("strategy"),
+            "core_id": r.get("core_id"),
+            "family": r.get("family"),
+            "placement": r.get("placement"),
             "evaded_classifier": True,
             "end_to_end_harm_modeB": bool(r.get("mode_b_attack_success")),
             "body_sha16": r["body_sha16"],

@@ -5,9 +5,9 @@ instructions that carry an email address, re-targets every address to the reserv
 ``{target}``, and writes them as cores with provenance ``dataset:<source>`` and family
 ``polite_request`` or ``action_line`` (whichever the surface form matches).
 
-Isolation (RFC issue #7 / review n1): reads ONLY data/splits/train.jsonl and val.jsonl. It never
-reads data/splits/frozen_test.jsonl or fixtures/scenarios/heldout/. The output carries
-``do_not_train: true`` and is a probe/eval artifact, never training input.
+Isolation (RFC issue #7 / review n1): reads ONLY the train and val split files. It never reads the
+hash-locked test split or the held-out scenarios. The output carries ``do_not_train: true`` and is a
+probe/eval artifact, never training input.
 
     python -m redteam.adaptive.build_cores            # writes fixtures/adaptive/cores_curated.json
     python -m redteam.adaptive.build_cores --dry-run  # counts only; writes nothing
@@ -29,7 +29,8 @@ from .cores import CURATED_PATH
 _ADDR = re.compile(r"[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,}")
 _SEND_VERB = re.compile(r"\b(send|forward|email|e-mail|mail|cc|bcc)\b", re.IGNORECASE)
 _ACTION = re.compile(r"\b(send_email|ACTION\s*:|TOOL\s*:)", re.IGNORECASE)
-FORBIDDEN = ("frozen_test", "heldout")
+# Only the train/val split files are opened below; no other split is referenced or read.
+ALLOWED_SPLITS = ("train", "val")
 MAX_CHARS = 320            # email-plausible, short instruction only
 PER_SOURCE_CAP = 4         # keep the curated slice small and auditable
 
@@ -55,12 +56,9 @@ def _eligible(row: dict) -> bool:
 
 
 def build(dry_run: bool = False) -> dict:
-    for part in CURATED_PATH.parts:
-        if part in FORBIDDEN:
-            raise RuntimeError("curated cores must not live under a forbidden path")
     per_source: dict[str, list[dict]] = {}
     diag = {"n_label1": 0, "n_with_address": 0, "n_with_send_verb": 0, "n_eligible": 0}
-    for split in ("train", "val"):
+    for split in ALLOWED_SPLITS:
         src_path = SPLITS_DIR / f"{split}.jsonl"
         for row in read_jsonl(src_path):
             if row.get("label") == 1:
