@@ -1,0 +1,15 @@
+{
+  "core_set": "adaptive_cores_curated",
+  "do_not_train": true,
+  "note": "Email send/forward injection cores re-shaped from committed train/val items and re-targeted to a reserved placeholder. Probe/eval use only; never training input (RFC issue #7). Frozen test and held-out scenarios are never read.",
+  "sources": [],
+  "n_cores": 0,
+  "dataset_diagnostic": {
+    "n_label1": 10118,
+    "n_with_address": 1,
+    "n_with_send_verb": 238,
+    "n_eligible": 0,
+    "finding": "Public train/val injection sets are not email-shaped: almost no label-1 item carries a recipient address or an email send/forward instruction, so the dataset slice contributes few or no email cores. The core library is built from repo probe/fixture material and attributed public email-injection templates (see redteam/adaptive/cores.py)."
+  },
+  "cores": []
+}
