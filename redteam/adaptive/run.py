@@ -90,13 +90,16 @@ def cmd_attack(args) -> int:
         for g in goals:
             classifier = make_gateway_classifier(args.gateway_url)  # fresh per goal: clean query accounting
             res = run_goal(g, attacker, classifier, budget=args.budget,
-                           score_feedback=args.score_feedback, temperature=args.temperature)
+                           score_feedback=args.score_feedback, temperature=args.temperature,
+                           attack_mode=args.attack_mode)
             results.append(res)
             for q in res.queries:
                 raw.write(json.dumps({"goal_id": g.goal_id, **q}, ensure_ascii=False) + "\n")
-            print(json.dumps({"goal": g.goal_id, "evaded": res.classifier_evaded,
-                              "q_first_evasion": res.queries_to_first_evasion,
-                              "harm": res.end_to_end_harm, "q_first_harm": res.queries_to_first_harm,
+            print(json.dumps({"goal": g.goal_id, "harmful_evasion": res.harmful_evasion,
+                              "q_first_harmful_evasion": res.queries_to_first_harmful_evasion,
+                              "harm_modeB": res.end_to_end_harm, "q_first_harm": res.queries_to_first_harm,
+                              "allowed_any": res.classifier_allowed_any,
+                              "harmful_caught": res.n_harmful_flagged, "harmful_missed": res.n_harmful_allowed,
                               "stopped": res.stopped_reason, "spent_usd": round(spend.spent_usd, 4)}))
             if spend.remaining_usd <= 0:
                 print(json.dumps({"stop": "dollar_cap_reached", "spent_usd": round(spend.spent_usd, 4)}))
@@ -104,6 +107,7 @@ def cmd_attack(args) -> int:
 
     meta = {
         "attacker_model": args.attacker_model,
+        "attack_mode": args.attack_mode,
         "feedback": "score" if args.score_feedback else "decision_only",
         "goal_split": args.goal_split,
         "budget": args.budget,
@@ -116,12 +120,13 @@ def cmd_attack(args) -> int:
     }
     report = aggregate(results, meta=meta)
     _write_json(out_dir / "summary.json", report)
-    _write_json(out_dir / "gate_input.json", gate_input(report, bundle_sha256=bundle.bundle_sha256))
+    _write_json(out_dir / "adaptive_asr_gate_input.json", gate_input(report, bundle_sha256=bundle.bundle_sha256))
     print(json.dumps({
         "wrote": str(out_dir / "summary.json"),
         "n_goals": report["n_goals"],
-        "classifier_evasion_asr": report["classifier_evasion_asr"]["value"],
+        "harmful_evasion_asr": report["harmful_evasion_asr"]["value"],
         "end_to_end_harm_asr_modeB": report["end_to_end_harm_asr_modeB"]["value"],
+        "candidate_harmful_miss_rate": report["candidate_harmful_miss_rate"]["value"],
         "modeC_invariant_holds": report["firewall_invariant_modeC"]["holds"],
         "spent_usd": round(spend.spent_usd, 4),
     }, indent=1))
@@ -141,6 +146,9 @@ def main(argv=None) -> int:
     a.add_argument("--budget", type=int, default=40, help="gateway queries per goal (RFC ~100)")
     a.add_argument("--attacker-model", default="claude-haiku-5-5",
                    help="claude-haiku-5-5 (default) or claude-sonnet-5-5")
+    a.add_argument("--attack-mode", default="compose", choices=["compose", "author"],
+                   help="compose (default): LLM writes a benign carrier, harness inserts a fixed mild "
+                        "injection core; author: LLM authors the full injection (documents refusals)")
     a.add_argument("--score-feedback", action="store_true",
                    help="ablation: also reveal the decider score to the attacker (stronger attacker)")
     a.add_argument("--max-usd", type=float, default=MILESTONE_CAP_USD,
