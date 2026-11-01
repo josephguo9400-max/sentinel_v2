@@ -193,6 +193,14 @@ def test_frozen_test_gate_reports_are_owner_approved():
     entries = [json.loads(line) for line in log.read_text().splitlines() if line.strip()] if log.is_file() else []
     frozen = [e for e in entries if e["action"] == "gate_on_frozen_test"]
     assert [e["status"] for e in frozen] == ["started", "completed"] * len(APPROVED_FROZEN_RUNS), frozen
+    # each approved report has exactly one started and one completed entry that name it, by its approver, and the
+    # completed entry is bound to the approved bundle (review streaming-r1 m6)
+    for rel, (bundle, approver) in APPROVED_FROZEN_RUNS.items():
+        mine = [e for e in frozen if e.get("gate_report_path") == rel]
+        assert [e["status"] for e in mine] == ["started", "completed"], (rel, frozen)
+        assert all(e.get("actor") == approver for e in mine), (rel, mine)
+        assert mine[1].get("bundle_sha256") == bundle, (rel, mine[1])
+        assert mine[1].get("run_complete") is True, (rel, mine[1])
 
 
 # Every non-test Python file that mentions the frozen test. All but training/gate.py predate the gate and are
