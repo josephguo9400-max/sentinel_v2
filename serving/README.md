@@ -616,6 +616,20 @@ for the same cores, even with one intra-op thread. The overhead is not in the mi
 its own. So a DeBERTa-class shadow should run on separate cores or a separate host (serving-hardening), or be
 sampled.
 
+## Streaming guard (`serving/streaming.py`, milestone streaming; not served)
+
+Output-side classification: `guard_stream(tokens, check, StreamGuardConfig(...))` wraps a model's async token
+stream, checks it every k tokens through the classifier service (`service_check(service)`), releases only checked
+text minus a hold-back of B tokens, and on a flag closes the source and withholds everything unreleased. Its
+failure mode covers only what the service cannot see (its own timeout, exceptions, a lag budget): `FAIL_CLOSED`
+stops the stream, `FAIL_OPEN` releases the waiting text marked unchecked, and no budget at all means the visible
+stream stalls. A flag from the bundle, including one its own `FAIL_CLOSED` produced, always stops the stream.
+It is a client of the policy engine, not part of it: no decision-path file changed, so the engine version (1.1.0)
+and the D23 bundle hash (`2ebc7d9ae676…`) are unchanged; for the same reason no endpoint serves it (its settings
+are not in any policy). Design, the threat-model difference from the input side, and the measured B x k x W sweep
+and backpressure results: `docs/design/streaming.md`; harness `serving/bench/streaming.py`, outputs
+`serving/bench_results/streaming/`.
+
 ## Configuration
 
 Each option is an environment variable `SENTINEL_<NAME>`; see `serving/config.py`. The options marked "injected"
