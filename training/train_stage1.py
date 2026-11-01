@@ -33,7 +33,7 @@ from sklearn.metrics import roc_auc_score
 from sklearn.pipeline import Pipeline
 
 from contracts import ArtifactManifest
-from training.common import ROOT, SEED, SPLITS_DIR, read_jsonl, sha256_file, write_json
+from training.common import ROOT, SEED, SPLITS_DIR, read_jsonl, read_training_jsonl, sha256_file, write_json
 from training.stage1_onnx import Stage1Onnx
 from training.stage1_text import (MAX_TOKENS, ONNX_LOCALE, PREPROCESSING_VERSION, STRIDE, TOKEN_PATTERN_PY,
                                   TOKEN_PATTERN_RE2, ascii_lower, chunk_text)
@@ -233,8 +233,8 @@ def main(argv=None) -> int:
         print(f"refusing to overwrite existing artifact directory {out_dir}", file=sys.stderr)
         return 2
 
-    train = list(read_jsonl(a.splits_dir / "train.jsonl"))
-    val = list(read_jsonl(a.splits_dir / "val.jsonl"))
+    train = read_training_jsonl(a.splits_dir / "train.jsonl")  # refuses any do_not_train row (review n1)
+    val = read_training_jsonl(a.splits_dir / "val.jsonl")
     Xtr, ytr = [r["text"] for r in train], np.array([r["label"] for r in train])
     Xva, yva = [r["text"] for r in val], np.array([r["label"] for r in val])
     print(f"train {len(train)}  val {len(val)}")

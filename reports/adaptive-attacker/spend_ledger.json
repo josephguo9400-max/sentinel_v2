@@ -1,0 +1,116 @@
+{
+  "ledger": "adaptive-attacker milestone API spend",
+  "note": "Cumulative API spend across all adaptive-attacker runs. The dollar cap reads prior_total_usd from here so the cap is milestone-wide, not per invocation (review m5). No key, header or request content is ever stored.",
+  "total_usd": 0.057127,
+  "n_entries": 5,
+  "accounting_notes": [
+    "2026-10-31 recount (no API calls made): every entry with token counts was re-priced at claude-haiku-5-5 $0.10/M input and $0.50/M output (<=100K-token prompts; all requests were far below 100K). The 24 local response-cache entries sum to 8,745 input / 11,387 output tokens, matching the build_carriers + author_refusal_probe entries exactly.",
+    "total_usd uses the live-victim upper bound. Token-derived range for all recorded entries: $0.020536 (live victim all at input rate) to $0.057126 (all at output rate).",
+    "first_version:eval_score (dc0aa1e) made 0 API calls (6 cache hits) and costs $0.",
+    "NOT IN total_usd: the first version's author-mode development pilots that produced the original refusal finding. dc0aa1e's design doc estimated total milestone spend at about $0.045, of which $0.0048 was the committed compose runs, i.e. roughly $0.04 for those pilots; no token counts were committed for them, so they cannot be re-priced. Including that unverified estimate, milestone spend to date is about $0.097.",
+    "Current scripts open their entry before the first call and rewrite it after every call (status in_progress until the run finishes)."
+  ],
+  "entries": [
+    {
+      "label": "first_version:pilot",
+      "time": "2026-10-31T17:53:16Z",
+      "status": "complete",
+      "backfilled": true,
+      "spent_usd": 0.001876,
+      "input_tokens": 1485,
+      "output_tokens": 3455,
+      "n_calls": 3,
+      "by_model": {
+        "claude-haiku-5-5": {
+          "usd": 0.001876,
+          "n_calls": 3,
+          "input_tokens": 1485,
+          "output_tokens": 3455
+        }
+      },
+      "note": "pilot, 3 calls; token counts from the committed summary at dc0aa1e (first version, before this ledger existed): reports/adaptive-attacker/pilot/summary.json meta.spend"
+    },
+    {
+      "label": "first_version:eval_decision",
+      "time": "2026-10-31T17:53:16Z",
+      "status": "complete",
+      "backfilled": true,
+      "spent_usd": 0.002945,
+      "input_tokens": 2970,
+      "output_tokens": 5295,
+      "n_calls": 6,
+      "by_model": {
+        "claude-haiku-5-5": {
+          "usd": 0.002945,
+          "n_calls": 6,
+          "input_tokens": 2970,
+          "output_tokens": 5295
+        }
+      },
+      "note": "eval_decision, 6 calls; token counts from the committed summary at dc0aa1e (first version, before this ledger existed): reports/adaptive-attacker/eval_decision/summary.json meta.spend"
+    },
+    {
+      "label": "build_carriers",
+      "time": "2026-10-31T18:27:56Z",
+      "spent_usd": 0.002191,
+      "input_tokens": 2217,
+      "output_tokens": 3938,
+      "n_calls": 12,
+      "by_model": {
+        "claude-haiku-5-5": {
+          "usd": 0.002191,
+          "n_calls": 12,
+          "input_tokens": 2217,
+          "output_tokens": 3938
+        }
+      },
+      "note": "benign carrier pool generation",
+      "status": "complete",
+      "repriced_2026_10_31": "re-checked: input and output tokens priced at their own rates; unchanged"
+    },
+    {
+      "label": "live_victim:eval_decision",
+      "time": "2026-10-31T18:35:59Z",
+      "spent_usd": 0.045738,
+      "input_tokens": null,
+      "output_tokens": null,
+      "n_calls": null,
+      "by_model": {
+        "claude-haiku-5-5": {
+          "usd": 0.045738,
+          "n_calls": null,
+          "input_tokens": null,
+          "output_tokens": null,
+          "combined_tokens": 91475
+        }
+      },
+      "note": "live claude-haiku-5-5 victim spot check (mode B/C)",
+      "status": "complete",
+      "spent_usd_lower_bound": 0.009148,
+      "spent_usd_upper_bound": 0.045738,
+      "combined_tokens": 91475,
+      "n_samples": 6,
+      "n_victim_runs": 12,
+      "correction_2026_10_31": "Originally recorded as $0.009148 with output_tokens 0: the script passed the victim's combined input+output token count (91,475) as input tokens (review r2 m3, verify/adaptive-attacker-r2 a10160f, reviews/adaptive-attacker-r2.md). The input/output split was not kept and cannot be recovered without rerunning, so the entry now carries the conservative upper bound (all 91,475 tokens at the $0.50/M output rate) as spent_usd, with the all-input-rate figure as spent_usd_lower_bound. n_calls was 6 samples, not API calls; the API-call count was not recorded (12 victim runs of up to 6 model turns each)."
+    },
+    {
+      "label": "author_refusal_probe",
+      "time": "2026-10-31T18:37:06Z",
+      "spent_usd": 0.004377,
+      "input_tokens": 6528,
+      "output_tokens": 7449,
+      "n_calls": 12,
+      "by_model": {
+        "claude-haiku-5-5": {
+          "usd": 0.004377,
+          "n_calls": 12,
+          "input_tokens": 6528,
+          "output_tokens": 7449
+        }
+      },
+      "note": "author-mode refusal probe",
+      "status": "complete",
+      "repriced_2026_10_31": "re-checked: input and output tokens priced at their own rates; unchanged"
+    }
+  ]
+}

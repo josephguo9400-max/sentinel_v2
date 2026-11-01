@@ -203,7 +203,8 @@ def paired_recall(candidate: list[dict], active: list[dict], label: int = 1) -> 
     return {"diff": out[0], "ci95": [out[1], out[2]], "only_candidate": b, "only_active": c, "n_pairs": a + b + c + d}
 
 
-def checks(records: list[dict], slices: dict, paired: dict | None, comparison: str | None, policy=None) -> dict:
+def checks(records: list[dict], slices: dict, paired: dict | None, comparison: str | None, policy=None,
+           adaptive_asr: dict | None = None, bundle_sha256: str | None = None) -> dict:
     """One verdict per RFC check. `paired` is None when there is no active bundle to pair with."""
     overall = slices.get("overall", {})
     bh = slices.get("benign_hard")
@@ -271,8 +272,32 @@ def checks(records: list[dict], slices: dict, paired: dict | None, comparison: s
                                                           "profile", "verdict": NOT_EVALUATED,
                           "why": "needs a load profile and >= 1,000 requests on a host that is not shared with the "
                                  "load generator (RFC serving-hardening); this run is sequential and in-process"}
-    out["adaptive_asr"] = {"name": "adaptive_asr", "rule": "mode B ASR no worse than the active bundle",
-                           "verdict": NOT_EVALUATED, "why": "the adaptive attacker is RFC adaptive-eval"}
+    aa = {"name": "adaptive_asr", "rule": "mode B ASR no worse than the active bundle",
+          "verdict": NOT_EVALUATED, "why": "the adaptive attacker is RFC adaptive-eval"}
+    if adaptive_asr is not None:
+        # Surface the measured adaptive-ASR (redteam/adaptive). The RFC rule is relative and D23 has no
+        # previous bundle to pair against, and the RFC defines no absolute threshold, so this stays
+        # report-only (verdict unchanged at NOT_EVALUATED); the owner decides the gate semantics
+        # (docs/design/adaptive-attacker.md §8-9).
+        measured_sha = adaptive_asr.get("measured_against_bundle_sha256")
+        # review m8: a missing bundle hash is NOT a match. applies is True only when both hashes are
+        # present and equal; a None on either side is "unknown", treated as a mismatch (does not apply).
+        applies = bool(bundle_sha256) and bool(measured_sha) and measured_sha == bundle_sha256
+        aa["reported"] = adaptive_asr
+        aa["applies_to_this_bundle"] = applies
+        if applies:
+            detail = "measured on this bundle."
+        elif not measured_sha:
+            detail = ("WARNING: the adaptive input carries no measured_against_bundle_sha256; the bundle "
+                      "it was measured on is unknown, so the number does not apply here.")
+        elif not bundle_sha256:
+            detail = ("WARNING: this report has no bundle hash to compare against; applicability is "
+                      "unknown, so the number does not apply here.")
+        else:
+            detail = f"WARNING: measured on bundle {measured_sha}, not this one; number does not apply."
+        aa["why"] = ("adaptive ASR reported from redteam/adaptive (report-only: the RFC rule is relative, "
+                     "D23 has no previous bundle, no absolute threshold is defined). " + detail)
+    out["adaptive_asr"] = aa
     return out
 
 
@@ -286,7 +311,8 @@ def verdict_of(checks_out: dict) -> str:
 
 
 def build_report(records, meta, bundle, wall, n_new, registry: Path, active_records=None,
-                 active_bundle=None, frozen_approved_by: str | None = None) -> dict:
+                 active_bundle=None, frozen_approved_by: str | None = None,
+                 adaptive_asr: dict | None = None) -> dict:
     from serving import engine_version as ev
     from serving.policy import describe_bundle
 
@@ -296,7 +322,8 @@ def build_report(records, meta, bundle, wall, n_new, registry: Path, active_reco
     if active_bundle is not None and active_bundle.bundle_sha256 != bundle.bundle_sha256:
         comparison = active_bundle.bundle_sha256
         paired = paired_recall(records, active_records or [])
-    cs = checks(records, slices, paired, comparison, bundle.policy)
+    cs = checks(records, slices, paired, comparison, bundle.policy, adaptive_asr=adaptive_asr,
+                bundle_sha256=bundle.bundle_sha256)
     return {
         "report": "release gate (training/gate.py)",
         "generated_at": _now(),
@@ -504,8 +531,11 @@ def _evaluate_after_audit(args) -> dict:
             active_records = [json.loads(line) for line in active_progress.read_text().splitlines()
                               if line.strip() and json.loads(line).get("bundle_sha256") == want]
             active_bundle = _bundle_of_policy(args.registry, other["bundle"]["policy_path"])
+    adaptive_asr = None
+    if getattr(args, "adaptive_asr", None):
+        adaptive_asr = json.loads(args.adaptive_asr.read_text())
     rep = build_report(records, meta, bundle, wall, n_new, args.registry, active_records, active_bundle,
-                       args.frozen_test_approved_by)
+                       args.frozen_test_approved_by, adaptive_asr=adaptive_asr)
     write_json(args.out, rep)
     return rep
 
@@ -525,6 +555,9 @@ def main(argv=None) -> int:
                     help="a gate report of the active bundle, for the paired recall check")
     ev.add_argument("--frozen-test-approved-by", default=None,
                     help="required with --split frozen_test: who decided to look at the final split")
+    ev.add_argument("--adaptive-asr", type=Path, default=None,
+                    help="an adaptive-attacker gate_input.json to surface in the report (report-only; "
+                         "no threshold, see docs/design/adaptive-attacker.md §8)")
     ev.add_argument("--audit-log", type=Path, default=AUDIT_LOG,
                     help="where frozen-test runs are recorded (default artifacts/audit_log.jsonl)")
 

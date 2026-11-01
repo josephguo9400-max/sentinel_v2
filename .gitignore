@@ -10,3 +10,14 @@ data/raw/
 # Per-item progress of the resumable equivalence run (the committed report holds its results).
 reports/**/*.progress.jsonl
 reports/**/*.rowcache.jsonl
+
+# Adaptive attacker (milestone adaptive-attacker): the API-response cache and raw per-query
+# transcripts may contain full candidate bodies and token usage; they are never committed. The
+# cache stores response bodies keyed by a request hash that excludes all headers (no API key, no
+# auth), but it is still local-only. Committed outputs are the small summary JSONs under
+# reports/adaptive-attacker/ and the labelled probe set under fixtures/probes/.
+.sentinel.env
+redteam/adaptive/cache/
+reports/adaptive-attacker/**/queries.jsonl
+reports/adaptive-attacker/**/transcripts/
+reports/adaptive-attacker/**/*.raw.jsonl

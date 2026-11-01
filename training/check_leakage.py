@@ -70,6 +70,38 @@ def check_replay(recs: list[tuple[str, dict]], keys: list[str], replay_dir: Path
     return errors, len(items)
 
 
+FIXTURES_DIR = ROOT / "fixtures"
+
+
+def _iter_do_not_train_bodies():
+    """Yield (path, body) for every string body in a do_not_train-marked fixture JSON under fixtures/."""
+    import json as _json
+    for p in sorted(FIXTURES_DIR.rglob("*.json")):
+        try:
+            obj = _json.loads(p.read_text(encoding="utf-8"))
+        except (OSError, _json.JSONDecodeError):
+            continue
+        if not (isinstance(obj, dict) and obj.get("do_not_train")):
+            continue
+        for key in ("probes", "cores", "items", "rows"):
+            for entry in obj.get(key, []) or []:
+                if isinstance(entry, dict):
+                    for field in ("body", "text", "template"):
+                        v = entry.get(field)
+                        if isinstance(v, str) and v.strip():
+                            yield p, v
+
+
+def check_do_not_train(recs, split_keys: set[str]) -> tuple[list[str], int]:
+    errors: list[str] = []
+    n = 0
+    for path, body in _iter_do_not_train_bodies():
+        n += 1
+        if dedup_key(body) in split_keys:
+            errors.append(f"DO_NOT_TRAIN body from {path.relative_to(ROOT)} leaked into a split")
+    return errors, n
+
+
 def check(splits_dir: Path, verify_hash: bool = True, replay_dir: Path | None = None) -> list[str]:
     errors: list[str] = []
     recs = []
@@ -121,6 +153,11 @@ def check(splits_dir: Path, verify_hash: bool = True, replay_dir: Path | None = 
         rerr, n_replay = check_replay(recs, keys, replay_dir)
         errors += rerr
 
+    # do_not_train binding (review n1): no body from a do_not_train-marked fixture (red-team probe sets,
+    # the adaptive core library/evasions) may appear in train/val by dedup key.
+    derr, n_dnt = check_do_not_train(recs, set(keys))
+    errors += derr
+
     if verify_hash:
         expected = FROZEN_TEST_SHA.read_text().split()[0] if FROZEN_TEST_SHA.exists() else None
         actual = sha256_file(splits_dir / "frozen_test.jsonl")
@@ -129,7 +166,7 @@ def check(splits_dir: Path, verify_hash: bool = True, replay_dir: Path | None = 
     print(f"checked {len(recs)} records in {len(SPLIT_NAMES)} splits: "
           f"{n_exact} exact and {n_near} near cross-split duplicates, "
           f"{n_bh} benign-hard sentences shared by val and frozen_test; {n_replay} replay items checked against "
-          f"all splits; {len(errors)} errors")
+          f"all splits; {n_dnt} do_not_train fixture bodies checked; {len(errors)} errors")
     return errors
 
 

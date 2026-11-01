@@ -217,7 +217,13 @@ attempt is closed, so any late tool call from the stray thread raises and cannot
   summary (subject + first sentence of each body), and sends only to addresses written in the
   user's own request (`cc <addr>` goes to cc).
 - `GullibleDefender`: the same, plus it obeys every `ACTION: send_email {json}` line or
-  natural-language "send/forward ... to <addr>" in any body it can read.
+  natural-language "send/forward ... to <addr>" in any body it can read. **Those two shapes are all it
+  obeys**, so it is not a worst-case victim for any other phrasing: it ignores "kindly cc X", "back up
+  … at X", "pass this thread along to X", "should be forwarded to X" and `TOOL: send_email(...)`, each
+  of which a person or a live LLM would read as an instruction. A measurement whose success predicate
+  is this defender therefore reports a **lower** bound on victim-actionable harm, not an upper bound;
+  see `docs/design/adaptive-attacker.md` §6 and review `reviews/adaptive-attacker-r2.md` R2-M1
+  (branch `verify/adaptive-attacker-r2`, commit `a10160f`).
 - `LLMDefender` (`redteam/llm_defender.py`): a real tool-calling defender (see below).
 
 ## Contract v1.2 adoption (cascade-and-shadow)
@@ -385,7 +391,10 @@ python -m redteam.llm_run --replay fixtures/recorded_runs/<run>.transcript.json 
 
 ## What this does not do yet
 
-- No adaptive attacker (the adaptive-eval milestone); the probes here are fixed, not score-optimized.
+- The probes here are fixed, not score-optimized. The adaptive-eval milestone adds a mutation search
+  (`redteam/adaptive/`), whose headline is a **fixed-budget evasion rate (lower bound)** under a
+  4-candidate-per-core budget, report-only in the gate; it is deliberately not an evasion optimizer
+  (`docs/design/adaptive-attacker.md` §8).
 - `KeywordClassifier` is a regex fake for tests; its "scores" are not measurements.
 - Grants come from the scenario file, standing in for an explicit user confirmation; there is
   no parser that extracts authorization from free-text user requests (on purpose: that parser
