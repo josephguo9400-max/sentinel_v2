@@ -137,6 +137,32 @@ Adds four kinds of fields to v1.0: request status, long-input handling, runtime 
 
 - **`TraceEvent`** (`contracts/trace.py`): adds `detector_timeout`, `shadow_failed`, `content_quarantined` event types, plus `mode` (A / B / C) and `source` (live / recorded / scripted) on every event.
 
+### Contracts after v1.1
+
+Every change since went through `docs/contract_requests.md`; the snapshot of all seven schemas is
+`tests/contract/schema_snapshot.json`.
+
+- **v1.2** (gateway-mvp, cascade-and-shadow): `DetectorResult.failure_reason`; `ArtifactManifest.tokenizer` and
+  `input_languages`; `TraceEvent.seq` and `scenario_id`; the `/classify` wire shape frozen as `ClassifyRequest` /
+  `ClassifyResponse` with `coverage_policy_applied` and `stages_run`.
+- **v1.3 and two new contracts** (policy-runtime, owner decision D25, design
+  [`docs/design/capability-policy.md`](design/capability-policy.md)): `DetectorResult.role` gains `"observe"`;
+  `ClassifyResponse` gains `policy_id`, `policy_version`, `bundle_sha256`, `unscored_by_any_step` and
+  `escalation_reason`. **`CapabilityManifest` 2.0** (`contracts/capability.py`) says what one detector can do —
+  every file pinned by sha256, its input contract, its scoring rule and its calibration — and **`ExecutionPolicy`
+  1.0** (`contracts/policy.py`) says how the gateway uses detectors: a gate step, a decide stage, observe steps, a
+  shadow, a coverage rule. `ArtifactManifest` becomes read-only: still accepted and converted, never written.
+  Routing fields (`cascade_role`, `gray_zone`, `failure_policy`, `timeout_ms`) leave the manifest, which is what
+  makes a routing change a policy version rather than a model version.
+
+  **Compatibility: v1.3 is a breaking change for readers pinned to v1.2.** Readers in this repository accept
+  1.1-1.3, so every in-tree consumer moved with the shared `contracts/` package. But `ClassifyResponse` and
+  `DetectorResult` keep `extra="forbid"`, the gateway writes `schema_version: "1.3"` on every `DetectorResult` and
+  adds five response fields, and there is no response-level version to negotiate on, so a client validating with
+  the v1.2 models rejects **every** v1.3 response, including D23 responses that carry no observe result.
+  Mitigation for an out-of-tree reader: upgrade to the 1.3 models (they accept 1.1-1.3 documents), or parse
+  responses without `extra="forbid"` and ignore unknown fields. The gateway has no 1.2 compatibility mode.
+
 ## Evaluation and release gate
 
 Every reported number carries its denominator, confidence interval and measurement conditions; with too little data the gate returns `INSUFFICIENT_EVIDENCE`, never PASS.
@@ -174,6 +200,17 @@ Every reported number carries its denominator, confidence interval and measureme
 
 Any FAIL → overall FAIL; no FAIL but some insufficient evidence → overall `INSUFFICIENT_EVIDENCE`; all pass → PASS, and the owner must still approve switching the active pointer.
 
+**Implemented in milestone policy-runtime** as `training/gate.py`, whose unit is the **bundle** (one execution
+policy, the capability versions it pins, the engine version), evaluated as served and never promoted by the gate
+itself. Recall, benign-hard FPR, compute saved and the error rate are checked; p99 latency and adaptive ASR are
+reported `NOT_EVALUATED` with the reason (both need work scheduled for later milestones), which makes any verdict
+without them `INSUFFICIENT_EVIDENCE`. Compute saved applies only to a policy that has a gate step: without one
+every request reaches a decider by design (D23), so there is nothing to save. Promotion is a separate command
+needing an explicit `--approved-by`, which appends `{actor, time, bundle_sha256, previous_bundle_sha256,
+gate_report_path, verdict, split}` to `artifacts/audit_log.jsonl`; rollback is a pointer flip to `previous`,
+audited the same way. `data/splits/frozen_test.jsonl` is read for a verdict by this script only, and only with an
+explicit `--frozen-test-approved-by`, which is itself audited.
+
 ## Milestones, checkpoints and kill criteria
 
 Time budget: until Monday 2026-11-02 (~90 hours). Milestones are named by what they deliver, not by day. Each milestone ends with an independent review agent pass, fixes, and owner review before anything reaches `main`.
@@ -183,6 +220,7 @@ Time budget: until Monday 2026-11-02 (~90 hours). Milestones are named by what t
 | 1 | **detector-baseline** (done) | Measure DeBERTa CPU latency and truncation behavior | Audit dataset licenses and sizes | — | Contracts v1.1 frozen | CPU p95 > 150 ms → int8 (triggered) |
 | 2 | **gateway-mvp** | Gateway `/classify`: chunking, batching, timeouts, failure policy, metrics; load-test script | Dedup, source-aware splits, lock frozen test; train Stage 1; eval harness with CIs | Email sandbox, 4 tools, deterministic judge, mode A/B/C switches | B's harness calls A's endpoint | Gateway not working → everyone helps A |
 | 3 | **cascade-and-shadow** | Manifest-driven loading; async shadow; cascade routing; int8 Stage 2; **coverage policy**: any unscored content (`truncated=True`) is handled by an explicit, configurable policy (flag, quarantine or deep scan), never silently allowed; **chunk-level cascade**: Stage 1 scores every chunk of any length, DeBERTa scores only suspicious chunks plus the first and last; **structure-aware chunking** on paragraph, quoted-reply, signature and hidden-HTML boundaries | Threshold sweep → cost-vs-recall curve, at both request and chunk level; publish candidate manifest | Defender agent on the real LLM; record first real traces; two new attack placements for later adaptive runs: injection hidden in the middle of an over-long email, and injection split across a chunk boundary | Candidate import smoke test; middle-placement and boundary-split probes measured before vs after; **traffic replay**: a dedicated replay set (never frozen test or val) mixing held-out sources, benign emails, sandbox emails and attacker outputs, replayed at a fixed rate, with delayed labels on a fraction of items and a drift schedule (rising non-English share); shadow compares agreement rate, latency overhead and errors against active | Savings < 30% → fall back to single model, report the negative result. **Amended 2026-10-30 (owner decision D22):** the criterion as written triggered on val (28.7% saved; 23.6% at identical recall) but did not specify a traffic mix, and val is 70% injections while Stage 1 can only save benign requests. It is now evaluated on the traffic replay set (measured, not projected), with per-class rates reported, and the original trigger is disclosed in the results. **Result 2026-10-30 (D23): the criterion fired on the replay set.** Simulated the way the gateway routes (real Stage 1, real language detector, DeBERTa on exactly the chunks the gateway would send; `reports/cascade-and-shadow/replay_counterfactual_served_faithful.json`, which agrees with the served run on 1,991/1,995 decisions), the cascade sends 1,198/2,000 requests to Stage 2 (40.1% saved) but recall falls from 247/306 (DeBERTa alone) to 201/306 (paired -15.0 pt, 95% CI [-19.4, -10.7]): 48 injections DeBERTa catches are allowed by Stage 1, 45 of them from `gandalf_summ`, indirect injections inside text to summarize, a source Stage 1 never trained on. The cascade brings no FPR benefit either (194/1,185 -> 191/1,185, paired -0.25 pt [-0.91, +0.40]). Best savings at equal recall: 2.5%; within 2 points of recall: 6.05%. The TF-IDF Stage 1 therefore makes no decisions: DeBERTa decides every request and Stage 1 runs observe-only (`stage1_mode: observe`) so its scores keep being collected; registry, coverage policy and shadow stay. Replayed through the gateway, this D23 deployment measured recall 248/303 = 81.8% [77.1, 85.8] and FPR 199/1,169 = 17.0% [15.0, 19.3] (`reports/cascade-and-shadow/d23/replay_counterfactual.json`). Coverage is necessary but not sufficient: with every token scored, a short injection in the middle of long benign text is usually still missed (`training/DILUTION.md`). A future Stage 1 candidate is judged by the same rule, but on a fresh replay draw: this replay set's weak spot is now known, so deciding on it again would overfit it. |
+| 3.5 | **policy-runtime** (done, in review) | Separate **capability** (what a detector can do: files pinned by sha256, input contract, scoring rule, calibration) from **execution policy** (gate / decide / observe / shadow / coverage, bands, budgets, failure modes); refactor `ClassifierService` in place into a policy engine; registry v2 names a **bundle** (policy + pinned capabilities + `engine_version`, hashed as `bundle_sha256`); contracts v1.3 (`role="observe"`, `policy_id`, `policy_version`, `bundle_sha256`, `unscored_by_any_step`, `escalation_reason`); decision-affecting environment variables refused at startup; shape B and the canary designed, with the canary rejected by the engine | Minimal release gate `training/gate.py` whose input is a bundle: as-served checks, a report bound to `bundle_sha256`, promotion only with `--approved-by` plus an audit log, rollback as a pointer flip; the frozen test readable by the gate alone | Consumers updated to skip `role="observe"` as they skip `"shadow"` and to record `bundle_sha256` | **Equivalence is the merge condition.** T3: all 2,000 replay items through the frozen pre-refactor service and the policy engine, real models, timeouts disabled — identical decisions and DeBERTa row selection, 0 differences: at engine 1.1.0 against the served bundle `2ebc7d9ae676…`, `reports/policy-runtime/t3_d23_equivalence_engine110_2ebc7d9a.json` (the merge-condition evidence; `t3_d23_equivalence.json` is the earlier engine-1.0.0 run, bundle `17fac609a8f2…`). It covers the served D23 path only, where `stages_run` and `policy_applied` are constant, and its DeBERTa scores are shared through a row cache, so identical scores hold by construction. Uncached subsets: the reviewer's 193 items at bc49454 (`reviews/policy-runtime-r1/t3_subset_nocache.json` on `verify/policy-runtime`, 3cacec5) and at engine 1.1.0 (`reviews/policy-runtime-r2/t3_subset_nocache_engine110.json` on `verify/policy-runtime-r2`, 7f29bd1), 0 differences and score gap 0.0 each; `t3_d23_first300_nocache_engine110.json` shared an in-memory cache between the engines (review r2-m1, since fixed), so it supports decision equality only. T4: the route policy reproduces the committed cascade counterfactual item for item, 201/306 and 191/1,185. T5: 1,970/1,974 live D23 responses identical, the other 4 Stage 2 timeouts listed. Live smoke of the v2 registry; gate dry run on val (`gate_val_d23.json` at engine 1.0.0, `gate_val_d23_engine110_2ebc7d9a.json` for the 1.1.0 bundle, identical slices) | Any decision difference in T3 → stop and report rather than adjust the tests (none occurred) |
 | 4 | **adaptive-eval** | Release gate, ROLLBACK, gate report page; **version iteration**: real candidates (DeBERTa fp32 → int8, Stage 1 v2 → MiniLM, config-only threshold/gray-zone changes as versions) plus deliberately bad candidates that must each be caught (hash or runtime mismatch rejected at load, over-aggressive threshold fails FPR, slow model fails p99, crashing model fails error rate without affecting active decisions); canary by request_id hash with automatic rollback on error rate, p99 or flag-rate deviation; previous version kept loaded so rollback is a pointer flip; every transition audit-logged (actor, time, hash, metrics) | Review red-team hard examples; train Stage 1 v2 (MiniLM-class) as a shadow candidate | Adaptive attacker: 3 strategies, ~100 queries, multiple seeds, attacking the cascade | Full gate dry run | No bypass within budget → report budget and curve; do not raise the budget |
 | 5 | **serving-hardening** | Stuck tokenization: a tokenizer thread held past its timeout must be visible in metrics and must not make later requests wait the full timeout; load generator on separate cores or host (the gateway-mvp load test shared the 2-core host with the client); concurrency curves (p50/p95/p99 vs offered load, find the knee); overload behavior (load shedding vs queueing to timeout); fault injection (slow, crashing, hanging Stage 2) verifying fail-open/closed degradation | Gate re-run on the hardened gateway | Attack runs under load | Hardening report with measured curves | Any fault that changes an active decision outside its declared failure policy → fix before anything else |
 | 6 | **writeup** | Static HTML page, replay mode (no API key needed) | Data and limitations report | Pick the recorded run for the demo | Technical write-up, design doc, backup demo | No new features |
@@ -302,6 +340,27 @@ Step 3 shows measured results only. If a later adaptive attacker run is added an
 - [x] LLM for defender and attacker: Anthropic API with a dedicated, spend-capped key (to be provided before the cascade-and-shadow milestone).
 - [x] Time budget: calendar time until 2026-11-02 (~90 hours); scope extended beyond the original four-day plan.
 - [x] Stage 1: TF-IDF + logistic regression first; a MiniLM-class model as the Stage 1 v2 candidate. A probe is not used: its cost advantage depends on reusing the served model's activations, which an API-served defender does not expose.
+
+### Owner decisions
+
+Earlier decisions are recorded where they apply: D17 (a change to what decides is a config version change that goes
+through the release gate; `serving/README.md`, "Registry"), D22 and D23 (milestone 3 row above). This section starts
+the log with D25.
+
+- **D25 (2026-10-30): capability manifests and execution policies.** The owner approved
+  [`docs/design/capability-policy.md`](design/capability-policy.md) for implementation in milestone
+  **policy-runtime**, with these answers to its §12:
+  1. No `decision: "quarantine"` on the wire in v1.3: a quarantine stays `decision="flag"` with
+     `coverage_policy_applied="quarantine"`.
+  2. `engine_version` is a manual semantic version, plus a test that fails when a decision-path file in `serving/`
+     changes without a bump (a committed sha256 list of those files tied to the version).
+  3. Under registry v2 a decision-affecting environment variable is a hard startup error that names the policy
+     field to change.
+  4. Canary is designed only; the engine rejects a policy with `canary` set.
+  5. Shape B (parallel decide) is implemented and tested with fake detectors only; it is not served.
+  6. Stage 1 scoring mismatch: no recalibration now. The capability records the served scoring rule, and its
+     calibration records that the threshold was chosen with a different rule (observe-only, no decision impact).
+  7. `stage1-tfidf-v2` and `stage1-tfidf-v2.1` stay separate, immutable capability versions.
 
 ### Risks and mitigations
 

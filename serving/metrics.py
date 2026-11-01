@@ -17,6 +17,9 @@ class GatewayMetrics:
         self.coverage = Counter("sentinel_coverage_policy_applied",
                                 "Requests decided by the coverage policy (content scored by neither stage)",
                                 ["policy"], registry=r)
+        self.unscored = Counter("sentinel_unscored_requests",
+                                "Requests with content neither cleared by the gate nor scored by a decide detector "
+                                "(ClassifyResponse.unscored_by_any_step), by decision", ["decision"], registry=r)
         self.detector_latency = Histogram("sentinel_detector_latency_seconds",
                                           "Detector latency per request; role=active is the decision path, "
                                           "role=shadow the observe-only Stage 1",

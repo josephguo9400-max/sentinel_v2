@@ -1,0 +1,51 @@
+{
+ "artifact_format": "onnx",
+ "calibration": {
+  "calibrated_with": null,
+  "chosen_on": "upstream:protectai/deberta-v3-base-prompt-injection-v2@90c9989b1a342275dd0d1a95aad283c04e075671",
+  "evidence_path": null,
+  "notes": "serving/bench_results/int8_compare.json measures its agreement with fp32.",
+  "rule": "upstream default 0.5 kept after dynamic int8 quantization (scripts/quantize_deberta.py); not re-calibrated",
+  "threshold": 0.5
+ },
+ "created_at": "2026-10-30T00:10:00Z",
+ "detector_id": "deberta-pi-v2-int8",
+ "detector_version": "2.0.0+90c9989b.onnx.int8-dyn-qint8-matmul-perchannel.v2",
+ "files": {
+  "candidates/deberta-pi-v2-int8/onnx/model.onnx": "3c91d31e6926a3c8c80f1061e3dddca0cc81bc245456ec2c702e036c6dc99c33",
+  "candidates/deberta-pi-v2-int8/onnx/tokenizer.json": "752fe5f0d5678ad563e1bd2ecc1ddf7a3ba7e2024d0ac1dba1a72975e26dff2f"
+ },
+ "input": {
+  "kind": "token",
+  "max_input_tokens": 512,
+  "preprocessing": "deberta-v3-window-v1",
+  "tokenizer": "hf:deberta-v3",
+  "validated_languages": null
+ },
+ "label_mapping": {
+  "0": "benign",
+  "1": "injection"
+ },
+ "limits": {
+  "latency_evidence_path": null,
+  "max_batch": 1,
+  "recommended_timeout_ms": 5000
+ },
+ "model_file": "candidates/deberta-pi-v2-int8/onnx/model.onnx",
+ "runtime": {
+  "onnxruntime": "1.29.0",
+  "python": "3.13.18",
+  "skl2onnx": null,
+  "sklearn": null,
+  "tokenizers": "0.23.3"
+ },
+ "schema_version": "2.0",
+ "scoring": {
+  "aggregation": "max",
+  "score_segment_pieces": false,
+  "subwindow_stride": null,
+  "subwindow_tokens": 0
+ },
+ "tokenizer_file": "candidates/deberta-pi-v2-int8/onnx/tokenizer.json",
+ "training_data_version": "upstream:protectai/deberta-v3-base-prompt-injection-v2@90c9989b1a342275dd0d1a95aad283c04e075671;quantized:scripts/quantize_deberta.py"
+}

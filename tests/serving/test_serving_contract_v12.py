@@ -5,7 +5,7 @@ import asyncio
 import pytest
 from fastapi.testclient import TestClient
 
-from contracts import ClassifyResponse
+from contracts import SCHEMA_VERSION, ClassifyResponse
 from fakes import FakeDetector
 from serving.app import create_app
 from serving.config import GatewayConfig
@@ -22,7 +22,7 @@ def test_ok_response_is_v12_classify_response():
         body = c.post("/classify", json={"text": "hello", "request_id": "a"}).json()
     resp = ClassifyResponse.model_validate(body)
     assert resp.stages_run and resp.coverage_policy_applied is None
-    assert all(r.schema_version == "1.2" and r.failure_reason is None for r in resp.results)
+    assert all(r.schema_version == SCHEMA_VERSION and r.failure_reason is None for r in resp.results)
 
 
 def test_request_contract_rejects_extra_and_long_request_id():

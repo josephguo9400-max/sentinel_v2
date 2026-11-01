@@ -236,8 +236,8 @@ def _prediction_truncated(event: TraceEvent) -> bool:
     d = event.detail or {}
     if d.get("truncated"):
         return True
-    # An observe-only result (role="shadow", D23) did not take part in the prediction: its truncation is not one.
-    return any(isinstance(r, dict) and r.get("truncated") and r.get("role") != "shadow"
+    # An observe or shadow result did not take part in the prediction: its truncation is not one (D23, D25).
+    return any(isinstance(r, dict) and r.get("truncated") and r.get("role", "active") == "active"
                for r in d.get("results") or [])
 
 

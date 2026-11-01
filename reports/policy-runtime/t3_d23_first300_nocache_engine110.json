@@ -1,0 +1,4320 @@
+{
+  "test": "T3 (design §8): D23 replay equivalence, legacy service vs policy engine",
+  "complete": true,
+  "n_items_total": 300,
+  "n_items_compared": 300,
+  "n_items_this_run": 300,
+  "identical_on_every_item": true,
+  "n_items_with_differences": 0,
+  "differences": [],
+  "inputs": {
+    "replay": "data/replay/replay-v1.jsonl",
+    "replay_sha256": "47ac4c845ab7604dc6940ff6fefa02049e383cb1b960818fa481da5fd1a07592",
+    "registry": "reports/policy-runtime/registry_v1_d23.json (sentinel-registry-v1)",
+    "registry_sha256": "45ec8790bea64c65b25d341fa6c2cc3a40231068aa3a63bfad1fb4a5f7455731",
+    "stage1": "stage1-tfidf-lr@stage1-tfidf-v2.1",
+    "stage1_model_sha256": "2a5df39a27e300b0a74d0f9565d4fee13e9862c2afa79fcc2af26e205f4b6af3",
+    "stage2": "deberta-pi-v2@2.0.0+90c9989b.onnx.fp32",
+    "stage2_model_sha256": "f0ea7f239f765aedbde7c9e163a7cb38a79c5b8853d3f76db5152172047b228c",
+    "engine_version": "1.1.0",
+    "timeouts_disabled_ms": 600000,
+    "config": {
+      "max_chunks": 4,
+      "coverage_policy": "flag",
+      "stage1_subwindow": [
+        64,
+        32
+      ],
+      "stage1_max_chunks": 512,
+      "max_batch": 1
+    }
+  },
+  "bundle": {
+    "run_policy_bundle_sha256": "90cb88f8ab7f736fb6d4af4f0bde9158a861faf3d0b755574c9fb2925582e3f8",
+    "committed_policy": "artifacts/policies/d23-deberta-decides/1/policy.json",
+    "committed_bundle_sha256": "2ebc7d9ae676e800c12c90075db5ba509fa7aa5263572dec0298519415500240",
+    "differences_from_committed_policy": {
+      "decide.members[0].timeout_ms": [
+        5000,
+        600000
+      ],
+      "observe[0].timeout_ms": [
+        50,
+        600000
+      ]
+    },
+    "only_timeout_fields_differ": true,
+    "note": "the run raises both budgets to 600 s so no decision is made by a deadline; everything else, including every capability pin, is the committed bundle"
+  },
+  "decisions": {
+    "allow": 186,
+    "flag": 114
+  },
+  "compared_fields_constant_on_every_item": [
+    "policy_applied",
+    "stages_run"
+  ],
+  "compared_field_value_counts": {
+    "decision": {
+      "\"allow\"": 186,
+      "\"flag\"": 114
+    },
+    "decided_by": {
+      "\"coverage_policy:flag\"": 2,
+      "\"deberta-pi-v2\"": 298
+    },
+    "policy_applied": {
+      "null": 300
+    },
+    "coverage_policy_applied": {
+      "\"flag\"": 2,
+      "null": 298
+    },
+    "stages_run": {
+      "[\"stage2\"]": 300
+    }
+  },
+  "paths": {
+    "coverage_flag": 2,
+    "stage2_allow": 186,
+    "stage2_flag": 112
+  },
+  "observe_outcomes": {
+    "would_escalate": 186,
+    "would_finalize_allow": 114
+  },
+  "deberta_rows": {
+    "total_scored_per_engine": 342,
+    "unique_rows_in_cache": 341,
+    "cache_hits": 343,
+    "cache_misses": 341,
+    "cache_path": null
+  },
+  "wall_s_this_run": 66.5,
+  "provenance": {
+    "this_run": {
+      "git_commit": "933e987228e157de5170cb05cdf2579512cf9b4c",
+      "git_dirty": false,
+      "engine_version": "1.1.0",
+      "engine_record_sha256": "c4dc5e43ae2444aa57f5dad058ea2d7f2373ebf3504761a0324f02771371555c",
+      "started_utc": "2026-10-30T21:52:38Z",
+      "n_items": 300,
+      "wall_s": 66.5,
+      "no_cache": true
+    },
+    "items_by_code_version": [
+      {
+        "code": {
+          "git_commit": "933e987228e157de5170cb05cdf2579512cf9b4c",
+          "git_dirty": false,
+          "engine_version": "1.1.0",
+          "engine_record_sha256": "c4dc5e43ae2444aa57f5dad058ea2d7f2373ebf3504761a0324f02771371555c"
+        },
+        "n_items": 300
+      }
+    ],
+    "note": "Each per-item record carries the git commit, dirty flag and engine version of the invocation that produced it (resumed runs append records from several invocations)."
+  },
+  "items": [
+    {
+      "id": "rp-0018f465dc4c27da4fd7",
+      "label": 0,
+      "decision": "flag",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_flag",
+      "observe_outcome": "would_escalate",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-001b157a71d02b54fd78",
+      "label": 0,
+      "decision": "allow",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_allow",
+      "observe_outcome": "would_escalate",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-00577bc0265155329677",
+      "label": 1,
+      "decision": "flag",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_flag",
+      "observe_outcome": "would_escalate",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-00c512005879f3de4272",
+      "label": 0,
+      "decision": "flag",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_flag",
+      "observe_outcome": "would_finalize_allow",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-01022da283ad7a70a347",
+      "label": 0,
+      "decision": "flag",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_flag",
+      "observe_outcome": "would_escalate",
+      "n_rows": 4
+    },
+    {
+      "id": "rp-010e716b569f015a21d4",
+      "label": 0,
+      "decision": "allow",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_allow",
+      "observe_outcome": "would_escalate",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-011b0e8f90209ae0794b",
+      "label": 1,
+      "decision": "allow",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_allow",
+      "observe_outcome": "would_finalize_allow",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-014912b358be1af52a15",
+      "label": 1,
+      "decision": "flag",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_flag",
+      "observe_outcome": "would_escalate",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-0171e5d8fe17196ea234",
+      "label": 0,
+      "decision": "allow",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_allow",
+      "observe_outcome": "would_finalize_allow",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-01955a66763c9a139656",
+      "label": 1,
+      "decision": "flag",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_flag",
+      "observe_outcome": "would_finalize_allow",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-01a2f539673b2c3be887",
+      "label": 0,
+      "decision": "allow",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_allow",
+      "observe_outcome": "would_escalate",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-01a9e993d9b6a15b6185",
+      "label": null,
+      "decision": "flag",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_flag",
+      "observe_outcome": "would_escalate",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-01ac977c13dc63c95a74",
+      "label": 0,
+      "decision": "allow",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_allow",
+      "observe_outcome": "would_finalize_allow",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-01ea734c7bffb604a724",
+      "label": 0,
+      "decision": "allow",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_allow",
+      "observe_outcome": "would_escalate",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-01fe783655ab6e61a73c",
+      "label": null,
+      "decision": "allow",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_allow",
+      "observe_outcome": "would_finalize_allow",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-02021558aec93add7028",
+      "label": 0,
+      "decision": "allow",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_allow",
+      "observe_outcome": "would_escalate",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-023f3c41a80616a8af37",
+      "label": null,
+      "decision": "flag",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_flag",
+      "observe_outcome": "would_finalize_allow",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-0249ee58f899ba5deb2d",
+      "label": 0,
+      "decision": "flag",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_flag",
+      "observe_outcome": "would_escalate",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-02587c1cbdd836b27b72",
+      "label": 0,
+      "decision": "flag",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_flag",
+      "observe_outcome": "would_escalate",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-0263b5157a4e0a2cb93d",
+      "label": 1,
+      "decision": "allow",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_allow",
+      "observe_outcome": "would_escalate",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-026af7edb372d586e3d9",
+      "label": 0,
+      "decision": "allow",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_allow",
+      "observe_outcome": "would_escalate",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-02a3d23c7b65354807c1",
+      "label": null,
+      "decision": "flag",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_flag",
+      "observe_outcome": "would_escalate",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-02c7246d5b6cd1350153",
+      "label": 0,
+      "decision": "flag",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_flag",
+      "observe_outcome": "would_escalate",
+      "n_rows": 2
+    },
+    {
+      "id": "rp-02eaf8d163888bfc7402",
+      "label": 0,
+      "decision": "flag",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_flag",
+      "observe_outcome": "would_escalate",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-02f71d28d1f2b09aca44",
+      "label": 0,
+      "decision": "allow",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_allow",
+      "observe_outcome": "would_finalize_allow",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-033eb62d80dfdb320894",
+      "label": 0,
+      "decision": "allow",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_allow",
+      "observe_outcome": "would_escalate",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-0350621ef5a073361986",
+      "label": 1,
+      "decision": "flag",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_flag",
+      "observe_outcome": "would_escalate",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-0380b7de49ef1b0ac0c1",
+      "label": 0,
+      "decision": "allow",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_allow",
+      "observe_outcome": "would_finalize_allow",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-039282d67aa0a3f74a32",
+      "label": null,
+      "decision": "flag",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_flag",
+      "observe_outcome": "would_escalate",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-039ca391d35a561a63ad",
+      "label": 0,
+      "decision": "allow",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_allow",
+      "observe_outcome": "would_escalate",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-039cf6a1fd0158d8a9a9",
+      "label": 0,
+      "decision": "allow",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_allow",
+      "observe_outcome": "would_finalize_allow",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-039e128eb484e69a4227",
+      "label": null,
+      "decision": "flag",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_flag",
+      "observe_outcome": "would_escalate",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-03ac68ec94e3b90b7537",
+      "label": 1,
+      "decision": "flag",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_flag",
+      "observe_outcome": "would_escalate",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-03d3633a3783d7a41f5b",
+      "label": 1,
+      "decision": "flag",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_flag",
+      "observe_outcome": "would_escalate",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-03ea8fda71775bc52bf5",
+      "label": null,
+      "decision": "allow",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_allow",
+      "observe_outcome": "would_escalate",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-04005dc5bd5818fb2694",
+      "label": 0,
+      "decision": "flag",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_flag",
+      "observe_outcome": "would_escalate",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-04147a9eefd4b1b0de5e",
+      "label": 0,
+      "decision": "allow",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_allow",
+      "observe_outcome": "would_finalize_allow",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-0415096605201b90e79a",
+      "label": null,
+      "decision": "flag",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_flag",
+      "observe_outcome": "would_finalize_allow",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-04260f25ec09b0079489",
+      "label": 0,
+      "decision": "allow",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_allow",
+      "observe_outcome": "would_escalate",
+      "n_rows": 2
+    },
+    {
+      "id": "rp-0439cfac81504cb5430f",
+      "label": 0,
+      "decision": "allow",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_allow",
+      "observe_outcome": "would_escalate",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-0469dd5244ef0b78025b",
+      "label": 1,
+      "decision": "flag",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_flag",
+      "observe_outcome": "would_escalate",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-04db2b2856cc6f38f7c5",
+      "label": 0,
+      "decision": "allow",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_allow",
+      "observe_outcome": "would_finalize_allow",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-04dd4f8c375cc5a983bb",
+      "label": 0,
+      "decision": "allow",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_allow",
+      "observe_outcome": "would_escalate",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-04e1a0fef75c4d1a1115",
+      "label": 0,
+      "decision": "allow",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_allow",
+      "observe_outcome": "would_escalate",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-053676c86967369a1c5d",
+      "label": null,
+      "decision": "allow",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_allow",
+      "observe_outcome": "would_finalize_allow",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-053b890c62fba60d2466",
+      "label": null,
+      "decision": "allow",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_allow",
+      "observe_outcome": "would_escalate",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-0549a6241e58271c361f",
+      "label": null,
+      "decision": "flag",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_flag",
+      "observe_outcome": "would_escalate",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-054a4a3048b03bf80997",
+      "label": 0,
+      "decision": "allow",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_allow",
+      "observe_outcome": "would_escalate",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-0553485c9ae3f97ebdb4",
+      "label": 0,
+      "decision": "allow",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_allow",
+      "observe_outcome": "would_escalate",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-056a46d516e6ef1aeb3a",
+      "label": 0,
+      "decision": "allow",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_allow",
+      "observe_outcome": "would_escalate",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-05727670fa06d17bea4b",
+      "label": null,
+      "decision": "flag",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_flag",
+      "observe_outcome": "would_finalize_allow",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-05858739aab8b951749d",
+      "label": null,
+      "decision": "allow",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_allow",
+      "observe_outcome": "would_escalate",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-058db9ad97f274c75096",
+      "label": 0,
+      "decision": "flag",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_flag",
+      "observe_outcome": "would_escalate",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-05b395b88313fca304ab",
+      "label": 0,
+      "decision": "allow",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_allow",
+      "observe_outcome": "would_finalize_allow",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-05c9c82ba88411a8a8df",
+      "label": null,
+      "decision": "flag",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_flag",
+      "observe_outcome": "would_escalate",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-05f33f56a270e0ba0862",
+      "label": 0,
+      "decision": "allow",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_allow",
+      "observe_outcome": "would_escalate",
+      "n_rows": 2
+    },
+    {
+      "id": "rp-0634f4054a0306d6f7ea",
+      "label": 0,
+      "decision": "allow",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_allow",
+      "observe_outcome": "would_finalize_allow",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-065face6e5edd6ca48c9",
+      "label": 0,
+      "decision": "allow",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_allow",
+      "observe_outcome": "would_finalize_allow",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-06737fbc3534dba2e656",
+      "label": 1,
+      "decision": "flag",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_flag",
+      "observe_outcome": "would_escalate",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-067d23510833fac12d24",
+      "label": 0,
+      "decision": "allow",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_allow",
+      "observe_outcome": "would_finalize_allow",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-0697f53a4b258134f6a5",
+      "label": null,
+      "decision": "allow",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_allow",
+      "observe_outcome": "would_finalize_allow",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-06a407d80e871372c806",
+      "label": null,
+      "decision": "allow",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_allow",
+      "observe_outcome": "would_escalate",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-06c473499037e6d864fe",
+      "label": 0,
+      "decision": "allow",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_allow",
+      "observe_outcome": "would_finalize_allow",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-06d33422f5ab85ede0d9",
+      "label": 1,
+      "decision": "flag",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_flag",
+      "observe_outcome": "would_escalate",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-06de1f52ae0184d763c6",
+      "label": 0,
+      "decision": "allow",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_allow",
+      "observe_outcome": "would_finalize_allow",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-0707e64831bad5977802",
+      "label": 1,
+      "decision": "flag",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_flag",
+      "observe_outcome": "would_finalize_allow",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-0715d3654f209b15ecd4",
+      "label": 0,
+      "decision": "flag",
+      "decided_by": "coverage_policy:flag",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": "flag",
+      "path": "coverage_flag",
+      "observe_outcome": "would_escalate",
+      "n_rows": 4
+    },
+    {
+      "id": "rp-071a4f10cdfdd57fbdb9",
+      "label": 0,
+      "decision": "allow",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_allow",
+      "observe_outcome": "would_escalate",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-072469c928f14f7678bb",
+      "label": 0,
+      "decision": "allow",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_allow",
+      "observe_outcome": "would_finalize_allow",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-072e9d55ca519ab36b2f",
+      "label": 0,
+      "decision": "flag",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_flag",
+      "observe_outcome": "would_escalate",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-073183b02e507329b431",
+      "label": 0,
+      "decision": "allow",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_allow",
+      "observe_outcome": "would_escalate",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-074bac5bf05032e835a7",
+      "label": 0,
+      "decision": "allow",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_allow",
+      "observe_outcome": "would_finalize_allow",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-075233cdde0ba05bffe9",
+      "label": 0,
+      "decision": "allow",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_allow",
+      "observe_outcome": "would_escalate",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-0758a56a6e1af6fe2e6b",
+      "label": 0,
+      "decision": "allow",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_allow",
+      "observe_outcome": "would_escalate",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-077849ca7eb4e4842a99",
+      "label": 0,
+      "decision": "allow",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_allow",
+      "observe_outcome": "would_escalate",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-079821500b33ccb68002",
+      "label": 0,
+      "decision": "allow",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_allow",
+      "observe_outcome": "would_escalate",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-07bfcac21c064dce7c7c",
+      "label": 1,
+      "decision": "flag",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_flag",
+      "observe_outcome": "would_finalize_allow",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-07e12b95aed1ff41abbb",
+      "label": 0,
+      "decision": "allow",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_allow",
+      "observe_outcome": "would_finalize_allow",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-07f3063f974c88b1cafc",
+      "label": 0,
+      "decision": "allow",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_allow",
+      "observe_outcome": "would_escalate",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-07f8b981b216d147bc9f",
+      "label": null,
+      "decision": "flag",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_flag",
+      "observe_outcome": "would_escalate",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-085764ea787f4e88b937",
+      "label": 0,
+      "decision": "allow",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_allow",
+      "observe_outcome": "would_finalize_allow",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-085d9ac55899570cb071",
+      "label": 0,
+      "decision": "allow",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_allow",
+      "observe_outcome": "would_finalize_allow",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-08a2f399750f4058cc6c",
+      "label": 0,
+      "decision": "allow",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_allow",
+      "observe_outcome": "would_finalize_allow",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-08c4d4cd89d54c305ac8",
+      "label": null,
+      "decision": "flag",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_flag",
+      "observe_outcome": "would_finalize_allow",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-08f62c994d416efb7339",
+      "label": 0,
+      "decision": "allow",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_allow",
+      "observe_outcome": "would_finalize_allow",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-096b8433d0c0080b585c",
+      "label": 0,
+      "decision": "allow",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_allow",
+      "observe_outcome": "would_finalize_allow",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-096f546ec5c37881d452",
+      "label": 0,
+      "decision": "allow",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_allow",
+      "observe_outcome": "would_finalize_allow",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-09bf6371ff63e09c023a",
+      "label": 0,
+      "decision": "allow",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_allow",
+      "observe_outcome": "would_finalize_allow",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-09c79b4a1bc809b81938",
+      "label": 0,
+      "decision": "flag",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_flag",
+      "observe_outcome": "would_escalate",
+      "n_rows": 2
+    },
+    {
+      "id": "rp-0a71edbcc5ade8aa3378",
+      "label": 0,
+      "decision": "allow",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_allow",
+      "observe_outcome": "would_escalate",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-0a792242878241d1806a",
+      "label": null,
+      "decision": "flag",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_flag",
+      "observe_outcome": "would_finalize_allow",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-0a8f3a5287f174fb29c0",
+      "label": null,
+      "decision": "allow",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_allow",
+      "observe_outcome": "would_finalize_allow",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-0b0027e19427cbf71b59",
+      "label": 0,
+      "decision": "flag",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_flag",
+      "observe_outcome": "would_escalate",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-0b2e81afbe8c89723c3e",
+      "label": 0,
+      "decision": "flag",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_flag",
+      "observe_outcome": "would_escalate",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-0b559a6bbbf7239903d7",
+      "label": null,
+      "decision": "flag",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_flag",
+      "observe_outcome": "would_escalate",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-0b57f7ea1d3ee144b588",
+      "label": 1,
+      "decision": "flag",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_flag",
+      "observe_outcome": "would_escalate",
+      "n_rows": 2
+    },
+    {
+      "id": "rp-0bad76dc0101f77238ba",
+      "label": 0,
+      "decision": "allow",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_allow",
+      "observe_outcome": "would_escalate",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-0be387605f2eab93b9c2",
+      "label": 0,
+      "decision": "allow",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_allow",
+      "observe_outcome": "would_escalate",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-0be7736b599c5d7bbbce",
+      "label": 0,
+      "decision": "allow",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_allow",
+      "observe_outcome": "would_escalate",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-0bfe6bfebe673aff1e94",
+      "label": 0,
+      "decision": "allow",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_allow",
+      "observe_outcome": "would_escalate",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-0c0f0d8e030b50edce45",
+      "label": 0,
+      "decision": "allow",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_allow",
+      "observe_outcome": "would_escalate",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-0c1f8efd2a43fe963d06",
+      "label": null,
+      "decision": "allow",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_allow",
+      "observe_outcome": "would_finalize_allow",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-0c31e0deabe592379b81",
+      "label": null,
+      "decision": "allow",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_allow",
+      "observe_outcome": "would_finalize_allow",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-0c3c6d8e9521d344cb89",
+      "label": null,
+      "decision": "flag",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_flag",
+      "observe_outcome": "would_finalize_allow",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-0c4c8c4211db76a9b6cc",
+      "label": 0,
+      "decision": "allow",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_allow",
+      "observe_outcome": "would_escalate",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-0c65d4db61a8a7fd9003",
+      "label": null,
+      "decision": "allow",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_allow",
+      "observe_outcome": "would_finalize_allow",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-0c829725b6f9ad73033d",
+      "label": 0,
+      "decision": "flag",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_flag",
+      "observe_outcome": "would_escalate",
+      "n_rows": 4
+    },
+    {
+      "id": "rp-0ca19c6ebec3217ff6ab",
+      "label": 0,
+      "decision": "allow",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_allow",
+      "observe_outcome": "would_finalize_allow",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-0cae59b854d9ca2d0596",
+      "label": 1,
+      "decision": "allow",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_allow",
+      "observe_outcome": "would_finalize_allow",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-0cc91d21cf8d334823d9",
+      "label": 0,
+      "decision": "allow",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_allow",
+      "observe_outcome": "would_finalize_allow",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-0cfd49f70a8612f432ec",
+      "label": 0,
+      "decision": "allow",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_allow",
+      "observe_outcome": "would_escalate",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-0d18f8c1b09012c79528",
+      "label": 0,
+      "decision": "allow",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_allow",
+      "observe_outcome": "would_finalize_allow",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-0d2efd2020d724fa97a6",
+      "label": 0,
+      "decision": "allow",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_allow",
+      "observe_outcome": "would_finalize_allow",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-0dc7b2f8f81cf51ec72f",
+      "label": 0,
+      "decision": "allow",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_allow",
+      "observe_outcome": "would_finalize_allow",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-0dd800e446ebb39ac6ad",
+      "label": 1,
+      "decision": "flag",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_flag",
+      "observe_outcome": "would_escalate",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-0de55b8db9b05cd9dcad",
+      "label": 1,
+      "decision": "flag",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_flag",
+      "observe_outcome": "would_escalate",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-0e4dbd44d7029888dbb1",
+      "label": 0,
+      "decision": "flag",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_flag",
+      "observe_outcome": "would_escalate",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-0e61225eed8f5146d3a3",
+      "label": 0,
+      "decision": "flag",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_flag",
+      "observe_outcome": "would_escalate",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-0e7df9f5b3459e1396e1",
+      "label": 0,
+      "decision": "allow",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_allow",
+      "observe_outcome": "would_finalize_allow",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-0e875d0d6305656ec56e",
+      "label": 1,
+      "decision": "flag",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_flag",
+      "observe_outcome": "would_finalize_allow",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-0e9cbb84ff319ed9b5d9",
+      "label": null,
+      "decision": "flag",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_flag",
+      "observe_outcome": "would_escalate",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-0eb45ef99ea97cb2b581",
+      "label": 0,
+      "decision": "allow",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_allow",
+      "observe_outcome": "would_escalate",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-0ecfd60c12d5ac4fd763",
+      "label": 0,
+      "decision": "allow",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_allow",
+      "observe_outcome": "would_finalize_allow",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-0f48aec85ad0a7423260",
+      "label": null,
+      "decision": "allow",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_allow",
+      "observe_outcome": "would_escalate",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-0f6abfaef9ab23f50f4d",
+      "label": 0,
+      "decision": "allow",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_allow",
+      "observe_outcome": "would_escalate",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-0f761bc5955ceee2e007",
+      "label": 0,
+      "decision": "allow",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_allow",
+      "observe_outcome": "would_escalate",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-0f7763a975829b7e47a1",
+      "label": null,
+      "decision": "allow",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_allow",
+      "observe_outcome": "would_escalate",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-0f8f193295c256744339",
+      "label": 0,
+      "decision": "allow",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_allow",
+      "observe_outcome": "would_finalize_allow",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-0fd87ad5fb2c0bd7195a",
+      "label": 0,
+      "decision": "allow",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_allow",
+      "observe_outcome": "would_escalate",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-0fe89b730a44998d05f1",
+      "label": null,
+      "decision": "flag",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_flag",
+      "observe_outcome": "would_escalate",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-100252e3291f0bc59bcd",
+      "label": null,
+      "decision": "allow",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_allow",
+      "observe_outcome": "would_escalate",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-10a584e42ed6f9d29bfd",
+      "label": 0,
+      "decision": "allow",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_allow",
+      "observe_outcome": "would_finalize_allow",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-10aca8e3ee33ba68cc54",
+      "label": 0,
+      "decision": "allow",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_allow",
+      "observe_outcome": "would_escalate",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-10d5de3c9e60c40f8b8e",
+      "label": 1,
+      "decision": "flag",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_flag",
+      "observe_outcome": "would_escalate",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-116b21d1b25d8a66fcd1",
+      "label": 0,
+      "decision": "allow",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_allow",
+      "observe_outcome": "would_escalate",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-11e8f6cc4286a00f56b8",
+      "label": 0,
+      "decision": "flag",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_flag",
+      "observe_outcome": "would_escalate",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-120115d73f2b5314be84",
+      "label": 1,
+      "decision": "flag",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_flag",
+      "observe_outcome": "would_escalate",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-12436f461a2078e70339",
+      "label": null,
+      "decision": "allow",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_allow",
+      "observe_outcome": "would_finalize_allow",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-1251a92ef151c722b086",
+      "label": 0,
+      "decision": "allow",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_allow",
+      "observe_outcome": "would_finalize_allow",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-125b62a955b55bacdf97",
+      "label": 0,
+      "decision": "allow",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_allow",
+      "observe_outcome": "would_finalize_allow",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-127b440b6e4317a21fa5",
+      "label": null,
+      "decision": "flag",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_flag",
+      "observe_outcome": "would_finalize_allow",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-12a254783f8b8d5dc316",
+      "label": 0,
+      "decision": "allow",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_allow",
+      "observe_outcome": "would_escalate",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-12b2f89611c07e776dfc",
+      "label": 0,
+      "decision": "allow",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_allow",
+      "observe_outcome": "would_escalate",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-12d1417b7bca40c9a1c2",
+      "label": 0,
+      "decision": "allow",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_allow",
+      "observe_outcome": "would_escalate",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-1317345bae4dcf7888ac",
+      "label": 1,
+      "decision": "flag",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_flag",
+      "observe_outcome": "would_escalate",
+      "n_rows": 4
+    },
+    {
+      "id": "rp-131cf3f1062427a61bdc",
+      "label": null,
+      "decision": "allow",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_allow",
+      "observe_outcome": "would_escalate",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-1372573f869855de6c41",
+      "label": 0,
+      "decision": "allow",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_allow",
+      "observe_outcome": "would_escalate",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-13861eb7f2a380caec8d",
+      "label": 1,
+      "decision": "flag",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_flag",
+      "observe_outcome": "would_escalate",
+      "n_rows": 3
+    },
+    {
+      "id": "rp-14389927ecb4c1e4e851",
+      "label": null,
+      "decision": "allow",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_allow",
+      "observe_outcome": "would_finalize_allow",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-1453a0d6c17fc8ac1e08",
+      "label": 0,
+      "decision": "flag",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_flag",
+      "observe_outcome": "would_escalate",
+      "n_rows": 4
+    },
+    {
+      "id": "rp-147abd6a89127c1784e1",
+      "label": null,
+      "decision": "flag",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_flag",
+      "observe_outcome": "would_finalize_allow",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-147fda5104df9cebedcd",
+      "label": 0,
+      "decision": "allow",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_allow",
+      "observe_outcome": "would_escalate",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-14c148c452ee0388491a",
+      "label": 1,
+      "decision": "flag",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_flag",
+      "observe_outcome": "would_escalate",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-14e8dc7515f057a135e8",
+      "label": 0,
+      "decision": "allow",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_allow",
+      "observe_outcome": "would_escalate",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-14f616ad35a2e87e2f48",
+      "label": null,
+      "decision": "flag",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_flag",
+      "observe_outcome": "would_finalize_allow",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-14f8d2bf988595600928",
+      "label": 0,
+      "decision": "allow",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_allow",
+      "observe_outcome": "would_escalate",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-15193f14bb7fd8cb8c78",
+      "label": 0,
+      "decision": "allow",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_allow",
+      "observe_outcome": "would_escalate",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-15296e15901a5efad6b7",
+      "label": 0,
+      "decision": "allow",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_allow",
+      "observe_outcome": "would_escalate",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-157857e7bbbb0e38b00b",
+      "label": null,
+      "decision": "flag",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_flag",
+      "observe_outcome": "would_escalate",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-15a4c818265a54f82f07",
+      "label": 0,
+      "decision": "allow",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_allow",
+      "observe_outcome": "would_finalize_allow",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-16338e6dee1499649cf8",
+      "label": 0,
+      "decision": "allow",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_allow",
+      "observe_outcome": "would_escalate",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-163de2d59d0b1e6636c5",
+      "label": 0,
+      "decision": "allow",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_allow",
+      "observe_outcome": "would_escalate",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-1649afeb93cf3e327bac",
+      "label": 0,
+      "decision": "allow",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_allow",
+      "observe_outcome": "would_finalize_allow",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-164fc2045f9127dbf5b3",
+      "label": 0,
+      "decision": "allow",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_allow",
+      "observe_outcome": "would_finalize_allow",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-1658ecbafefa839ec37b",
+      "label": 0,
+      "decision": "allow",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_allow",
+      "observe_outcome": "would_escalate",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-1675fb9c8f5aee2221d6",
+      "label": 0,
+      "decision": "allow",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_allow",
+      "observe_outcome": "would_escalate",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-1692e111a2a43138d66f",
+      "label": 0,
+      "decision": "allow",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_allow",
+      "observe_outcome": "would_escalate",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-169f1201e7dc6b75d0d5",
+      "label": 0,
+      "decision": "allow",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_allow",
+      "observe_outcome": "would_escalate",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-16ebbe3e5adc8596f915",
+      "label": null,
+      "decision": "flag",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_flag",
+      "observe_outcome": "would_escalate",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-172b462d458278c84525",
+      "label": null,
+      "decision": "flag",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_flag",
+      "observe_outcome": "would_finalize_allow",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-173193ba63afd52d3624",
+      "label": null,
+      "decision": "flag",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_flag",
+      "observe_outcome": "would_escalate",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-1777ace11790568e65b6",
+      "label": null,
+      "decision": "flag",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_flag",
+      "observe_outcome": "would_escalate",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-178cd7715ddc9ea53be2",
+      "label": null,
+      "decision": "flag",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_flag",
+      "observe_outcome": "would_finalize_allow",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-178f67506d3268d50d3f",
+      "label": 1,
+      "decision": "allow",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_allow",
+      "observe_outcome": "would_escalate",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-17c77cadaa59ae90ee28",
+      "label": 0,
+      "decision": "flag",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_flag",
+      "observe_outcome": "would_finalize_allow",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-17cb28eda81ee8d0a63c",
+      "label": 0,
+      "decision": "allow",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_allow",
+      "observe_outcome": "would_escalate",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-17f26d94adbb47886450",
+      "label": 1,
+      "decision": "flag",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_flag",
+      "observe_outcome": "would_escalate",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-18084e895763cefee6b0",
+      "label": 0,
+      "decision": "allow",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_allow",
+      "observe_outcome": "would_finalize_allow",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-1814ca949501290ecda3",
+      "label": null,
+      "decision": "flag",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_flag",
+      "observe_outcome": "would_finalize_allow",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-18436d0176d7521b80ee",
+      "label": 1,
+      "decision": "flag",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_flag",
+      "observe_outcome": "would_finalize_allow",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-185196ba38d25b152de6",
+      "label": 1,
+      "decision": "flag",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_flag",
+      "observe_outcome": "would_escalate",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-1857ee069f11ddb07e69",
+      "label": null,
+      "decision": "allow",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_allow",
+      "observe_outcome": "would_escalate",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-188ccb4900729c9f3dc2",
+      "label": 0,
+      "decision": "allow",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_allow",
+      "observe_outcome": "would_escalate",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-18c00ecb7bf3e7163ba4",
+      "label": 0,
+      "decision": "allow",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_allow",
+      "observe_outcome": "would_finalize_allow",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-18e52d169c83e8c044af",
+      "label": 1,
+      "decision": "flag",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_flag",
+      "observe_outcome": "would_escalate",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-190c6a3d91f769932cc0",
+      "label": 0,
+      "decision": "allow",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_allow",
+      "observe_outcome": "would_escalate",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-199f2970d716a8e5b52e",
+      "label": null,
+      "decision": "allow",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_allow",
+      "observe_outcome": "would_escalate",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-19c3d076cab046cd5672",
+      "label": null,
+      "decision": "flag",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_flag",
+      "observe_outcome": "would_finalize_allow",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-19c59a125f2c925b18f9",
+      "label": 0,
+      "decision": "allow",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_allow",
+      "observe_outcome": "would_escalate",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-1a088b9bd83d5feb16e1",
+      "label": 0,
+      "decision": "allow",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_allow",
+      "observe_outcome": "would_finalize_allow",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-1a94ee57cb8dd1f67edf",
+      "label": 0,
+      "decision": "allow",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_allow",
+      "observe_outcome": "would_escalate",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-1a9febef4ce964e25c53",
+      "label": null,
+      "decision": "flag",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_flag",
+      "observe_outcome": "would_finalize_allow",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-1ac00cf0ff94b57102b8",
+      "label": null,
+      "decision": "allow",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_allow",
+      "observe_outcome": "would_finalize_allow",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-1aca2fac807b7ae69405",
+      "label": 0,
+      "decision": "allow",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_allow",
+      "observe_outcome": "would_finalize_allow",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-1acc578aa0d77d7d3646",
+      "label": 0,
+      "decision": "allow",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_allow",
+      "observe_outcome": "would_escalate",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-1ad53e4f89f2612616a4",
+      "label": 1,
+      "decision": "flag",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_flag",
+      "observe_outcome": "would_escalate",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-1ae58674bb19268d6e85",
+      "label": 0,
+      "decision": "allow",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_allow",
+      "observe_outcome": "would_finalize_allow",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-1b503664f9e5a2eb27f4",
+      "label": 0,
+      "decision": "allow",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_allow",
+      "observe_outcome": "would_finalize_allow",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-1b7c7c1316cab6d12cb8",
+      "label": 1,
+      "decision": "flag",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_flag",
+      "observe_outcome": "would_escalate",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-1bd48d5d617d7254f12c",
+      "label": 0,
+      "decision": "allow",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_allow",
+      "observe_outcome": "would_escalate",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-1bfdcb19a53427049e80",
+      "label": 0,
+      "decision": "flag",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_flag",
+      "observe_outcome": "would_escalate",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-1c1776774c723e198d85",
+      "label": 0,
+      "decision": "allow",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_allow",
+      "observe_outcome": "would_escalate",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-1c264ce1619dd0f58847",
+      "label": null,
+      "decision": "flag",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_flag",
+      "observe_outcome": "would_escalate",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-1c305e4314eff5458ef7",
+      "label": 1,
+      "decision": "flag",
+      "decided_by": "coverage_policy:flag",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": "flag",
+      "path": "coverage_flag",
+      "observe_outcome": "would_escalate",
+      "n_rows": 4
+    },
+    {
+      "id": "rp-1c398af3d99342ea5d4b",
+      "label": 1,
+      "decision": "allow",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_allow",
+      "observe_outcome": "would_escalate",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-1c5c02bbf9098ada2ec4",
+      "label": null,
+      "decision": "flag",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_flag",
+      "observe_outcome": "would_finalize_allow",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-1ce8e427990a1a8543d9",
+      "label": null,
+      "decision": "flag",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_flag",
+      "observe_outcome": "would_escalate",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-1d2417b4cb10d7b93608",
+      "label": 0,
+      "decision": "allow",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_allow",
+      "observe_outcome": "would_finalize_allow",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-1d2a692658d9a192f43a",
+      "label": null,
+      "decision": "flag",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_flag",
+      "observe_outcome": "would_finalize_allow",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-1d6107c89c064510697d",
+      "label": null,
+      "decision": "allow",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_allow",
+      "observe_outcome": "would_escalate",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-1daaf8ece6965a4ae907",
+      "label": null,
+      "decision": "flag",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_flag",
+      "observe_outcome": "would_finalize_allow",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-1db6655aa71cce77d439",
+      "label": null,
+      "decision": "flag",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_flag",
+      "observe_outcome": "would_finalize_allow",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-1e0a0ebfd565920377ee",
+      "label": 0,
+      "decision": "allow",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_allow",
+      "observe_outcome": "would_finalize_allow",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-1e2a6e311e4cdd4dfdba",
+      "label": 0,
+      "decision": "allow",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_allow",
+      "observe_outcome": "would_escalate",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-1e3c345aeb01ba2b4032",
+      "label": 0,
+      "decision": "allow",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_allow",
+      "observe_outcome": "would_finalize_allow",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-1e947ac800509d9783f7",
+      "label": 0,
+      "decision": "allow",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_allow",
+      "observe_outcome": "would_escalate",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-1eb22dcdf40ccd9d5ce1",
+      "label": 0,
+      "decision": "allow",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_allow",
+      "observe_outcome": "would_finalize_allow",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-1ed82ab202116e0b3aac",
+      "label": 0,
+      "decision": "allow",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_allow",
+      "observe_outcome": "would_finalize_allow",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-1edba8f419db4ab9de6f",
+      "label": 1,
+      "decision": "flag",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_flag",
+      "observe_outcome": "would_escalate",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-1f043efd716048ba5c51",
+      "label": null,
+      "decision": "flag",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_flag",
+      "observe_outcome": "would_escalate",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-1f5dc2dc580310f0d68c",
+      "label": null,
+      "decision": "allow",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_allow",
+      "observe_outcome": "would_finalize_allow",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-1f81647e23a3618c2377",
+      "label": 0,
+      "decision": "allow",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_allow",
+      "observe_outcome": "would_escalate",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-1fa63a38afe72513967f",
+      "label": 0,
+      "decision": "allow",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_allow",
+      "observe_outcome": "would_finalize_allow",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-1fdf6b58a00736a05fee",
+      "label": null,
+      "decision": "flag",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_flag",
+      "observe_outcome": "would_finalize_allow",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-200a10414f52be3cd8ae",
+      "label": null,
+      "decision": "flag",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_flag",
+      "observe_outcome": "would_escalate",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-203b875f2b6ca361e450",
+      "label": 0,
+      "decision": "flag",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_flag",
+      "observe_outcome": "would_escalate",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-206109717ed73451de1e",
+      "label": null,
+      "decision": "allow",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_allow",
+      "observe_outcome": "would_escalate",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-206e5b342a54ac539fd9",
+      "label": 0,
+      "decision": "flag",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_flag",
+      "observe_outcome": "would_escalate",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-208085f4e8edbf53626b",
+      "label": 0,
+      "decision": "allow",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_allow",
+      "observe_outcome": "would_escalate",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-20bd3b7bed50fd778ae3",
+      "label": 0,
+      "decision": "allow",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_allow",
+      "observe_outcome": "would_escalate",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-21027689413b574176cf",
+      "label": 0,
+      "decision": "allow",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_allow",
+      "observe_outcome": "would_finalize_allow",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-21677c196e4ff6e45eb7",
+      "label": 0,
+      "decision": "allow",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_allow",
+      "observe_outcome": "would_escalate",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-216ce4fb25547bcfcb36",
+      "label": 0,
+      "decision": "allow",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_allow",
+      "observe_outcome": "would_escalate",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-218535f318b1b34f616c",
+      "label": null,
+      "decision": "allow",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_allow",
+      "observe_outcome": "would_escalate",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-219614348c7dfddab3bc",
+      "label": 0,
+      "decision": "allow",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_allow",
+      "observe_outcome": "would_escalate",
+      "n_rows": 4
+    },
+    {
+      "id": "rp-21abfb450d6c73a25975",
+      "label": 0,
+      "decision": "allow",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_allow",
+      "observe_outcome": "would_escalate",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-21ae8eb1a976cc74fd36",
+      "label": 1,
+      "decision": "flag",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_flag",
+      "observe_outcome": "would_escalate",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-2215758861eb67dcdc75",
+      "label": 0,
+      "decision": "flag",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_flag",
+      "observe_outcome": "would_finalize_allow",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-221ccef7e64509fb931e",
+      "label": 0,
+      "decision": "allow",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_allow",
+      "observe_outcome": "would_finalize_allow",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-224ed2cbb899a23fe814",
+      "label": null,
+      "decision": "flag",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_flag",
+      "observe_outcome": "would_finalize_allow",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-226f677a27016a7ca2f8",
+      "label": null,
+      "decision": "flag",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_flag",
+      "observe_outcome": "would_finalize_allow",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-228437c1809d507f735c",
+      "label": 0,
+      "decision": "allow",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_allow",
+      "observe_outcome": "would_escalate",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-22bb994c102a4c790589",
+      "label": null,
+      "decision": "flag",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_flag",
+      "observe_outcome": "would_finalize_allow",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-22cc8e248b54d8631bb3",
+      "label": 0,
+      "decision": "allow",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_allow",
+      "observe_outcome": "would_escalate",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-23044dcb7ce69b695282",
+      "label": 0,
+      "decision": "allow",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_allow",
+      "observe_outcome": "would_escalate",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-23773c1f63d8cb47758f",
+      "label": 1,
+      "decision": "flag",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_flag",
+      "observe_outcome": "would_escalate",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-23884da1016b0a4ce461",
+      "label": null,
+      "decision": "flag",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_flag",
+      "observe_outcome": "would_escalate",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-23b5e563b3feb5951ebb",
+      "label": 0,
+      "decision": "allow",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_allow",
+      "observe_outcome": "would_escalate",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-23dc846d811cd5e7a0aa",
+      "label": 1,
+      "decision": "flag",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_flag",
+      "observe_outcome": "would_escalate",
+      "n_rows": 3
+    },
+    {
+      "id": "rp-23e12bd7a5f266892209",
+      "label": 1,
+      "decision": "flag",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_flag",
+      "observe_outcome": "would_escalate",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-23f92b7d07478766148e",
+      "label": 0,
+      "decision": "allow",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_allow",
+      "observe_outcome": "would_escalate",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-246540a09ce5da3c796b",
+      "label": 0,
+      "decision": "flag",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_flag",
+      "observe_outcome": "would_escalate",
+      "n_rows": 4
+    },
+    {
+      "id": "rp-247b99b5a1fa5605c641",
+      "label": null,
+      "decision": "allow",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_allow",
+      "observe_outcome": "would_finalize_allow",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-24a1b623799428129a51",
+      "label": 0,
+      "decision": "allow",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_allow",
+      "observe_outcome": "would_finalize_allow",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-24dfa35aa55d3a5cb5b4",
+      "label": null,
+      "decision": "allow",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_allow",
+      "observe_outcome": "would_finalize_allow",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-2519be422ebafbc22cb0",
+      "label": 0,
+      "decision": "allow",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_allow",
+      "observe_outcome": "would_escalate",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-254dcaebfdc73eb3788a",
+      "label": null,
+      "decision": "flag",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_flag",
+      "observe_outcome": "would_escalate",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-25ad650b99828ba1f6a0",
+      "label": 0,
+      "decision": "flag",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_flag",
+      "observe_outcome": "would_escalate",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-25c62ccf6a6f0c332195",
+      "label": 0,
+      "decision": "allow",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_allow",
+      "observe_outcome": "would_escalate",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-25ca901555a0b6498a17",
+      "label": 1,
+      "decision": "flag",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_flag",
+      "observe_outcome": "would_escalate",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-25ce960c2f08de316915",
+      "label": 0,
+      "decision": "allow",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_allow",
+      "observe_outcome": "would_finalize_allow",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-25d9735a06a4b83583ab",
+      "label": 0,
+      "decision": "allow",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_allow",
+      "observe_outcome": "would_finalize_allow",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-260e2386d9332c4d9c55",
+      "label": 0,
+      "decision": "flag",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_flag",
+      "observe_outcome": "would_escalate",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-26103fa99476cd99d9af",
+      "label": 1,
+      "decision": "flag",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_flag",
+      "observe_outcome": "would_escalate",
+      "n_rows": 4
+    },
+    {
+      "id": "rp-26298fed95daa78a7973",
+      "label": 0,
+      "decision": "allow",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_allow",
+      "observe_outcome": "would_escalate",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-268d3e43ee9789f2d2d1",
+      "label": 0,
+      "decision": "allow",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_allow",
+      "observe_outcome": "would_escalate",
+      "n_rows": 3
+    },
+    {
+      "id": "rp-269139dcc4be88a3e56a",
+      "label": 1,
+      "decision": "flag",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_flag",
+      "observe_outcome": "would_finalize_allow",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-2697958cd732206be607",
+      "label": 0,
+      "decision": "allow",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_allow",
+      "observe_outcome": "would_finalize_allow",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-26ba1a0bd67b186e2b59",
+      "label": null,
+      "decision": "flag",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_flag",
+      "observe_outcome": "would_escalate",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-26e3014bbeaf11cf2673",
+      "label": 0,
+      "decision": "allow",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_allow",
+      "observe_outcome": "would_escalate",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-2716d9e7804ac1392230",
+      "label": 1,
+      "decision": "flag",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_flag",
+      "observe_outcome": "would_escalate",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-2718867221ba48dfbaec",
+      "label": 1,
+      "decision": "flag",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_flag",
+      "observe_outcome": "would_escalate",
+      "n_rows": 2
+    },
+    {
+      "id": "rp-2720e182114f13f7a6b8",
+      "label": 0,
+      "decision": "allow",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_allow",
+      "observe_outcome": "would_finalize_allow",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-273340bb126125513264",
+      "label": 0,
+      "decision": "allow",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_allow",
+      "observe_outcome": "would_escalate",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-2734f0291a75410ec561",
+      "label": null,
+      "decision": "flag",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_flag",
+      "observe_outcome": "would_finalize_allow",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-273878810132d4b93820",
+      "label": 0,
+      "decision": "flag",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_flag",
+      "observe_outcome": "would_escalate",
+      "n_rows": 4
+    },
+    {
+      "id": "rp-2746957c29bc3e3ae757",
+      "label": 0,
+      "decision": "allow",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_allow",
+      "observe_outcome": "would_finalize_allow",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-27907ced7fc3d027848a",
+      "label": 0,
+      "decision": "allow",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_allow",
+      "observe_outcome": "would_finalize_allow",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-27e3e1eaffe718de7e4c",
+      "label": 0,
+      "decision": "allow",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_allow",
+      "observe_outcome": "would_escalate",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-282cfb8f49ff227d2698",
+      "label": 0,
+      "decision": "allow",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_allow",
+      "observe_outcome": "would_escalate",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-285a0dc96ec59d054e0c",
+      "label": 0,
+      "decision": "allow",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_allow",
+      "observe_outcome": "would_escalate",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-285fc7c87f96e8ed3e84",
+      "label": 0,
+      "decision": "allow",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_allow",
+      "observe_outcome": "would_escalate",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-2861b20717788b7dcef8",
+      "label": 0,
+      "decision": "allow",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_allow",
+      "observe_outcome": "would_finalize_allow",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-28763f934cd1346bfdb0",
+      "label": 0,
+      "decision": "allow",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_allow",
+      "observe_outcome": "would_escalate",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-2895f6969883e78a4ed4",
+      "label": 1,
+      "decision": "flag",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_flag",
+      "observe_outcome": "would_escalate",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-28c8336610a12825fb03",
+      "label": 0,
+      "decision": "allow",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_allow",
+      "observe_outcome": "would_finalize_allow",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-28dc8bb532889c089a7b",
+      "label": null,
+      "decision": "flag",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_flag",
+      "observe_outcome": "would_finalize_allow",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-28fc4beb962143c71c7e",
+      "label": 0,
+      "decision": "allow",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_allow",
+      "observe_outcome": "would_finalize_allow",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-290d7f2636d5e4b6a0eb",
+      "label": 0,
+      "decision": "allow",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_allow",
+      "observe_outcome": "would_finalize_allow",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-292c09cb41bd14b0786c",
+      "label": null,
+      "decision": "allow",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_allow",
+      "observe_outcome": "would_escalate",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-293be153f20aa0cd919d",
+      "label": 0,
+      "decision": "allow",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_allow",
+      "observe_outcome": "would_finalize_allow",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-2941d8978d9907262b33",
+      "label": 0,
+      "decision": "allow",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_allow",
+      "observe_outcome": "would_escalate",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-2957553837f71e1d5629",
+      "label": 1,
+      "decision": "flag",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_flag",
+      "observe_outcome": "would_finalize_allow",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-298963abf13ad91f70be",
+      "label": 0,
+      "decision": "flag",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_flag",
+      "observe_outcome": "would_escalate",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-299ae7bc9a0cb4963811",
+      "label": null,
+      "decision": "allow",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_allow",
+      "observe_outcome": "would_finalize_allow",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-29b3cb7db316d5be3b7a",
+      "label": 0,
+      "decision": "allow",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_allow",
+      "observe_outcome": "would_finalize_allow",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-29bd6502d056f5e8c972",
+      "label": 0,
+      "decision": "allow",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_allow",
+      "observe_outcome": "would_escalate",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-29d2a73ad8537282a892",
+      "label": 1,
+      "decision": "allow",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_allow",
+      "observe_outcome": "would_escalate",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-29ebcbc70f068fb7b153",
+      "label": 0,
+      "decision": "allow",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_allow",
+      "observe_outcome": "would_escalate",
+      "n_rows": 1
+    },
+    {
+      "id": "rp-29f03d5806e47471c969",
+      "label": null,
+      "decision": "flag",
+      "decided_by": "deberta-pi-v2",
+      "stages_run": [
+        "stage2"
+      ],
+      "policy_applied": null,
+      "coverage_policy_applied": null,
+      "path": "stage2_flag",
+      "observe_outcome": "would_escalate",
+      "n_rows": 1
+    }
+  ]
+}

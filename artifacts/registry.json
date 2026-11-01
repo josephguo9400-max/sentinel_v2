@@ -1,8 +1,8 @@
 {
-  "schema": "sentinel-registry-v1",
-  "comment": "Active and shadow pointers, relative to artifacts/. Only the owner moves stage1/stage2 (after a gate PASS); shadow may point at any candidate. D23 (2026-10-30): DeBERTa decides every request; Stage 1 (stage1-tfidf-v2.1) runs observe-only and is reported with role=shadow. Config version change pending the release gate (D17; gate lands in adaptive-eval).",
-  "stage1": "candidates/stage1-tfidf-v2.1",
-  "stage1_mode": "observe",
-  "stage2": "baseline/deberta-pi-v2",
-  "shadow": null
+  "schema": "sentinel-registry-v2",
+  "comment": "The served bundle: one ExecutionPolicy plus the capability versions it pins (owner decision D25, docs/design/capability-policy.md). Only the owner moves `active`, and only after a release-gate PASS (training/gate.py promote --approved-by). `previous` stays loaded so a rollback is a pointer flip; it is null because this is the first policy-shaped deployment, so there is nothing to roll back to yet. `status` is the bundle's lifecycle state, not a gate verdict: D23 (DeBERTa decides, Stage 1 observe-only) was and remains pending the gate (D17), and converting it to a policy changed no decision (T3: identical on all 2,000 replay items, reports/policy-runtime/t3_d23_equivalence.json), so the pending status carries over unchanged. The previous sentinel-registry-v1 state of this file is in git history and still loads (it is converted in memory).",
+  "active": "policies/d23-deberta-decides/1/policy.json",
+  "previous": null,
+  "capabilities_root": "capabilities",
+  "status": "pending_gate"
 }

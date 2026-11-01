@@ -20,8 +20,15 @@ def test_manifest_is_a_valid_stage2_candidate_and_not_active():
     from contracts import ArtifactManifest
     m = ArtifactManifest.model_validate_json((CAND / "manifest.json").read_text())
     assert m.cascade_role == "stage2" and m.tokenizer == "hf:deberta-v3" and m.sha256 != "0" * 64
-    reg = json.loads((ROOT / "artifacts" / "registry.json").read_text())
-    assert "deberta-pi-v2-int8" not in (reg["stage1"] or "") + reg["stage2"]  # promotion is the gate's job
+    # Promotion is the gate's job: the int8 candidate has a published capability but no policy pins it.
+    from contracts.policy import iter_refs
+    from serving.registry import load_policy_file, read_registry_v2
+
+    state = read_registry_v2(ROOT / "artifacts" / "registry.json")
+    for rel in (state["active"], *( [state["previous"]] if state["previous"] else [])):
+        policy = load_policy_file(ROOT / "artifacts", rel)
+        assert all(r.detector_id != "deberta-pi-v2-int8" for r in iter_refs(policy))
+    assert (ROOT / "artifacts/capabilities/deberta-pi-v2-int8").is_dir()
 
 
 def test_settings_are_pinned():

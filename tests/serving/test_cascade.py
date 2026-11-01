@@ -120,9 +120,14 @@ def test_one_foreign_chunk_escalates_whole_request():
     assert o.stages_run == ["stage1", "stage2"]
 
 
-def test_no_language_restriction_when_manifest_and_config_declare_none():
-    (o,) = run(["w1 w2"], languages=None, config=cfg(stage1_undeclared_languages=""), language=FixedLanguage("de"))
-    assert o.stages_run == ["stage1"]
+def test_unscoped_stage1_without_declared_languages_is_refused():
+    """Legacy served this with no language restriction. Under the policy engine (D25, design §4) a gate detector
+    that declares no validated languages may not clear chunks unless the policy states a scope, so the
+    conversion refuses it."""
+    from contracts.policy import PolicyError
+    with pytest.raises(PolicyError) as exc:
+        run(["w1 w2"], languages=None, config=cfg(stage1_undeclared_languages=""), language=FixedLanguage("de"))
+    assert exc.value.code == "undeclared_languages"
 
 
 def test_undeclared_v11_languages_default_to_english():

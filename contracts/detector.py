@@ -1,6 +1,7 @@
-"""DetectorResult v1.2 — the only shape any detector (stage1, stage2, shadow) may return.
+"""DetectorResult v1.3 — the only shape any detector (stage1, stage2, observe, shadow) may return.
 
-v1.2 adds `failure_reason`. Readers accept 1.1 and 1.2; writers emit 1.2.
+v1.2 adds `failure_reason`. v1.3 adds role "observe" (an observe step of an ExecutionPolicy: runs after the decision,
+never read by it; "shadow" keeps meaning the asynchronous mirror only). Readers accept 1.1-1.3; writers emit 1.3.
 
 Owned by the project owner. Agents must not edit this file; file a request in docs/contract_requests.md.
 """
@@ -11,8 +12,8 @@ from pydantic import BaseModel, BeforeValidator, ConfigDict, Field, StrictBool, 
 
 from ._validators import coerce_bool
 
-SCHEMA_VERSION = "1.2"
-SUPPORTED_SCHEMA_VERSIONS = ("1.1", "1.2")
+SCHEMA_VERSION = "1.3"
+SUPPORTED_SCHEMA_VERSIONS = ("1.1", "1.2", "1.3")
 # Producers compute scores in float32 (onnxruntime). Within this distance of the threshold either
 # decision is accepted, so float32-vs-float64 rounding never makes a valid result fail validation.
 THRESHOLD_TOLERANCE = 1e-6
@@ -25,7 +26,7 @@ Bool = Annotated[StrictBool, BeforeValidator(coerce_bool)]
 class DetectorResult(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    schema_version: Literal["1.1", "1.2"] = SCHEMA_VERSION
+    schema_version: Literal["1.1", "1.2", "1.3"] = SCHEMA_VERSION
     request_id: str
     detector_id: str
     detector_version: str
@@ -40,7 +41,10 @@ class DetectorResult(BaseModel):
     truncated: Bool = False  # MUST be True whenever any input content was not scored
     aggregation: Literal["max", "mean", "none"] = "max"
     stage: Literal["stage1", "stage2", "single"] = "single"
-    role: Literal["active", "shadow"] = "active"
+    # "active": took part in the decision. "observe" (v1.3): an observe step, run after the decision was fixed and
+    # never read by it. "shadow": the asynchronous shadow mirror. Consumers counting catches, truncations or failures
+    # count only "active".
+    role: Literal["active", "observe", "shadow"] = "active"
     # v1.2: why a non-ok result failed. "overloaded" = the gateway shed load before inference, which the gate's
     # error-rate check must count separately from detector timeouts and exceptions.
     failure_reason: Literal["timeout", "exception", "overloaded"] | None = None
@@ -57,6 +61,8 @@ class DetectorResult(BaseModel):
         else:
             if self.score is not None or self.predicted_injection is not None:
                 raise ValueError("score and predicted_injection must be None unless status=ok")
+        if self.role == "observe" and self.schema_version in ("1.1", "1.2"):
+            raise ValueError("role=observe requires schema_version 1.3")
         if self.failure_reason is not None:
             if self.schema_version == "1.1":
                 raise ValueError("failure_reason requires schema_version 1.2")

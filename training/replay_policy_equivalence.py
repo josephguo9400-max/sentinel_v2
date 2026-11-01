@@ -1,0 +1,745 @@
+"""T3 / T4 / T5 (docs/design/capability-policy.md §8): the policy engine decides what the served gateway decided.
+
+    # T3: all 2,000 replay items through the legacy D23 service and the converted policy, real models, in-process,
+    # timeouts disabled. Resumable: run it again (same --out) until it reports complete.
+    flock /home/claude/measure.lock -c 'python -m training.replay_policy_equivalence t3 \
+        --out reports/policy-runtime/t3_d23_equivalence.json --max-seconds 240'
+
+    # T4: the route policy reproduces the committed serving-faithful counterfactual (no DeBERTa inference: the
+    # committed per-chunk scores are reused), including its headline 201/306.
+    flock /home/claude/measure.lock -c 'python -m training.replay_policy_equivalence t4 \
+        --out reports/policy-runtime/t4_cascade_equivalence.json'
+
+    # T5: the T3 policy-engine decisions against the live D23 run.
+    python -m training.replay_policy_equivalence t5 --t3 reports/policy-runtime/t3_d23_equivalence.json \
+        --out reports/policy-runtime/t5_live_comparison.json
+
+T3, both engines in one process on the same input, one item at a time:
+  legacy  serving/legacy_service.py (frozen at milestone/cascade-and-shadow 36ce683) with the registry v1 state
+          D23 served (reports/policy-runtime/registry_v1_d23.json: DeBERTa decides, Stage 1 observe-only; the same
+          pointers artifacts/registry.json held until 764e160 switched that file to registry v2) and the default
+          GatewayConfig with both budgets set to 600 s, which is how training/replay_counterfactual_served.py
+          disables timeouts.
+  policy  serving/service.py with the policy serving.policy.legacy_to_v2 derives from the same registry state and
+          the same config, so both sides use the same no-timeout budgets. The committed bundle
+          (artifacts/policies/d23-deberta-decides/1/policy.json) is the same policy with the served budgets
+          (50 ms / 5,000 ms); the run records both bundle hashes and asserts that the two policies differ in
+          nothing but those two timeout fields (decide.members[0].timeout_ms, observe[0].timeout_ms).
+  Compared per item: decision, decided_by, policy_applied, coverage_policy_applied, stages_run, the DeBERTa rows
+  scored (content token ids, in order) and the active scores (within contracts THRESHOLD_TOLERANCE). The observe
+  step's status and outcome are compared too; its `role` differs by design (1.2 "shadow" -> 1.3 "observe").
+  On the served D23 path `stages_run` is always ["stage2"] and `policy_applied` always null (no gate step, no
+  deadline), so those two fields are compared but cannot differ; T3 says nothing about the gate, band, language,
+  FALLBACK or deep-scan logic, which T4 (real Stage 1) and the fake-detector tests T2, T6 and T7 cover.
+
+  By default DeBERTa inference is memoized by row content, shared by both engines and persisted (--cache), so a row
+  is scored once instead of twice and a resumed run does not rescore. Identical rows therefore get bit-identical
+  scores BY CONSTRUCTION: with the cache, "identical scores" is not evidence; the test is about which rows each
+  engine selects and what it decides from them (rows are compared exactly before scores matter). --no-cache gives
+  the engines no cache at all, not even an in-memory one: each engine calls the model itself for every row it
+  scores, and the scores are compared with THRESHOLD_TOLERANCE (slower, about twice the model calls; the design's
+  answer to thread-count nondeterminism). Before feat/pr-r2-fixes, --no-cache still shared an in-memory cache
+  between the engines (review r2-m1), so reports produced with it before that fix are cached evidence: they support
+  row and decision equality only, not score agreement. The report records `deberta_rows.cache` ("shared" or
+  "none"). The default cache is reports/policy-runtime/<out>.rowcache.jsonl (gitignored).
+
+  Provenance: every per-item progress record carries the git commit (and whether the tracked tree was dirty) and
+  the engine version of the invocation that produced it, and the report counts items per code version
+  (`provenance`). Records written before this was added carry none and are counted as "unrecorded".
+"""
+from __future__ import annotations
+
+import argparse
+import asyncio
+import hashlib
+import json
+import subprocess
+import sys
+import time
+from datetime import datetime, timezone
+from collections import Counter
+from pathlib import Path
+
+from contracts.detector import THRESHOLD_TOLERANCE
+from training.common import ROOT, read_jsonl, sha256_file, write_json
+
+REPLAY = ROOT / "data" / "replay" / "replay-v1.jsonl"
+ARTIFACTS = ROOT / "artifacts"
+LIVE_D23 = ROOT / "reports" / "cascade-and-shadow" / "d23" / "replay" / "requests.jsonl"
+FAITHFUL = ROOT / "reports" / "cascade-and-shadow" / "replay_counterfactual_served_faithful.json"
+NO_TIMEOUT_MS = 600_000
+DEBERTA_THRESHOLD = 0.5
+COMPARED = ("decision", "decided_by", "policy_applied", "coverage_policy_applied", "stages_run")
+# The registry v1 state D23 served. artifacts/registry.json held exactly these pointers until 764e160 switched it to
+# registry v2 (the converted bundle), so T3 reads the preserved copy rather than the live registry.
+D23_REGISTRY_V1 = ROOT / "reports" / "policy-runtime" / "registry_v1_d23.json"
+ROUTE_REGISTRY_V1 = ROOT / "reports" / "cascade-and-shadow" / "registry_integration_route.json"
+
+
+# ---------------------------------------------------------------------- shared setup
+
+def no_timeout_config():
+    from serving.config import GatewayConfig
+    return GatewayConfig(shadow_log_path="", stage1_timeout_ms=NO_TIMEOUT_MS, stage2_timeout_ms=NO_TIMEOUT_MS)
+
+
+def registry_state(path: Path = D23_REGISTRY_V1) -> dict:
+    """A registry v1 state (pointers). Refuses anything else: load_specs would silently find no detector."""
+    state = json.loads(path.read_text())
+    if state.get("schema") != "sentinel-registry-v1":
+        raise SystemExit(f"{path} is {state.get('schema')!r}, not a sentinel-registry-v1 state; T3/T4 need the v1 "
+                         f"pointers the legacy service loads")
+    return state
+
+
+def rel(path: Path) -> str:
+    return str(path.relative_to(ROOT)) if path.is_relative_to(ROOT) else str(path)
+
+
+def code_version() -> dict:
+    """Which code produced a run: git commit, whether tracked files differed from it, and the engine version."""
+    from serving import engine_version as ev
+
+    def git(*args) -> str | None:
+        try:
+            out = subprocess.run(["git", *args], cwd=ROOT, capture_output=True, text=True, timeout=30)
+        except (OSError, subprocess.SubprocessError):
+            return None
+        return out.stdout.strip() if out.returncode == 0 else None
+
+    status = git("status", "--porcelain", "--untracked-files=no")
+    return {"git_commit": git("rev-parse", "HEAD"), "git_dirty": None if status is None else bool(status),
+            "engine_version": ev.ENGINE_VERSION, "engine_record_sha256": sha256_file(ev.RECORD)}
+
+
+def provenance_counts(rows: list[dict]) -> list[dict]:
+    """Items per code version, in first-seen order; records without one are counted as unrecorded."""
+    counts: dict[tuple, int] = {}
+    for r in rows:
+        cv = r.get("code")
+        key = ("unrecorded",) if cv is None else (cv.get("git_commit"), cv.get("git_dirty"),
+                                                  cv.get("engine_version"), cv.get("engine_record_sha256"))
+        counts[key] = counts.get(key, 0) + 1
+    out = []
+    for key, n in counts.items():
+        if key == ("unrecorded",):
+            out.append({"code": None, "n_items": n})
+        else:
+            out.append({"code": dict(zip(("git_commit", "git_dirty", "engine_version", "engine_record_sha256"),
+                                         key)), "n_items": n})
+    return out
+
+
+def load_specs(pointers: dict, intra_op_threads: int = 0) -> dict:
+    """The real DetectorSpecs, verified and loaded the way the gateway loads them (v1 pointers)."""
+    from serving.registry import load_detector
+    return {name: load_detector(ARTIFACTS, name, rel, intra_op_threads=intra_op_threads)
+            for name, rel in pointers.items() if name in ("stage1", "stage2", "shadow") and rel is not None}
+
+
+class RowCache:
+    """Row content -> score, persisted as JSONL so a resumed run does not rescore."""
+
+    def __init__(self, path: Path | None):
+        self.path = path
+        self.scores: dict[str, float] = {}
+        self.hits = 0
+        self.misses = 0
+        if path is not None and path.is_file():
+            for line in path.read_text().splitlines():
+                if line.strip():
+                    rec = json.loads(line)
+                    self.scores[rec["k"]] = rec["v"]
+        self._fh = path.open("a", encoding="utf-8") if path is not None else None
+
+    @staticmethod
+    def key(row: list[int]) -> str:
+        return hashlib.sha256(",".join(map(str, row)).encode()).hexdigest()
+
+    def get(self, row: list[int]):
+        k = self.key(row)
+        if k in self.scores:
+            self.hits += 1
+            return self.scores[k]
+        self.misses += 1
+        return None
+
+    def put(self, row: list[int], score: float) -> None:
+        k = self.key(row)
+        self.scores[k] = score
+        if self._fh is not None:
+            self._fh.write(json.dumps({"k": k, "v": score}) + "\n")
+            self._fh.flush()
+
+    def close(self) -> None:
+        if self._fh is not None:
+            self._fh.close()
+
+
+class Recorder:
+    """Wraps a token detector: records the rows of the current request and (optionally) memoizes scores."""
+
+    def __init__(self, det, cache: RowCache | None):
+        self._det = det
+        self._cache = cache
+        self.rows: list[list[int]] = []
+        self.model_calls = 0  # rows this recorder sent to the model itself (not served from the cache)
+        for attr in ("detector_id", "detector_version", "threshold", "max_len", "cls_id", "sep_id"):
+            setattr(self, attr, getattr(det, attr))
+
+    def tokenize(self, text: str):
+        return self._det.tokenize(text)
+
+    def tokenize_with_offsets(self, text: str):
+        return self._det.tokenize_with_offsets(text)
+
+    def infer(self, batch: list[list[int]]) -> list[float]:
+        out = []
+        for row in batch:
+            self.rows.append(list(row))
+            cached = None if self._cache is None else self._cache.get(row)
+            if cached is None:
+                cached = float(self._det.infer([row])[0])
+                self.model_calls += 1
+                if self._cache is not None:
+                    self._cache.put(row, cached)
+            out.append(cached)
+        return out
+
+
+def _spec_with(spec, detector):
+    import dataclasses
+    return dataclasses.replace(spec, detector=detector)
+
+
+def build_engines(pointers: dict, config, cache: RowCache | None, specs: dict):
+    """(legacy service, policy service, {"legacy": recorder, "policy": recorder}, policy, bundle)."""
+    from serving.legacy_service import ClassifierService as Legacy
+    from serving.policy import bundle_sha256, legacy_to_v2
+    from serving.registry import KNOWN_TOKENIZERS, LoadedBundle
+    from serving.service import ClassifierService
+
+    from serving.convert_registry import CALIBRATION_RECORDS
+    # With a cache both recorders share it (a row is scored once). Without one (--no-cache) each recorder calls the
+    # model itself, so the two engines' scores are independent.
+    recs = {name: Recorder(specs["stage2"].detector, cache) for name in ("legacy", "policy")}
+    mode = pointers.get("stage1_mode")
+    legacy = Legacy(_spec_with(specs["stage2"], recs["legacy"]), config, stage1=specs.get("stage1"),
+                    shadow=specs.get("shadow"), stage1_mode=mode)
+    manifests = {name: spec.manifest for name, spec in specs.items()}
+    # Same id, version, rationale and validated-on engine version as the committed policy, so the only differences
+    # are the raised budgets.
+    committed = committed_policy()
+    policy, caps = legacy_to_v2(pointers, manifests, config, known_tokenizers=KNOWN_TOKENIZERS,
+                                calibrations=CALIBRATION_RECORDS, policy_id="d23-deberta-decides",
+                                policy_version="1", rationale=committed.rationale,
+                                engine_version=committed.engine_version)
+    detectors = {}
+    for name, spec in specs.items():
+        if name == "shadow":
+            continue
+        det = recs["policy"] if name == "stage2" else spec.detector
+        detectors[(spec.detector_id, spec.detector_version)] = _spec_with(spec, det)
+    bundle = LoadedBundle(policy=policy, capabilities=caps, detectors=detectors, shadow=specs.get("shadow"),
+                          bundle_sha256=bundle_sha256(policy), policy_source="legacy_registry")
+    return legacy, ClassifierService(config=config, bundle=bundle), recs, policy, bundle
+
+
+def committed_policy(policy_id: str = "d23-deberta-decides", version: str = "1"):
+    from contracts import ExecutionPolicy
+    path = ARTIFACTS / "policies" / policy_id / version / "policy.json"
+    return ExecutionPolicy.model_validate(json.loads(path.read_text()))
+
+
+def timeout_only_diff(a, b) -> dict:
+    """The fields in which two policies differ, as dotted paths (used to prove only budgets were raised)."""
+    out = {}
+
+    def walk(x, y, path):
+        if isinstance(x, dict) and isinstance(y, dict):
+            for k in sorted(set(x) | set(y)):
+                walk(x.get(k), y.get(k), f"{path}.{k}" if path else k)
+        elif isinstance(x, list) and isinstance(y, list) and len(x) == len(y):
+            for i, (u, v) in enumerate(zip(x, y)):
+                walk(u, v, f"{path}[{i}]")
+        elif x != y:
+            out[path] = [x, y]
+
+    walk(a.model_dump(mode="json"), b.model_dump(mode="json"), "")
+    return out
+
+
+# ---------------------------------------------------------------------- T3
+
+PROVENANCE_NOTE = ("Each per-item record carries the git commit, dirty flag and engine version of the invocation "
+                   "that produced it (resumed runs append records from several invocations).")
+PROVENANCE_UNRECORDED = (
+    " Records under code: null were written before this was recorded: they are the resumed invocations of the "
+    "2,000-item run committed in 9ac0e92, and nothing records which code version produced which of them. serving/ "
+    "did not change between debbe1a and 9ac0e92; the reviewer's uncached re-run of 193 of these items at bc49454 "
+    "(reviews/policy-runtime-r1/t3_subset_nocache.json on branch verify/policy-runtime, commit 3cacec5) found 0 "
+    "engine differences and 0 differences from these records.")
+
+def item_view(out, rows: list[list[int]]) -> dict:
+    """The comparable part of one response."""
+    active = [r for r in out.results if r.role == "active"]
+    other = [r for r in out.results if r.role != "active"]
+    return {
+        **{k: (list(getattr(out, k)) if k == "stages_run" else getattr(out, k)) for k in COMPARED},
+        "path": out.info.get("path"),
+        "n_chunks": out.info.get("n_chunks"),
+        "active": [{"detector_id": r.detector_id, "stage": r.stage, "status": r.status, "score": r.score,
+                    "n_chunks": r.n_chunks, "truncated": r.truncated, "failure_reason": r.failure_reason}
+                   for r in active],
+        "observe": [{"detector_id": r.detector_id, "status": r.status, "score": r.score,
+                     "failure_reason": r.failure_reason} for r in other],
+        "observe_outcome": (out.info.get("stage1_observe") or {}).get("outcome"),
+        "rows": [list(r) for r in rows],
+    }
+
+
+def differences(a: dict, b: dict) -> list[str]:
+    """Where two item views disagree. Scores compare within THRESHOLD_TOLERANCE."""
+    diffs = []
+    for k in (*COMPARED, "path", "n_chunks", "observe_outcome"):
+        if a[k] != b[k]:
+            diffs.append(f"{k}: {a[k]!r} vs {b[k]!r}")
+    if a["rows"] != b["rows"]:
+        diffs.append(f"stage2 rows differ: {len(a['rows'])} vs {len(b['rows'])} rows scored")
+    for side in ("active", "observe"):
+        if len(a[side]) != len(b[side]):
+            diffs.append(f"{side} result count: {len(a[side])} vs {len(b[side])}")
+            continue
+        for i, (x, y) in enumerate(zip(a[side], b[side])):
+            for k in x:
+                u, v = x[k], y[k]
+                if k == "score" and isinstance(u, float) and isinstance(v, float):
+                    if abs(u - v) > THRESHOLD_TOLERANCE:
+                        diffs.append(f"{side}[{i}].score: {u} vs {v}")
+                elif u != v:
+                    diffs.append(f"{side}[{i}].{k}: {u!r} vs {v!r}")
+    return diffs
+
+
+async def run_pair(legacy, policy_svc, recs, items, progress_fh, deadline: float | None, done: set[str],
+                   code: dict | None = None) -> int:
+    await legacy.start()
+    await policy_svc.start()
+    n = 0
+    try:
+        for it in items:
+            if it["id"] in done:
+                continue
+            if deadline is not None and time.perf_counter() > deadline:
+                break
+            views = {}
+            for name, svc in (("legacy", legacy), ("policy", policy_svc)):
+                recs[name].rows.clear()
+                out = await svc.classify(it["text"], f"eq-{it['id']}")
+                views[name] = item_view(out, recs[name].rows)
+            rec = {"id": it["id"], "label": it.get("label"), "source": it.get("source"),
+                   "diffs": differences(views["legacy"], views["policy"]),
+                   "legacy": {k: v for k, v in views["legacy"].items() if k != "rows"},
+                   "policy": {k: v for k, v in views["policy"].items() if k != "rows"},
+                   "n_rows": len(views["legacy"]["rows"]), "code": code}
+            progress_fh.write(json.dumps(rec, sort_keys=True) + "\n")
+            progress_fh.flush()
+            n += 1
+    finally:
+        await legacy.stop()
+        await policy_svc.stop()
+    return n
+
+
+def t3(out_path: Path, max_seconds: float | None, cache_path: Path | None, limit: int | None,
+       intra_op_threads: int, registry: Path = D23_REGISTRY_V1) -> dict:
+    items = sorted(read_jsonl(REPLAY), key=lambda x: x["id"])
+    if limit:
+        items = items[:limit]
+    progress = out_path.with_suffix(".progress.jsonl")
+    progress.parent.mkdir(parents=True, exist_ok=True)
+    done = {json.loads(line)["id"] for line in progress.read_text().splitlines() if line.strip()} \
+        if progress.is_file() else set()
+    # --no-cache: no RowCache at all, so build_engines gives each engine its own uncached Recorder and both call the
+    # model for every row (an in-memory cache shared by the engines would make the scores identical by construction).
+    cache = RowCache(cache_path) if cache_path is not None else None
+    pointers = registry_state(registry)
+    config = no_timeout_config()
+    specs = load_specs(pointers, intra_op_threads)
+    legacy, policy_svc, recs, policy, bundle = build_engines(pointers, config, cache, specs)
+    code = code_version()
+    started = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    t0 = time.perf_counter()
+    deadline = None if max_seconds is None else t0 + max_seconds
+    with progress.open("a", encoding="utf-8") as fh:
+        n_new = asyncio.run(run_pair(legacy, policy_svc, recs, items, fh, deadline, done, code))
+    wall = time.perf_counter() - t0
+    if cache is not None:
+        cache.close()
+    wanted = {it["id"] for it in items}
+    rows = [r for r in (json.loads(line) for line in progress.read_text().splitlines() if line.strip())
+            if r["id"] in wanted]
+    this_run = {**code, "started_utc": started, "n_items": n_new, "wall_s": round(wall, 1),
+                "no_cache": cache_path is None}
+    rep = t3_report(rows, items, policy, bundle, specs, config, cache, wall, n_new, cache_path, registry,
+                    this_run, {name: rec.model_calls for name, rec in recs.items()})
+    write_json(out_path, rep)
+    return rep
+
+
+def t3_report(rows, items, policy, bundle, specs, config, cache, wall, n_new, cache_path,
+              registry: Path = D23_REGISTRY_V1, this_run: dict | None = None,
+              model_calls: dict | None = None) -> dict:
+    from serving import engine_version as ev
+    from serving.policy import bundle_sha256
+
+    committed = committed_policy()
+    diff = timeout_only_diff(committed, policy)
+    expected_timeout_fields = {"decide.members[0].timeout_ms", "observe[0].timeout_ms"}
+    with_diffs = [r for r in rows if r["diffs"]]
+    by_id = {r["id"]: r for r in rows}
+    decisions = Counter(r["policy"]["decision"] for r in rows)
+    return {
+        "test": "T3 (design §8): D23 replay equivalence, legacy service vs policy engine",
+        "complete": len(rows) >= len(items),
+        "n_items_total": len(items),
+        "n_items_compared": len(rows),
+        "n_items_this_run": n_new,
+        "identical_on_every_item": not with_diffs,
+        "n_items_with_differences": len(with_diffs),
+        "differences": [{"id": r["id"], "diffs": r["diffs"]} for r in with_diffs[:50]],
+        "inputs": {
+            "replay": "data/replay/replay-v1.jsonl", "replay_sha256": sha256_file(REPLAY),
+            "registry": f"{rel(registry)} (sentinel-registry-v1)",
+            "registry_sha256": sha256_file(registry),
+            "stage1": f"{specs['stage1'].detector_id}@{specs['stage1'].detector_version}",
+            "stage1_model_sha256": specs["stage1"].sha256,
+            "stage2": f"{specs['stage2'].detector_id}@{specs['stage2'].detector_version}",
+            "stage2_model_sha256": specs["stage2"].sha256,
+            "engine_version": ev.ENGINE_VERSION,
+            "timeouts_disabled_ms": NO_TIMEOUT_MS,
+            "config": {"max_chunks": config.max_chunks, "coverage_policy": config.coverage_policy,
+                       "stage1_subwindow": [config.stage1_subwindow_tokens, config.stage1_subwindow_stride],
+                       "stage1_max_chunks": config.stage1_max_chunks, "max_batch": config.max_batch},
+        },
+        "bundle": {
+            "run_policy_bundle_sha256": bundle.bundle_sha256,
+            "committed_policy": "artifacts/policies/d23-deberta-decides/1/policy.json",
+            "committed_bundle_sha256": bundle_sha256(committed),
+            "differences_from_committed_policy": diff,
+            "only_timeout_fields_differ": set(diff) <= expected_timeout_fields,
+            "note": "the run raises both budgets to 600 s so no decision is made by a deadline; everything else, "
+                    "including every capability pin, is the committed bundle",
+        },
+        "decisions": dict(sorted(decisions.items())),
+        # A compared field with one value on every item could not have differed on this input (on the D23 path:
+        # stages_run and policy_applied), so its agreement is not evidence about that field.
+        "compared_fields_constant_on_every_item": [
+            k for k in COMPARED if len({json.dumps(r["policy"][k]) for r in rows}) <= 1] if rows else [],
+        "compared_field_value_counts": {
+            k: dict(sorted(Counter(json.dumps(r["policy"][k]) for r in rows).items())) for k in COMPARED},
+        "paths": dict(sorted(Counter(r["policy"]["path"] for r in rows).items())),
+        "observe_outcomes": dict(sorted(Counter(str(r["policy"]["observe_outcome"]) for r in rows).items())),
+        "deberta_rows": {"total_scored_per_engine": sum(r["n_rows"] for r in rows),
+                         "cache": "shared" if cache is not None else "none",
+                         "model_calls_this_run": model_calls,
+                         "unique_rows_in_cache": len(cache.scores) if cache is not None else None,
+                         "cache_hits": cache.hits if cache is not None else None,
+                         "cache_misses": cache.misses if cache is not None else None,
+                         "cache_path": rel(cache_path) if cache_path else None,
+                         "note": "cache shared: both engines read one row cache, so scores are identical by "
+                                 "construction and only rows and decisions are evidence" if cache is not None else
+                                 "no cache: each engine called the model for every row it scored; scores compared "
+                                 "within THRESHOLD_TOLERANCE"},
+        "wall_s_this_run": round(wall, 1),
+        "provenance": {
+            "this_run": this_run,
+            "items_by_code_version": provenance_counts(rows),
+            "note": PROVENANCE_NOTE + (PROVENANCE_UNRECORDED if any(r.get("code") is None for r in rows)
+                                       else ""),
+        },
+        "items": [{"id": r["id"], "label": r["label"], "decision": r["policy"]["decision"],
+                   "decided_by": r["policy"]["decided_by"], "stages_run": r["policy"]["stages_run"],
+                   "policy_applied": r["policy"]["policy_applied"],
+                   "coverage_policy_applied": r["policy"]["coverage_policy_applied"],
+                   "path": r["policy"]["path"], "observe_outcome": r["policy"]["observe_outcome"],
+                   "n_rows": r["n_rows"]} for r in sorted(by_id.values(), key=lambda x: x["id"])],
+    }
+
+
+# ---------------------------------------------------------------------- T4
+
+class _StubStage2:
+    """Records the chunk rows the policy would send to the decide member and returns 0 for each (phase A of
+    training/replay_counterfactual_served.py)."""
+
+    def __init__(self, det):
+        self._det = det
+        self.chunks: list[dict] = []
+        for attr in ("detector_id", "detector_version", "threshold", "max_len", "cls_id", "sep_id"):
+            setattr(self, attr, getattr(det, attr))
+
+    def tokenize(self, text):
+        return self._det.tokenize(text)
+
+    def tokenize_with_offsets(self, text):
+        return self._det.tokenize_with_offsets(text)
+
+    def infer(self, batch):
+        return [0.0] * len(batch)
+
+
+def t4(out_path: Path, limit: int | None, intra_op_threads: int) -> dict:
+    """The route policy (cascade-tfidf-allow-only) through the policy engine, Stage 2 stubbed, compared with the
+    committed serving-faithful counterfactual. The committed per-chunk DeBERTa scores are reused, so this needs no
+    DeBERTa inference and the headline 201/306 is recomputed from committed numbers."""
+    from serving.convert_registry import CALIBRATION_RECORDS
+    from serving.policy import bundle_sha256, legacy_to_v2
+    from serving.registry import KNOWN_TOKENIZERS, LoadedBundle
+    from serving.service import ClassifierService
+
+    faithful = json.loads(FAITHFUL.read_text())
+    committed_items = {it["id"]: it for it in faithful["items"]}
+    items = sorted(read_jsonl(REPLAY), key=lambda x: x["id"])
+    if limit:
+        items = items[:limit]
+    pointers = registry_state(ROUTE_REGISTRY_V1)
+    config = no_timeout_config()
+    specs = load_specs(pointers, intra_op_threads)
+    stub = _StubStage2(specs["stage2"].detector)
+    manifests = {name: spec.manifest for name, spec in specs.items()}
+    # Same id, version, rationale and validated-on engine version as the committed route policy, so the run's
+    # policy differs from it only in the raised budgets (checked in the report, review r1 m9).
+    committed = committed_policy("cascade-tfidf-allow-only")
+    policy, caps = legacy_to_v2(pointers, manifests, config, known_tokenizers=KNOWN_TOKENIZERS,
+                                calibrations=CALIBRATION_RECORDS, policy_id="cascade-tfidf-allow-only",
+                                policy_version="1", rationale=committed.rationale,
+                                engine_version=committed.engine_version)
+    detectors = {(s.detector_id, s.detector_version): (_spec_with(s, stub) if n == "stage2" else s)
+                 for n, s in specs.items() if n != "shadow"}
+    bundle = LoadedBundle(policy=policy, capabilities=caps, detectors=detectors, shadow=None,
+                          bundle_sha256=bundle_sha256(policy), policy_source="legacy_registry")
+    svc = ClassifierService(config=config, bundle=bundle)
+
+    # Instrumentation, as in training/replay_counterfactual_served.py: record the gate's per-chunk output and the
+    # chunks the decide member is asked to score. Nothing in serving/ is changed for the test.
+    recorded: dict[str, dict] = {}
+    chunks_by_item: dict[str, list[dict]] = {}
+    cur = {"id": "", "gate": None}
+    run_gate, member_scores = svc._run_stage1, svc._member_scores
+
+    def rec_gate(cs, deadline=None):
+        out = run_gate(cs, deadline)
+        cur["gate"] = {"scores": [None if out.scores.get(i) is None else float(out.scores[i])
+                                  for i in range(len(cs.chunks))],
+                       "langs": [out.langs.get(i) for i in range(len(cs.chunks))],
+                       "deadline_hit": out.deadline_hit}
+        return out
+
+    async def rec_member(member, cs, idx):
+        rows = chunks_by_item.setdefault(cur["id"], [])
+        for i in idx:
+            ch = cs.chunks[i]
+            rows.append({"index": i, "kind": ch.kind, "spans": [list(sp) for sp in ch.spans]})
+        return await member_scores(member, cs, idx)
+
+    svc._run_stage1 = rec_gate
+    svc._member_scores = rec_member
+
+    async def scenario():
+        await svc.start()
+        try:
+            for it in items:
+                cur["id"], cur["gate"] = it["id"], None
+                chunks_by_item.setdefault(it["id"], [])
+                out = await svc.classify(it["text"], f"t4-{it['id']}")
+                s1 = next((r for r in out.results if r.stage == "stage1"), None)
+                gate = cur["gate"] or {}
+                recorded[it["id"]] = {
+                    "stages_run": list(out.stages_run), "escalated": "stage2" in out.stages_run,
+                    "stub_decision": out.decision, "stub_policy_applied": out.policy_applied,
+                    "stub_coverage_policy_applied": out.coverage_policy_applied, "path": out.info.get("path"),
+                    "n_chunks": out.info.get("n_chunks"), "stage1_status": None if s1 is None else s1.status,
+                    "s1_scores": gate.get("scores"), "s1_langs": gate.get("langs"),
+                    "s1_deadline_hit": bool(gate.get("deadline_hit")),
+                    "escalation_reason": out.escalation_reason,
+                }
+        finally:
+            await svc.stop()
+
+    code = code_version()
+    asyncio.run(scenario())
+    return t4_report(out_path, recorded, chunks_by_item, committed_items, items, faithful, policy, bundle, specs,
+                     code)
+
+
+T4_TIMEOUT_FIELDS = {"gate.timeout_ms", "gate.on_failure.fallback.timeout_ms", "decide.members[0].timeout_ms"}
+
+
+def t4_report(out_path, recorded, chunks_by_item, committed_items, items, faithful, policy, bundle, specs,
+              code: dict | None = None) -> dict:
+    from serving import engine_version as ev
+    from serving.policy import bundle_sha256
+
+    committed = committed_policy("cascade-tfidf-allow-only")
+    diff = timeout_only_diff(committed, policy)
+    truth = {it["id"]: it for it in items}
+    cmp_fields = ("escalated", "stub_decision", "stub_policy_applied", "stub_coverage_policy_applied", "path",
+                  "n_chunks", "stage1_status", "s1_langs", "stages_run")
+    diffs = []
+    chunk_diffs = []
+    flags = {}
+    for rid, got in recorded.items():
+        want = committed_items.get(rid)
+        if want is None:
+            diffs.append({"id": rid, "diffs": ["not in the committed counterfactual"]})
+            continue
+        bad = []
+        for k in cmp_fields:
+            if k in want and want[k] != got[k]:
+                bad.append(f"{k}: committed {want[k]!r} vs policy engine {got[k]!r}")
+        if got["s1_scores"] is not None and want.get("s1_scores") is not None:
+            a = [None if x is None else round(x, 6) for x in got["s1_scores"]]
+            if a != want["s1_scores"]:
+                bad.append(f"s1_scores: committed {want['s1_scores']} vs policy engine {a}")
+        got_chunks = [{k: c[k] for k in ("index", "kind", "spans")} for c in chunks_by_item.get(rid, [])]
+        want_chunks = [{k: c[k] for k in ("index", "kind", "spans")} for c in want["stage2_chunks"]]
+        if got_chunks != want_chunks:
+            chunk_diffs.append({"id": rid, "committed": want_chunks, "policy_engine": got_chunks})
+        if bad:
+            diffs.append({"id": rid, "diffs": bad})
+        # The decision the route bundle serves, from the committed per-chunk DeBERTa scores of those same chunks.
+        scores = [c.get("deberta") for c in want["stage2_chunks"]]
+        positive = any(s is not None and s >= DEBERTA_THRESHOLD for s in scores)
+        flags[rid] = 0 if not got["escalated"] else int(got["stub_decision"] == "flag" or positive)
+    labeled = [(truth[r].get("label"), flags[r]) for r in flags if truth[r].get("label") in (0, 1)]
+    pos = [f for y, f in labeled if y == 1]
+    neg = [f for y, f in labeled if y == 0]
+    headline = faithful["views"]["cascade_served_faithful_chunk_level"]
+    rep = {
+        "test": "T4 (design §8): the cascade route policy reproduces the committed serving-faithful counterfactual",
+        "reference": "reports/cascade-and-shadow/replay_counterfactual_served_faithful.json",
+        "reference_sha256": sha256_file(FAITHFUL),
+        "n_items_compared": len(recorded),
+        "identical_on_every_item": not diffs and not chunk_diffs,
+        "n_items_with_differences": len(diffs),
+        "n_items_with_different_stage2_chunks": len(chunk_diffs),
+        "differences": diffs[:50],
+        "stage2_chunk_differences": chunk_diffs[:20],
+        "recall": {"flagged": sum(pos), "positives": len(pos), "as_fraction": f"{sum(pos)}/{len(pos)}"},
+        "fpr": {"flagged": sum(neg), "negatives": len(neg), "as_fraction": f"{sum(neg)}/{len(neg)}"},
+        "committed_reference_rates": {"recall": headline["recall"], "fpr": headline["fpr"]},
+        "headline_201_306_reproduced": f"{sum(pos)}/{len(pos)}" == "201/306",
+        "escalated": sum(1 for r in recorded.values() if r["escalated"]),
+        "escalation_reasons": dict(sorted(Counter(str(r["escalation_reason"]) for r in recorded.values()).items())),
+        "inputs": {"replay_sha256": sha256_file(REPLAY),
+                   "registry": "reports/cascade-and-shadow/registry_integration_route.json",
+                   "stage1": f"{specs['stage1'].detector_id}@{specs['stage1'].detector_version}",
+                   "stage2": f"{specs['stage2'].detector_id}@{specs['stage2'].detector_version} (stubbed in "
+                             f"phase A; the committed per-chunk scores decide, as in the reference)",
+                   "timeouts_disabled_ms": NO_TIMEOUT_MS},
+        "bundle": {"policy_id": policy.policy_id, "policy_version": policy.policy_version,
+                   "run_policy_bundle_sha256": bundle.bundle_sha256,
+                   "committed_policy": "artifacts/policies/cascade-tfidf-allow-only/1/policy.json",
+                   "committed_bundle_sha256": bundle_sha256(committed),
+                   "engine_version": ev.ENGINE_VERSION,
+                   "differences_from_committed_policy": diff,
+                   "only_timeout_fields_differ": set(diff) <= T4_TIMEOUT_FIELDS,
+                   "note": "the run raises the budgets to 600 s so no decision is made by a deadline; everything "
+                           "else, including every capability pin, is the committed route policy. The two bundle "
+                           "hashes differ by those budgets only."},
+        "provenance": {"this_run": code},
+    }
+    write_json(out_path, rep)
+    return rep
+
+
+# ---------------------------------------------------------------------- T5
+
+def t5(out_path: Path, t3_path: Path) -> dict:
+    """The T3 policy-engine decisions against the live D23 run. Items whose served response had a failed active
+    result are listed, not compared: timing decided them (design §8, T5)."""
+    t3_rep = json.loads(t3_path.read_text())
+    engine = {it["id"]: it for it in t3_rep["items"]}
+    live = [r for r in read_jsonl(LIVE_D23)]
+    served = {r["id"]: r for r in live}
+    comparable, agree, disagree, skipped = [], 0, [], []
+    for rid, s in served.items():
+        if rid not in engine:
+            continue
+        if s.get("error") is not None:
+            skipped.append({"id": rid, "why": f"transport error: {s['error']}"})
+            continue
+        statuses = s.get("statuses") or []
+        if any(st != "ok" for st in statuses) or s.get("policy_applied"):
+            skipped.append({"id": rid, "why": f"served response had a failed active result: statuses={statuses}, "
+                                              f"policy_applied={s.get('policy_applied')}"})
+            continue
+        comparable.append(rid)
+        if s["decision"] == engine[rid]["decision"]:
+            agree += 1
+        else:
+            disagree.append({"id": rid, "served": s["decision"], "policy_engine": engine[rid]["decision"],
+                             "served_coverage": s.get("coverage_policy_applied"),
+                             "engine_path": engine[rid]["path"]})
+    rep = {
+        "test": "T5 (design §8): policy engine vs the live D23 run",
+        "live_run": "reports/cascade-and-shadow/d23/replay/requests.jsonl",
+        "live_run_sha256": sha256_file(LIVE_D23),
+        "t3_report": str(t3_path.relative_to(ROOT)) if t3_path.is_relative_to(ROOT) else str(t3_path),
+        "n_live_records": len(live),
+        "n_compared": len(comparable),
+        "n_identical": agree,
+        "n_different": len(disagree),
+        "identical_on_every_comparable_item": not disagree,
+        "differences": disagree,
+        "n_not_compared": len(skipped),
+        "not_compared": skipped,
+        "note": "The live run served under real timeouts on a 2-core host; items it decided by a failure policy "
+                "cannot be reproduced by a run with timeouts disabled, so they are listed instead of compared.",
+    }
+    write_json(out_path, rep)
+    return rep
+
+
+# ---------------------------------------------------------------------- CLI
+
+def main(argv=None) -> int:
+    ap = argparse.ArgumentParser()
+    ap.add_argument("test", choices=["t3", "t4", "t5"])
+    ap.add_argument("--out", type=Path, required=True)
+    ap.add_argument("--max-seconds", type=float, default=None, help="t3: stop after this long; resumable")
+    ap.add_argument("--cache", type=Path, default=None,
+                    help="t3: persisted row score cache (JSONL); default: next to --out, <out>.rowcache.jsonl")
+    ap.add_argument("--registry", type=Path, default=D23_REGISTRY_V1,
+                    help="t3: the registry v1 state both engines load (default: the D23 state)")
+    ap.add_argument("--no-cache", action="store_true", help="t3: no row cache, not even in memory: each engine calls the model for every row")
+    ap.add_argument("--limit", type=int, default=None, help="first N items by id (smoke runs only)")
+    ap.add_argument("--intra-op-threads", type=int, default=0)
+    ap.add_argument("--t3", type=Path, default=None, help="t5: the T3 report to compare")
+    a = ap.parse_args(argv)
+    if a.test == "t3":
+        cache = None if a.no_cache else (a.cache or a.out.with_suffix(".rowcache.jsonl"))
+        rep = t3(a.out, a.max_seconds, cache, a.limit, a.intra_op_threads, a.registry)
+        print(json.dumps({k: rep[k] for k in ("complete", "n_items_compared", "n_items_total",
+                                              "identical_on_every_item", "n_items_with_differences",
+                                              "wall_s_this_run")}, indent=1))
+        if rep["differences"]:
+            print(json.dumps(rep["differences"][:5], indent=1))
+        return 0 if rep["identical_on_every_item"] else 1
+    if a.test == "t4":
+        rep = t4(a.out, a.limit, a.intra_op_threads)
+        print(json.dumps({k: rep[k] for k in ("n_items_compared", "identical_on_every_item",
+                                              "n_items_with_differences", "n_items_with_different_stage2_chunks",
+                                              "recall", "fpr", "headline_201_306_reproduced")}, indent=1))
+        return 0 if rep["identical_on_every_item"] else 1
+    if not a.t3:
+        ap.error("t5 needs --t3")
+    rep = t5(a.out, a.t3)
+    print(json.dumps({k: rep[k] for k in ("n_compared", "n_identical", "n_different", "n_not_compared",
+                                          "identical_on_every_comparable_item")}, indent=1))
+    return 0 if rep["identical_on_every_comparable_item"] else 1
+
+
+if __name__ == "__main__":
+    sys.exit(main())

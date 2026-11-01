@@ -1,0 +1,89 @@
+{
+  "test": "T4 (design §8): the cascade route policy reproduces the committed serving-faithful counterfactual",
+  "reference": "reports/cascade-and-shadow/replay_counterfactual_served_faithful.json",
+  "reference_sha256": "f1efbb7d0d5507e8aa66942324de4b0e850107583e6b5033002e2209d506c3db",
+  "n_items_compared": 2000,
+  "identical_on_every_item": true,
+  "n_items_with_differences": 0,
+  "n_items_with_different_stage2_chunks": 0,
+  "differences": [],
+  "stage2_chunk_differences": [],
+  "recall": {
+    "flagged": 201,
+    "positives": 306,
+    "as_fraction": "201/306"
+  },
+  "fpr": {
+    "flagged": 191,
+    "negatives": 1185,
+    "as_fraction": "191/1185"
+  },
+  "committed_reference_rates": {
+    "recall": {
+      "value": 0.6568627450980392,
+      "numerator": 201,
+      "denominator": 306,
+      "ci95": [
+        0.6020194470487437,
+        0.707816429548892
+      ],
+      "ci_method": "wilson"
+    },
+    "fpr": {
+      "value": 0.16118143459915613,
+      "numerator": 191,
+      "denominator": 1185,
+      "ci95": [
+        0.14134608389258865,
+        0.18320640875301672
+      ],
+      "ci_method": "wilson"
+    }
+  },
+  "headline_201_306_reproduced": true,
+  "escalated": 1198,
+  "escalation_reasons": {
+    "None": 802,
+    "band": 718,
+    "language": 480
+  },
+  "inputs": {
+    "replay_sha256": "47ac4c845ab7604dc6940ff6fefa02049e383cb1b960818fa481da5fd1a07592",
+    "registry": "reports/cascade-and-shadow/registry_integration_route.json",
+    "stage1": "stage1-tfidf-lr@stage1-tfidf-v2.1",
+    "stage2": "deberta-pi-v2@2.0.0+90c9989b.onnx.fp32 (stubbed in phase A; the committed per-chunk scores decide, as in the reference)",
+    "timeouts_disabled_ms": 600000
+  },
+  "bundle": {
+    "policy_id": "cascade-tfidf-allow-only",
+    "policy_version": "1",
+    "run_policy_bundle_sha256": "c1623eee08e9f6065e8e1cc647e9868da7ed8df67fcf0edba917b510f38135c3",
+    "committed_policy": "artifacts/policies/cascade-tfidf-allow-only/1/policy.json",
+    "committed_bundle_sha256": "b12b7ebce6bda5be94b050c3f585e4130235aed216c32b9251c7e03bd461ad67",
+    "engine_version": "1.1.0",
+    "differences_from_committed_policy": {
+      "decide.members[0].timeout_ms": [
+        5000,
+        600000
+      ],
+      "gate.on_failure.fallback.timeout_ms": [
+        5000,
+        600000
+      ],
+      "gate.timeout_ms": [
+        50,
+        600000
+      ]
+    },
+    "only_timeout_fields_differ": true,
+    "note": "the run raises the budgets to 600 s so no decision is made by a deadline; everything else, including every capability pin, is the committed route policy. The two bundle hashes differ by those budgets only."
+  },
+  "provenance": {
+    "this_run": {
+      "git_commit": "c0c684b26d40a10b06d6567e5283c27f4b149439",
+      "git_dirty": false,
+      "engine_version": "1.1.0",
+      "engine_record_sha256": "c4dc5e43ae2444aa57f5dad058ea2d7f2373ebf3504761a0324f02771371555c"
+    }
+  }
+}

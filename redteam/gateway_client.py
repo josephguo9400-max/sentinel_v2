@@ -124,6 +124,8 @@ class GatewayClient:
             results=tuple(resp.results), gateway_status="ok", latency_ms=_ms(t0),
             request_id=resp.request_id, stages_run=tuple(resp.stages_run),
             coverage_policy_applied=resp.coverage_policy_applied,
+            policy_id=resp.policy_id, policy_version=resp.policy_version, bundle_sha256=resp.bundle_sha256,
+            unscored_by_any_step=resp.unscored_by_any_step, escalation_reason=resp.escalation_reason,
         )
 
     def _fallback(self, status: GatewayStatus, error: str, t0: float) -> ClassifierVerdict:

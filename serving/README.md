@@ -1,4 +1,4 @@
-# Sentinel gateway (milestone cascade-and-shadow, pivot D23)
+# Sentinel gateway (milestone policy-runtime)
 
 A FastAPI service that serves detectors from manifests: Stage 2 is `protectai/deberta-v3-base-prompt-injection-v2`
 ONNX fp32 (`artifacts/baseline/deberta-pi-v2`), Stage 1 is a TF-IDF + logistic regression ONNX model
@@ -15,6 +15,20 @@ through the gateway, measured recall 248/303 = 81.8% [77.1, 85.8] and FPR 199/1,
 (`reports/cascade-and-shadow/d23/replay_counterfactual.json`). The cascade code stays: `stage1_mode: "route"` in the
 registry turns it back on for a future Stage 1 candidate. See "Stage 1 modes".
 
+**Since D25 (milestone policy-runtime) the gateway serves a *bundle*, not a set of pointers.** A bundle is one
+`ExecutionPolicy` (what runs, in what order, with what budgets and failure rules), the `CapabilityManifest`
+versions it pins by sha256, and the `engine_version` that interprets it; `bundle_sha256` covers all three. What a
+detector can do is separated from how the gateway uses it, so a routing change is a policy version instead of a
+model version, and a gate verdict is bound to a bundle hash. The decision path is the same code as before, proved
+by the equivalence runs: on all 2,000 replay items the policy engine and the pre-refactor service make identical
+decisions on the served D23 path (`reports/policy-runtime/t3_d23_equivalence_engine110_2ebc7d9a.json` at engine
+1.1.0, the served bundle; `t3_d23_equivalence.json` is the earlier engine-1.0.0 run; DeBERTa scores are shared
+through a row cache there, so identical scores hold by construction; uncached subsets agree too, see "Release
+gate"), and the converted route policy reproduces the
+committed cascade counterfactual exactly, including its 201/306
+(`reports/policy-runtime/t4_cascade_equivalence.json`). Design: `docs/design/capability-policy.md`; decisions: D25
+in `docs/RFC.md`. See "Bundles, policies and capabilities" below.
+
 ## Run
 
 ```bash
@@ -29,9 +43,14 @@ curl --noproxy '*' -s -X POST localhost:8200/admin/reload      # re-read artifac
 pytest -q tests/serving
 ```
 
+`artifacts/registry.json` is schema `sentinel-registry-v2`: it names the bundle to serve. A decision-affecting
+`SENTINEL_*` variable is refused at startup under it, with the policy field to change named in the error
+(D25.3). A live smoke of this deployment, with `/health`, two classified requests, the 24 probes and the refused
+startup, is `reports/policy-runtime/run_smoke_v2.sh` and its committed outputs.
+
 Optional int8 candidate: `flock /home/claude/measure.lock -c 'python scripts/quantize_deberta.py'`.
 
-## API (contracts v1.2)
+## API (contracts v1.3)
 
 `POST /classify` takes a `contracts.ClassifyRequest` (`{"text", "request_id"}`, extra keys rejected, `request_id`
 at most 200 characters). Every response is built as a `contracts.ClassifyResponse` and validated before it leaves:
@@ -39,12 +58,28 @@ at most 200 characters). Every response is built as a `contracts.ClassifyRespons
 ```json
 {"request_id": "demo-1", "decision": "flag", "decided_by": "deberta-pi-v2", "policy_applied": null,
  "coverage_policy_applied": null, "stages_run": ["stage1", "stage2"],
- "results": [{"stage": "stage1", "...": "DetectorResult v1.2"}, {"stage": "stage2", "...": "..."}]}
+ "policy_id": "d23-deberta-decides", "policy_version": "1", "bundle_sha256": "2ebc7d9ae676…",
+ "unscored_by_any_step": false, "escalation_reason": "band",
+ "results": [{"stage": "stage1", "...": "DetectorResult v1.3"}, {"stage": "stage2", "...": "..."}]}
 ```
 
-- `results` holds one active `DetectorResult` per stage that decided, in order. With `stage1_mode: "observe"`, the
-  Stage 1 result follows them with `role="shadow"`, `stage="stage1"`, and `stages_run` does not list it (see
-  "Stage 1 modes"). The shadow *mirror* (`shadow` pointer) is never in the response.
+- **Compatibility:** v1.3 is a breaking change for a client pinned to the v1.2 models. `ClassifyResponse` and
+  `DetectorResult` keep `extra="forbid"`, every `DetectorResult` now carries `schema_version: "1.3"` and the
+  response has five new fields, so a v1.2 reader rejects every response (also D23 responses without an observe
+  result). There is no response-level version and no 1.2 mode: upgrade the reader to the 1.3 models (they accept
+  1.1-1.3) or parse without `extra="forbid"`. In-tree consumers already use 1.3.
+- `results` holds one active `DetectorResult` per step that decided, in order. An observe step's result follows
+  them with `role="observe"` (v1.3; a v1.2 gateway reported it as `"shadow"`), `stage="stage1"`, and `stages_run`
+  does not list it. The shadow *mirror* is never in the response. Consumers that count catches, truncations or
+  failures keep only `role == "active"`.
+- v1.3 `policy_id`, `policy_version` and `bundle_sha256` name the bundle that decided, so a response can be
+  attributed to an exact deployment (and a gate report to an exact set of responses).
+- v1.3 `unscored_by_any_step` is true iff content was neither cleared by the gate step nor scored by a decide
+  member — including when the decision is a flag backed by a score, where `coverage_policy_applied` is null.
+- v1.3 `escalation_reason` says why a request with a gate step reached the decide stage: `band` (a chunk scored at
+  or above `clear_below`), `language` (a chunk below it was outside `band.scope_languages`), `coverage` (a chunk
+  the gate never scored: chunk budget, soft deadline, no text) or `gate_failed`. Precedence in that order, with
+  `gate_failed` first. Null when there is no gate step or the gate finalized.
 - Every non-ok result has a `failure_reason`: `timeout`, `exception`, or `overloaded` (admission control, full
   chunk queue, or, for the shadow, a busy shadow thread).
 - `decided_by` is the detector that decided (`deberta-pi-v2`, or `stage1-tfidf-lr` in route mode), or a coverage-policy tag
@@ -53,8 +88,11 @@ at most 200 characters). Every response is built as a `contracts.ClassifyRespons
 - `coverage_policy_applied` is set only when some content was scored by neither stage (see "Coverage policy").
 - HTTP 503 when no verified Stage 2 is loaded, 413 above `MAX_TEXT_CHARS`, 422 for invalid requests.
 
-`GET /health` reports `status` (`ok`, `degraded` when a pointer was rejected or the last reload was refused, or
-`unavailable` with 503), the active Stage 2 under `detector` (kept for existing clients), `stage1`, `shadow`
+`GET /health` reports `status` (`ok`, `degraded` when a pointer was rejected, the last reload was refused or the
+`previous` policy cannot be loaded, or `unavailable` with 503), a `policy` block (`policy_id`, `policy_version`,
+`policy_sha256`, `bundle_sha256`, `engine_version`, the pinned capabilities, `policy_source`
+(`registry_v2` | `legacy_registry` | `injected`), `status` and `previous`), the active decide member under
+`detector` (kept for existing clients), `stage1`, `shadow`
 (counts and agreement rate), `stage1_mode`, the language detector settings, `registry` (pointers and
 `stage1_mode`, registry sha256, rejections
 with reason codes, `last_reload`), and `config.timeout_ms`, which is the upper bound a client should wait for:
@@ -64,9 +102,88 @@ observe mode (Stage 1 runs after the decision). `config.stage1_soft_deadline_ms`
 `POST /admin/reload` re-reads the registry (200 when applied, 409 when refused). `GET /metrics` is Prometheus
 text; see "Metrics".
 
-## Registry and manifest verification (`serving/registry.py`)
+## Bundles, policies and capabilities (`serving/policy.py`, `serving/registry.py`)
 
-`artifacts/registry.json` (schema `sentinel-registry-v1`) names directories under `artifacts/`:
+`artifacts/registry.json` has schema `sentinel-registry-v2` and names a bundle, not detectors:
+
+```json
+{"schema": "sentinel-registry-v2",
+ "active": "policies/d23-deberta-decides/1/policy.json",
+ "previous": null,
+ "capabilities_root": "capabilities",
+ "status": "pending_gate"}
+```
+
+- **`CapabilityManifest` 2.0** (`artifacts/capabilities/<detector_id>/<detector_version>/capability.json`):
+  immutable, what one detector can do. `files` pins every file it loads by sha256 (the tokenizer included, which
+  retires `KNOWN_TOKENIZERS` for v2 capabilities), `input` is its preprocessing, tokenizer and token limit,
+  `scoring` is how the model is applied to one chunk (sub-windows, segment pieces), `calibration` is its
+  threshold plus what it was chosen on, and `limits` holds the researcher's recommended timeout. Nothing in it
+  names another detector or a pipeline position. `capability_sha256` is the sha256 of its canonical JSON.
+- **`ExecutionPolicy` 1.0** (`artifacts/policies/<policy_id>/<policy_version>/policy.json`): an optional **gate**
+  step, one **decide** stage (one member, or two in parallel), any number of **observe** steps, an optional
+  **shadow**, a **coverage** rule, one **chunking** plan and an optional **language_detector**. Every step pins
+  its detector by `(detector_id, detector_version, capability_sha256)`, so an edited capability cannot slip in.
+  Budgets, chunk caps, bands and failure modes live here.
+- **`bundle_sha256`** = sha256 over the canonical policy, the sorted pinned `capability_sha256` values and
+  `engine_version`. Model and tokenizer bytes are covered through `files`. Change a band, a threshold or the
+  engine and the hash changes, so a gate verdict never carries over (`tests/serving/test_policy_runtime.py`).
+- **`previous`** stays loadable so a rollback is a pointer flip (`python -m training.gate rollback`). It is null
+  today: the D23 bundle is the first policy-shaped deployment, so there is nothing to roll back to yet. A
+  `previous` that cannot be loaded makes `/health` degraded without taking the active bundle down.
+- **`status`** (`pending_gate` | `approved`) is the bundle's lifecycle state, not a gate verdict. D23 was pending
+  the gate (D17) before the conversion, the conversion changed no decision (T3), so it stays pending.
+- A v2 bundle loads **all or nothing**: a rejected detector means no service (503), because a verdict for a
+  partially loaded bundle would mean nothing. Rejection codes are the v1 ones plus `policy_invalid`,
+  `capability_invalid`, `capability_sha256_mismatch`, `engine_version_incompatible` and the `PolicyError` codes
+  of the validators.
+
+**The threshold split.** `calibration.threshold` ("is this injection") belongs to the detector author and changes
+with a new calibration, model or scoring rule, which is a new `detector_version`. `band.clear_below` and
+`band.flag_at_or_above` (the routing trade-off) belong to the policy owner and change with a new
+`policy_version`. No validator ties a band to the gate detector's threshold: that coupling is what shipped a
+policy change as a model version (`stage1-tfidf-v2` and `v2.1` have the same model bytes and threshold and differ
+only in their gray zone). Both are printed in the gate report.
+
+**`engine_version`** (`serving/engine_version.py`, 1.1.0) is the version of the interpreter a policy was validated
+on. 1.0.0 was the refactor; 1.1.0 holds the review r1 fixes (shape B: coverage after a failed member, the gate
+FALLBACK budget after a gate failure; validation: `scope_languages_required`, sorted `scope_languages`). The
+committed policies record 1.0.0, the engine they were validated on, and are accepted by 1.1.0; their bundle hashes
+changed with the engine (D23: `17fac609a8f2…` → `2ebc7d9ae676…`). A policy validated on another major version, or on a newer minor, is refused. `serving/engine_version.json`
+records the sha256 of every decision-path file, and `tests/serving/test_engine_version.py` fails when one of them
+changes without a bump, so a behaviour change cannot keep an old bundle hash (D25.2).
+
+**Decision-affecting environment variables are refused under registry v2** (D25.3). `COVERAGE_POLICY`,
+`MAX_CHUNKS`, `STAGE1_*`, `LANG_*`, `STRIDE`, `STRUCTURE_AWARE`, `PACK_OVERLAP_TOKENS`, `SHADOW_*` (except the log
+path) and `EXTRA_TOKENIZERS` all live in the policy or a capability now; setting one is a startup error naming the
+field to change instead (`serving/policy.py` `DECISION_FIELDS`; the list is also what the smoke run shows in
+`reports/policy-runtime/smoke_env_guard.txt`). Capacity settings (`MAX_BATCH`, `WORKERS`, `MAX_QUEUE`,
+`MAX_INFLIGHT*`, `TOKENIZE_WORKERS`, `INTRA_OP_THREADS`, `MAX_TEXT_CHARS`) stay in `GatewayConfig`: they change
+decisions only through overload and timeouts, which the gate measures.
+
+**Shape B (a parallel decide stage)** is implemented and tested with fake detectors only and is served by no
+committed policy (D25.5): on 2 cores two DeBERTa-class members compete for CPU and turn into timeouts. Its
+coverage rule: an aggregated allow with content that no member scored goes to the coverage policy whenever some
+member (or its fallback) scored chunks, also when the allow rests on a failed member's FAIL_OPEN vote, so a failure
+is never more permissive than the same vote succeeding (engine 1.1.0, review r1 M2); only when no member scored
+anything does the failure policy alone decide, as for a single member. A canary
+field is designed but not implemented, and the engine rejects a policy that sets it (D25.4).
+
+**Converting and the v1 path.** `serving/policy.py` `legacy_to_v2` is a pure function from a v1 registry state,
+its `ArtifactManifest`s and a `GatewayConfig` to the policy that was actually served plus its capabilities. A v1
+registry still loads: it is converted in memory and `/health` shows `policy_source: "legacy_registry"` with the
+derived `bundle_sha256`. `python -m serving.convert_registry` writes the committed v2 files, and `--check` fails
+when a committed file differs from the conversion; `reports/policy-runtime/registry_v1_d23.json` is the v1 state
+D23 served, kept as the historical record and as the converter's input. The v1 path is removed one milestone
+later.
+
+One behaviour the conversion deliberately drops: a Stage 1 that declares no `input_languages` may no longer clear
+chunks just because `STAGE1_UNDECLARED_LANGUAGES` had a value. A band that clears content must state its
+`scope_languages`, and a validator checks the scope against the capability's `validated_languages`.
+
+### Manifest verification (`serving/registry.py`, schema `sentinel-registry-v1`)
+
+The v1 registry names directories under `artifacts/`:
 
 ```json
 {"schema": "sentinel-registry-v1", "stage1": "candidates/stage1-tfidf-v2.1", "stage1_mode": "observe",
@@ -133,48 +250,74 @@ files in the manifest is filed in `docs/contract_requests.md`.
 
 ## Request flow (`serving/service.py`)
 
+The engine reads the active policy; "Stage 1" below is the policy's **gate** step (route mode) or its **observe**
+step, and "Stage 2" is the **decide** member. The numbers in brackets are the values the served D23 bundle
+(`artifacts/policies/d23-deberta-decides/1/policy.json`) carries, which are the ones the v1 registry produced.
+
 1. **Admission** (event loop). At most `MAX_INFLIGHT` requests holding `MAX_INFLIGHT_CHARS` characters can be in
-   flight. Above either cap, every stage result is `error`/`overloaded`, and Stage 2's failure policy decides.
+   flight. Above either cap, every step's result is `error`/`overloaded`, and the failure rules below decide
+   (a `FALLBACK` is never started on `overloaded`: a second model under load shedding adds load).
 2. **Prepare** (tokenizer pool). Structure-aware segmentation, then one chunk plan in Stage 2 tokenizer units
    (windows of 510 content tokens). Both stages score the same chunks.
-3. **Stage 1** (one thread, Stage 1 manifest timeout, 50 ms for `stage1-tfidf-v2.1`). For each of the first
-   `STAGE1_MAX_CHUNKS` (512) chunks, in order, Stage 1 computes the chunk's score and, only if the score is below
-   `gray_zone` low, its language (a chunk at or above low is uncleared whatever its language). The score is the
-   max over three things: the chunk text in Stage 1's own windows of up to 512 regex tokens, each segment piece
-   of a packed chunk on its own, and overlapping 64-token sub-windows (stride 32). A chunk is **cleared** iff
-   Stage 1 scored it, its score is below `gray_zone` low, and its language is in Stage 1's `input_languages`.
-   Stage 1 is **anytime**: it starts no new chunk after the soft deadline (budget minus
-   `STAGE1_DEADLINE_MARGIN_MS`) and returns what it scored, `status="ok"`, `truncated=true`; unscored chunks are
+3. **Gate step** (one thread, `gate.timeout_ms`, 50 ms for `stage1-tfidf-v2.1`). For each of the first
+   `gate.max_chunks` (512) chunks, in order, it computes the chunk's score and, only if the score is below
+   `band.clear_below`, its language (a chunk at or above low is uncleared whatever its language). The score is the
+   max over three things, all three set by the capability's `scoring` rule: the chunk text in the model's own
+   windows of up to `max_input_tokens` regex tokens, each segment piece of a packed chunk on its own
+   (`score_segment_pieces`), and overlapping `subwindow_tokens`-token sub-windows (stride `subwindow_stride`;
+   64/32 here). A chunk is **cleared** iff the gate scored it, its score is below `band.clear_below`, and its
+   language is in `band.scope_languages`. The gate is **anytime**: it starts no new chunk after the soft deadline
+   (budget minus `gate.deadline_margin_ms`) and returns what it scored, `status="ok"`, `truncated=true`; unscored chunks are
    uncleared and escalate, exactly like chunks beyond `STAGE1_MAX_CHUNKS`. See "Stage 1 latency".
-4. **Request-level rule.** Stage 1 finalizes `allow` only when **every** chunk is cleared. Stage 1 never finalizes
-   `flag` by default (its benign-hard FPR is 28%); `STAGE1_FINALIZE_FLAG=true` lets it flag when any chunk scores
-   at or above `gray_zone` high. Everything else escalates.
-5. **Chunk-level cascade.** Stage 2 scores at most `MAX_CHUNKS` (4) chunks, in this order: the first chunk, the
-   last chunk, then uncleared chunks (chunks Stage 1 did not score first, then by descending Stage 1 score,
-   ties by position). Cleared middle chunks are not sent to Stage 2.
-6. **Decision.** Any Stage 2 chunk at or above the threshold gives `flag`. A Stage 2 timeout, exception or
-   overload applies Stage 2's `failure_policy`. When every chunk was cleared or scored, the decision is `allow`.
-   Otherwise the coverage policy decides.
+4. **Request-level rule.** The gate finalizes `allow` only when **every** chunk is cleared and `"allow"` is in
+   `band.finalize`. It finalizes `flag` only when `"flag"` is in `band.finalize` and a chunk scores at or above
+   `band.flag_at_or_above` (not configured in any committed policy: Stage 1's benign-hard FPR is 28%). Everything
+   else escalates, and `escalation_reason` says why.
+5. **Chunk-level cascade.** Each decide member scores at most its `max_chunks` (4) chunks, in this order: the
+   first chunk, the last chunk, then uncleared chunks (chunks the gate did not score first, then by descending
+   gate score, ties by position). Cleared middle chunks are not sent. In a parallel stage both members score the
+   same selection.
+6. **Decision.** Any decide chunk at or above the member's calibrated threshold gives `flag`. A failed member
+   applies its `on_failure` (below). When every chunk was cleared or scored, the decision is `allow`. Otherwise
+   the coverage policy decides.
 
-Stage 1 failure (timeout, exception) clears nothing. Stage 1's own `fail_open` is never applied while a Stage 2
-exists; the request escalates instead. A `fail_open` Stage 1 would otherwise turn a 50 ms hiccup into an
-unscored `allow`.
+**Failure rules** (`on_failure`, one per step; `tests/serving/test_failure_matrix.py` documents all 36 cells of
+{gate, decide single, decide parallel member} x {timeout, exception, overloaded} x {FAIL_OPEN, FAIL_CLOSED,
+FALLBACK that works, FALLBACK that fails} on a one-chunk text, and 16 more on a text with more chunks than
+`max_chunks`, where the coverage rule interacts with the failure; budgets and the remaining interactions are in
+design §11a):
 
-In observe mode (the default deployment) steps 3 and 4 are skipped; see "Stage 1 modes".
+| Mode | Effect |
+| --- | --- |
+| `FAIL_OPEN` | the step votes allow (on a gate step that finalizes the request, which is why the policy linter flags it) |
+| `FAIL_CLOSED` | the step votes flag; `policy_applied="fail_closed"` |
+| `FALLBACK(d@v)` | run `d@v` on the same chunks within its own `timeout_ms`; if it fails too, `terminal` decides. Depth 1, and **never started on `overloaded`**. A gate's `FALLBACK` must target a decide member, which is the old rule "a Stage 1 failure clears nothing, escalate" |
+| `ASYNC_ONLY` | required on observe and shadow steps, forbidden on gate and decide steps: never read by the decision |
 
-`truncated` in each result is about that detector only. Stage 2's `truncated` is true whenever Stage 2 skipped a
-chunk, even one Stage 1 cleared. Content scored by neither stage shows up as `coverage_policy_applied`.
+The converted D23 and route policies keep exactly the old behaviour: the gate escalates on failure
+(`FALLBACK` to the decide member with `terminal: FAIL_CLOSED`), and Stage 1's manifest `fail_open` is not applied
+while a decider exists, because a `fail_open` gate would turn a 50 ms hiccup into an unscored `allow`.
 
-### Stage 1 modes (registry `stage1_mode`, D23)
+With an observe step instead of a gate (the default deployment) steps 3 and 4 are skipped; see "Stage 1 modes".
 
-| Mode | Stage 1 clears chunks / finalizes | Stage 2 chunk selection | Stage 1 result |
-| --- | --- | --- | --- |
-| `route` | yes (steps 3-4) | first, last, then uncleared by Stage 1 score | `role="active"`, first in `results`, in `stages_run` |
-| `observe` (default) | never | first, last, then the rest by position: the gateway without Stage 1 | `role="shadow"`, after the active results, not in `stages_run` |
+`truncated` in each result is about that detector only. The decide member's `truncated` is true whenever it
+skipped a chunk, even one the gate cleared. Content scored by **no** step shows up as `coverage_policy_applied`
+and, whatever the decision, as `unscored_by_any_step` (v1.3) and
+`sentinel_unscored_requests_total{decision}`.
 
-**Observe mode, how it runs.** `ClassifierService._classify_active(route_stage1=False)` is the decision path with
-Stage 1 removed: no chunk is cleared and no Stage 1 score reaches `stage2_order`, so chunk selection, Stage 2
-scoring, the coverage policy (deep scan included) and the decision are those of a gateway built without Stage 1.
+### Stage 1 modes (a gate step or an observe step; D23, D25)
+
+The v1 registry's `stage1_mode` became the position of the detector in the policy: `route` is a **gate** step and
+`observe` is an **observe** step. `/health` still reports `stage1_mode` for existing clients.
+
+| Mode | Policy | Clears chunks / finalizes | Decide chunk selection | Its result |
+| --- | --- | --- | --- | --- |
+| `route` | `gate` step | yes (steps 3-4) | first, last, then uncleared by gate score | `role="active"`, first in `results`, in `stages_run` |
+| `observe` (default) | `observe` step | never | first, last, then the rest by position: the gateway without a gate | `role="observe"` (v1.3; `"shadow"` in v1.2), after the active results, not in `stages_run` |
+
+**Observe mode, how it runs.** A policy with no gate step runs `ClassifierService._classify_active` with nothing
+cleared and no gate score reaching `stage2_order`, so chunk selection, decide scoring, the coverage policy (deep
+scan included) and the decision are those of a gateway built without a gate.
 Once that outcome is final, the request **gives back its admission slot** (`MAX_INFLIGHT` /
 `MAX_INFLIGHT_CHARS`), and only then does Stage 1 run, on the same chunk plan in its own thread, under its own
 budget (the hard wait is the Stage 1 timeout, not the Stage 2 deadline), and its `DetectorResult` is appended.
@@ -475,9 +618,26 @@ sampled.
 
 ## Configuration
 
-Each option is an environment variable `SENTINEL_<NAME>`; see `serving/config.py`. Detector thresholds, timeouts,
-failure policies, gray zone and languages come from manifests. The options marked "injected" apply only to a
-detector object passed to `create_app()` (tests).
+Each option is an environment variable `SENTINEL_<NAME>`; see `serving/config.py`. The options marked "injected"
+apply only to a detector object passed to `create_app()` (tests).
+
+**Under registry v2, every option in this table that can change a decision is owned by the policy or a capability
+and setting it is a startup error** (D25.3; see "Bundles, policies and capabilities"). The table says which field
+owns it. The rows without an owner are capacity settings and stay environment variables.
+
+| Env var (refused under registry v2) | Policy or capability field |
+| --- | --- |
+| `COVERAGE_POLICY`, `DEEP_SCAN_*` | `coverage.mode`, `coverage.deep_scan.*` |
+| `MAX_CHUNKS`, `STAGE2_TIMEOUT_MS` | `decide.members[].max_chunks`, `.timeout_ms` |
+| `STAGE1_MAX_CHUNKS`, `STAGE1_TIMEOUT_MS`, `STAGE1_DEADLINE_MARGIN_MS` | `gate.*` / `observe[].*` |
+| `STAGE1_FINALIZE_FLAG` | `gate.band.finalize`, `gate.band.flag_at_or_above` |
+| `STAGE1_UNDECLARED_LANGUAGES` | `gate.band.scope_languages` / `observe[].band.scope_languages` |
+| `STAGE1_OBSERVE_CONCURRENCY` | `observe[].concurrency` |
+| `STAGE1_SUBWINDOW_TOKENS` / `_STRIDE` | the capability's `scoring.subwindow_tokens` / `_stride` (a new `detector_version`) |
+| `LANG_SEED`, `LANG_MIN_LETTERS`, `LANG_MIN_PROB`, `LANG_MAX_CHARS` | `language_detector.*` |
+| `STRIDE`, `STRUCTURE_AWARE`, `PACK_OVERLAP_TOKENS` | `chunking.*` |
+| `SHADOW_QUEUE`, `SHADOW_TIMEOUT_MS`, `SHADOW_MAX_CHUNKS`, `SHADOW_INTRA_OP_THREADS` | `shadow.*` |
+| `EXTRA_TOKENIZERS` | the capability's `files` (every file is pinned by sha256) |
 
 | Option | Default | Notes |
 | --- | --- | --- |
@@ -505,7 +665,12 @@ detector object passed to `create_app()` (tests).
 
 ## Metrics
 
-New in this milestone:
+New in policy-runtime: `sentinel_unscored_requests_total{decision}` counts requests whose content was scored by
+no step (`ClassifyResponse.unscored_by_any_step`), including flags backed by a score, which
+`sentinel_coverage_policy_applied_total` cannot show. Metrics still carry no `bundle` label (design §9, a gap);
+`/health` and every response carry `bundle_sha256`, and the gate report binds its numbers to it.
+
+New in cascade-and-shadow:
 
 - `sentinel_cascade_path_total{path}`: per-request routing outcome. Values: `stage1_allow`, `stage1_flag`,
   `stage2_flag`, `stage2_allow`, `coverage_flag`, `coverage_quarantine`, `coverage_allow`, `stage2_timeout`,
@@ -583,10 +748,85 @@ why the pinned setting is per-channel. Choosing per-channel came from a scratch 
 val texts (per-channel 95/100, per-channel + reduce_range 94/100, QUInt8 per-tensor 92/100). The scratch script
 is not committed, so those three numbers are context, not results. The committed 484/500 figure is the evidence.
 
+## Release gate (`training/gate.py`)
+
+The gate's unit is the bundle, never a detector alone, and it **never promotes**:
+
+```bash
+flock /home/claude/measure.lock -c 'python -m training.gate evaluate \
+    --registry artifacts/registry.json --split val --out reports/policy-runtime/gate_val_d23.json \
+    --max-seconds 240'                                     # resumable; writes a report bound to bundle_sha256
+python -m training.gate promote  --gate-report <report> --approved-by "name <email>"   # owner action
+python -m training.gate rollback --approved-by "name <email>"                          # pointer flip to previous
+```
+
+It runs the bundle in-process through this service with its own budgets, reads every response with the as-served
+rules of `training/eval_harness.py`, and checks recall (paired Newcombe against the active bundle, needing >= 200
+positives), benign-hard FPR (n >= 100, Wilson upper bound <= 5%), compute saved (only for a policy that has a gate
+step: without one every request reaches a decider by design, so there is nothing to save), and the error rate
+(load shedding counted apart). p99 latency and adaptive ASR are reported `NOT_EVALUATED` with the reason: both
+need work that is not in this milestone. Any FAIL is a FAIL; anything unevaluated makes the verdict
+`INSUFFICIENT_EVIDENCE`.
+
+Promotion needs an explicit `--approved-by`, refuses a report bound to another bundle, a report whose run is
+incomplete (or ran with `--limit`), a report on a split other than val or frozen_test, and a candidate that is
+already the active bundle (which would overwrite `previous`); it refuses a non-PASS verdict unless the owner passes
+`--allow-not-pass` (recorded; it overrides only the verdict), then appends to `artifacts/audit_log.jsonl` and only
+after that writes `active`/`previous` (record before acting). The registry is replaced atomically (temporary file,
+validated, renamed), and a failed pointer move adds a `"status": "failed"` line; a kill between the two writes
+leaves an audit line for a move the registry does not show, never a move without one. Rollback is the pointer flip
+back to `previous`, audited the same way.
+
+**The frozen test** (`data/splits/frozen_test.jsonl`) is read for a verdict by this script only, and only with
+`--split frozen_test --frozen-test-approved-by NAME`, which is itself written to the audit log: a `started` entry
+before the split is opened, then `completed`, or `failed` on any exception up to and including writing the report,
+so a crashed run is visible as `failed` and only a killed run leaves `started` alone. It was not
+run in this milestone: the owner decides when the final split is read.
+
+Committed dry run, the D23 bundle as it was under engine 1.0.0 (`17fac609a8f2…`) on val (all 3,214 items,
+`reports/policy-runtime/gate_val_d23.json`): recall 2,164/2,240 = 96.6% [95.8, 97.3], FPR 88/974 = 9.0%
+[7.4, 11.0], benign-hard FPR 33/92 = 35.9% [26.8, 46.1], 0 failed active results, 1 request decided by the coverage
+policy. Verdict `INSUFFICIENT_EVIDENCE`: val has 92 benign-hard samples (below the 100 the FPR check needs), and a
+bundle cannot be paired against itself. The gate rule is applied correctly, but the benign-hard result is **a real
+weakness of the served model, not just missing evidence**: at n = 100 the FPR would be at least 33/100 = 33%, so the
+≤ 5% check will FAIL as soon as it can be evaluated (the point estimate stays above 5% until more than 660 samples
+with no further false positive). DeBERTa flags instruction-like benign emails; gateway-mvp measured the same on the
+frozen test (60/276 = 21.7%, gate FAIL). Val also shares Stage 1's training sources, which is exactly why the
+replay set, not val, exposed the cascade's loss (D23).
+
+That report is bound to `17fac609a8f2…`. Engine 1.1.0 makes the served bundle `2ebc7d9ae676…` (same policy
+file), so `promote` refuses the report for it. The val dry run for the current bundle is
+`reports/policy-runtime/gate_val_d23_engine110_2ebc7d9a.json` (all 3,214 items, `INSUFFICIENT_EVIDENCE`, every
+slice's confusion matrix identical to the 1.0.0 report); the frozen-test gate has not been run on it.
+
+The D23 path is unchanged by 1.1.0. The evidence (and the merge condition) is the full T3 at engine 1.1.0,
+`reports/policy-runtime/t3_d23_equivalence_engine110_2ebc7d9a.json`: 2,000/2,000 items in one invocation at
+`916eceb`, 0 differences, every item record equal to the engine-1.0.0 record.
+`reports/policy-runtime/t3_d23_equivalence.json` is the earlier engine-1.0.0 run (bundle `17fac609a8f2…`). Both
+share DeBERTa scores between the engines through a row cache, so their identical scores hold by construction.
+Uncached evidence: the reviewer's re-runs of 193 T3 items (459 rows per engine, 0 differences, maximum score gap
+0.0) at `bc49454` (`reviews/policy-runtime-r1/t3_subset_nocache.json` on branch `verify/policy-runtime`, commit
+3cacec5) and at engine 1.1.0 (`reviews/policy-runtime-r2/t3_subset_nocache_engine110.json` on branch
+`verify/policy-runtime-r2`, commit 7f29bd1). `reports/policy-runtime/t3_d23_first300_nocache_engine110.json`
+(first 300 items at 1.1.0, 342 rows per engine, 0 differences) was produced with `--no-cache` before review r2-m1
+was fixed, when that flag still shared an in-memory score cache between the engines: it supports row and decision
+equality only, not score agreement. T4 was also re-run at 1.1.0 (identical on all 2,000 items,
+`reports/policy-runtime/t4_cascade_equivalence.json`), but T4 tests the cascade route policy
+(`cascade-tfidf-allow-only`), not D23: it shows the gate, band and language code did not change.
+
 ## Not done in this milestone
 
-- The registry now points at Agent B's v1.2 manifest `stage1-tfidf-v2.1` (observe-only, D23). The registry
-  change is pending the release gate (see "Registry").
+- The served bundle is still **pending the gate** (D17, D23): converting it to a policy changed no decision (T3),
+  so its pending status carried over. The gate's accuracy verdict needs the frozen test, which the owner has not
+  released (see "Release gate").
+- Shape B (a parallel decide stage) is tested with fakes only and served by no policy; the canary field is
+  designed and rejected by the engine (D25.4, D25.5).
+- No metric carries a `bundle` label yet, and there is no per-step deadline-vs-budget metric (design §9).
+- Stage 1's threshold is still the one chosen on the training-side scoring rule, while the gateway applies
+  sub-windows and segment pieces; the capability records both and nothing was recalibrated (D25.6). It has no
+  decision impact while Stage 1 is observe-only, but a future gate band on it must be chosen on served scores.
+- The v1 registry path and `serving/legacy_service.py` (the frozen pre-refactor service the equivalence tests
+  compare against) are removed one milestone later (design §7, migration 6).
 - `reports/cascade-and-shadow/probes_after.json` and `replay_after/` were measured in route mode at `d8dfca0`
   (before the anytime Stage 1) with `registry_integration.json`; the observe-mode registry was measured
   separately in `reports/cascade-and-shadow/d23/`.
@@ -595,8 +835,10 @@ is not committed, so those three numbers are context, not results. The committed
 - A DeBERTa-class shadow on the same 2 cores doubles active p50 (see above). Running it on separate cores or
   sampling it belongs to serving-hardening.
 - The language gate's error rate on non-English text was not measured; the cost figure is a one-off timing.
-- Quarantine has no distinct wire decision yet (contract request filed).
-- `/health` `detector` still describes Stage 2 only, for compatibility; `stage1` and `shadow` sit next to it.
+- Quarantine has no distinct wire decision, by decision: D25.1 keeps `flag` plus
+  `coverage_policy_applied="quarantine"`.
+- `/health` `detector` still describes the decide member only, for compatibility; `stage1`, `shadow` and the new
+  `policy` block sit next to it.
 
 ## Timeouts, overload and batching (unchanged from gateway-mvp, now applied to Stage 2)
 

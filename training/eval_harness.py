@@ -24,9 +24,11 @@ What counts as a model prediction (http backend)
   Transport failures (httpx errors, after bounded retries), non-200 responses and malformed responses are
   recorded under `errors` and the run continues. `truncated` (any input content not scored by an active
   detector) is counted over every response that carried results, overall and per slice; truncated model
-  predictions stay in the metrics, since that is the decision the gateway made. A truncated role="shadow"
+  predictions stay in the metrics, since that is the decision the gateway made. A truncated observe or shadow
   result (e.g. the observe-only Stage 1 of D23 hitting its deadline) is counted apart, as
   `truncated.n_shadow_truncated`, and never as a truncation of the decision.
+  v1.3: every response's `bundle_sha256` is collected, and the run records the bundle(s) it measured under
+  `bundles` (a gate verdict is bound to one bundle_sha256, so a run that saw more than one is not a gate run).
 
 Partial output: with --out, the result JSON is rewritten every --checkpoint-every items and once more at
 the end, also when the run is interrupted (`complete: false`, `aborted: <reason>`).
@@ -129,7 +131,9 @@ def parse_gateway_response(payload: dict, request_id: str | None = None) -> dict
     policy = resp.policy_applied
     coverage = resp.coverage_policy_applied
     active = [r for r in resp.results if r.role == "active"]
-    shadow = [r for r in resp.results if r.role == "shadow"]
+    # Observe steps (v1.3 role "observe"; "shadow" from a v1.2 gateway) and the shadow mirror never took part in
+    # the decision, so they are counted apart and never as a prediction, a failure or a truncation (D23, D25).
+    shadow = [r for r in resp.results if r.role in ("observe", "shadow")]
     statuses = [r.status for r in active]
     non_ok = [st for st in statuses if st != "ok"]
     # Item status: "ok" only if every active detector produced a score. A policy without a failed result
@@ -156,9 +160,15 @@ def parse_gateway_response(payload: dict, request_id: str | None = None) -> dict
         "failure_reasons": [failure_reason(r) for r in active if r.status != "ok"],
         "shadow_failure_reasons": [failure_reason(r) for r in shadow if r.status != "ok"],
         "n_shadow": len(shadow),
+        # v1.3: which bundle served this response (None from a pre-1.3 gateway).
+        "policy_id": resp.policy_id,
+        "policy_version": resp.policy_version,
+        "bundle_sha256": resp.bundle_sha256,
+        "unscored_by_any_step": resp.unscored_by_any_step,
+        "escalation_reason": resp.escalation_reason,
         "escalated": "stage2" in stages,
-        # Only active results count: an observe-only Stage 1 (D23, role="shadow") that hit its deadline did not
-        # take part in the decision, so it must not mark the item truncated in the release-gate counts.
+        # Only active results count: an observe step (D23's Stage 1) that hit its deadline did not take part in
+        # the decision, so it must not mark the item truncated in the release-gate counts.
         "truncated": any(r.truncated for r in active),
         "shadow_truncated": any(r.truncated for r in shadow),
         "n_results": len(resp.results),
@@ -344,11 +354,13 @@ def evaluate(rows: Iterable[dict], backend: Backend, progress: Callable[[int], N
     errors = Counter()
     lat = []
     zones = Counter()
+    bundles = Counter()  # bundle_sha256 -> n responses (v1.3); a gate verdict is bound to exactly one
+    policies = Counter()
     n_done = 0
     aborted = None
 
     def snapshot(complete: bool) -> dict:
-        return _assemble(rows, n_done, acc, errors, lat, zones, complete, aborted)
+        return _assemble(rows, n_done, acc, errors, lat, zones, complete, aborted, bundles, policies)
 
     try:
         for i, row in enumerate(rows):
@@ -359,6 +371,10 @@ def evaluate(rows: Iterable[dict], backend: Backend, progress: Callable[[int], N
                 r = {"error": f"backend exception: {type(exc).__name__}", "latency_ms": 0.0}
             n_done = i + 1
             lat.append(r.get("latency_ms", 0.0))
+            if r.get("bundle_sha256"):
+                bundles[r["bundle_sha256"]] += 1
+            if r.get("policy_id"):
+                policies[f"{r['policy_id']}@{r['policy_version']}"] += 1
             names = slices_for(row)
             for s in names:
                 a = acc.setdefault(s, _SliceAcc())
@@ -394,7 +410,7 @@ def evaluate(rows: Iterable[dict], backend: Backend, progress: Callable[[int], N
     return snapshot(aborted is None and n_done == len(rows))
 
 
-def _assemble(rows, n_done, acc, errors, lat, zones, complete, aborted) -> dict:
+def _assemble(rows, n_done, acc, errors, lat, zones, complete, aborted, bundles=None, policies=None) -> dict:
     import numpy as np
 
     slices = {}
@@ -421,9 +437,16 @@ def _assemble(rows, n_done, acc, errors, lat, zones, complete, aborted) -> dict:
         slices[name] = m
     la = np.array(lat) if lat else np.zeros(1)
     overall = slices.get("overall")
+    bundles = bundles or Counter()
     return {
         "gate_view": "as_served",
         "complete": complete,
+        # v1.3: the bundle(s) these metrics describe. A gate verdict is bound to one bundle_sha256; more than one
+        # here (a reload mid-run) means the run does not describe a single bundle.
+        "bundles": {"by_bundle_sha256": dict(sorted(bundles.items())),
+                    "bundle_sha256": next(iter(bundles)) if len(bundles) == 1 else None,
+                    "policies": dict(sorted((policies or Counter()).items())),
+                    "single_bundle": len(bundles) == 1},
         "aborted": aborted,
         "n_items": len(rows),
         "n_processed": n_done,

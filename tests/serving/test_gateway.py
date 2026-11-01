@@ -11,7 +11,9 @@ from serving.config import GatewayConfig
 from serving.service import ClassifierService
 
 RESPONSE_KEYS = {"request_id", "decision", "decided_by", "policy_applied", "coverage_policy_applied", "stages_run",
-                 "results"}
+                 "results",
+                 # v1.3
+                 "policy_id", "policy_version", "bundle_sha256", "unscored_by_any_step", "escalation_reason"}
 
 
 def cfg(**kw) -> GatewayConfig:
