@@ -1,0 +1,154 @@
+[
+ {
+  "case": "short_benign",
+  "chars": 88,
+  "decision": "allow",
+  "decided_by": "deberta-pi-v2",
+  "stages_run": [
+   "stage2"
+  ],
+  "coverage_policy_applied": null,
+  "policy_applied": null,
+  "client_wall_ms": 68.5,
+  "results": [
+   {
+    "stage": "stage2",
+    "role": "active",
+    "detector_version": "2.0.0+90c9989b.onnx.fp32",
+    "status": "ok",
+    "score": 1.0384923465906493e-06,
+    "n_chunks": 1,
+    "truncated": false,
+    "input_tokens": 19,
+    "failure_reason": null,
+    "latency_ms": 55.3
+   },
+   {
+    "stage": "stage1",
+    "role": "shadow",
+    "detector_version": "stage1-tfidf-v2.1",
+    "status": "ok",
+    "score": 0.022220581769943237,
+    "n_chunks": 1,
+    "truncated": false,
+    "input_tokens": 15,
+    "failure_reason": null,
+    "latency_ms": 7.6
+   }
+  ]
+ },
+ {
+  "case": "short_injection",
+  "chars": 95,
+  "decision": "flag",
+  "decided_by": "deberta-pi-v2",
+  "stages_run": [
+   "stage2"
+  ],
+  "coverage_policy_applied": null,
+  "policy_applied": null,
+  "client_wall_ms": 51.8,
+  "results": [
+   {
+    "stage": "stage2",
+    "role": "active",
+    "detector_version": "2.0.0+90c9989b.onnx.fp32",
+    "status": "ok",
+    "score": 0.9999996174165098,
+    "n_chunks": 1,
+    "truncated": false,
+    "input_tokens": 18,
+    "failure_reason": null,
+    "latency_ms": 48.7
+   },
+   {
+    "stage": "stage1",
+    "role": "shadow",
+    "detector_version": "stage1-tfidf-v2.1",
+    "status": "ok",
+    "score": 0.9986461400985718,
+    "n_chunks": 1,
+    "truncated": false,
+    "input_tokens": 15,
+    "failure_reason": null,
+    "latency_ms": 0.6
+   }
+  ]
+ },
+ {
+  "case": "long_probe_attack",
+  "chars": 13518,
+  "decision": "flag",
+  "decided_by": "coverage_policy:flag",
+  "stages_run": [
+   "stage2"
+  ],
+  "coverage_policy_applied": "flag",
+  "policy_applied": null,
+  "client_wall_ms": 2763.7,
+  "results": [
+   {
+    "stage": "stage2",
+    "role": "active",
+    "detector_version": "2.0.0+90c9989b.onnx.fp32",
+    "status": "ok",
+    "score": 0.0005159659146272271,
+    "n_chunks": 4,
+    "truncated": true,
+    "input_tokens": 2600,
+    "failure_reason": null,
+    "latency_ms": 2726.2
+   },
+   {
+    "stage": "stage1",
+    "role": "shadow",
+    "detector_version": "stage1-tfidf-v2.1",
+    "status": "ok",
+    "score": 0.35909849405288696,
+    "n_chunks": 4,
+    "truncated": true,
+    "input_tokens": 2319,
+    "failure_reason": null,
+    "latency_ms": 35.4
+   }
+  ]
+ },
+ {
+  "case": "long_probe_control",
+  "chars": 13530,
+  "decision": "flag",
+  "decided_by": "coverage_policy:flag",
+  "stages_run": [
+   "stage2"
+  ],
+  "coverage_policy_applied": "flag",
+  "policy_applied": null,
+  "client_wall_ms": 2718.0,
+  "results": [
+   {
+    "stage": "stage2",
+    "role": "active",
+    "detector_version": "2.0.0+90c9989b.onnx.fp32",
+    "status": "ok",
+    "score": 0.0008471612138330444,
+    "n_chunks": 4,
+    "truncated": true,
+    "input_tokens": 2600,
+    "failure_reason": null,
+    "latency_ms": 2678.8
+   },
+   {
+    "stage": "stage1",
+    "role": "shadow",
+    "detector_version": "stage1-tfidf-v2.1",
+    "status": "ok",
+    "score": 0.3222807049751282,
+    "n_chunks": 4,
+    "truncated": true,
+    "input_tokens": 2335,
+    "failure_reason": null,
+    "latency_ms": 37.1
+   }
+  ]
+ }
+]

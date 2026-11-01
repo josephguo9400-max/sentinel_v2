@@ -9,7 +9,7 @@ import re
 from dataclasses import dataclass, field
 from typing import Literal, Protocol, runtime_checkable
 
-from contracts import DetectorResult
+from contracts import UNAVAILABLE_DETECTOR_VERSION, DetectorResult
 
 GatewayStatus = Literal["ok", "timeout", "unreachable", "bad_response"]
 
@@ -24,21 +24,63 @@ class ClassifierVerdict:
     fallback: bool = False  # True when the decision came from on_unavailable, not from the gateway
     error: str | None = None
     latency_ms: float | None = None
+    # contracts v1.2 ClassifyResponse fields (None / empty for fakes and client fallbacks).
+    request_id: str | None = None
+    stages_run: tuple[str, ...] = ()
+    coverage_policy_applied: str | None = None
 
     @property
     def detector_version(self) -> str:
-        """Value for TraceEvent.detector_version: which detectors produced this verdict."""
-        if self.results:
-            return ",".join(f"{r.detector_id}@{r.detector_version}" for r in self.results)
+        """Value for TraceEvent.detector_version: which detectors produced this verdict.
+
+        A client fallback (no detector answered) always uses contracts.UNAVAILABLE_DETECTOR_VERSION.
+        Only active results are named: an observe-only Stage 1 (role="shadow", D23) did not take part in the
+        verdict, so naming it here would attribute the decision to it. It is listed in `observe_detector_version`.
+        """
+        if self.fallback:
+            return UNAVAILABLE_DETECTOR_VERSION
+        if self.active_results:
+            return ",".join(f"{r.detector_id}@{r.detector_version}" for r in self.active_results)
         if self.decided_by:
             return self.decided_by
-        return "unavailable"
+        return UNAVAILABLE_DETECTOR_VERSION
+
+    @property
+    def active_results(self) -> tuple[DetectorResult, ...]:
+        """Results that took part in the decision. An observe-only Stage 1 (D23) is returned with role="shadow"
+        and must never count as a catch, a truncation or a failure of the active path."""
+        return tuple(r for r in self.results if r.role != "shadow")
+
+    @property
+    def observe_results(self) -> tuple[DetectorResult, ...]:
+        """Results returned for observation only (role="shadow"): reported, never part of the decision."""
+        return tuple(r for r in self.results if r.role == "shadow")
+
+    @property
+    def observe_detector_version(self) -> str | None:
+        """detector_id@version of the observe-only results, or None when there are none."""
+        if not self.observe_results:
+            return None
+        return ",".join(f"{r.detector_id}@{r.detector_version}" for r in self.observe_results)
+
+    @property
+    def failure_reasons(self) -> tuple[str | None, ...]:
+        """DetectorResult.failure_reason of every active result, in result order (v1.2)."""
+        return tuple(r.failure_reason for r in self.active_results)
+
+    @property
+    def observe_failure_reasons(self) -> tuple[str | None, ...]:
+        """failure_reason of every observe-only (role="shadow") result: observe data, not an active failure."""
+        return tuple(r.failure_reason for r in self.observe_results)
 
     @property
     def flag_cause(self) -> str | None:
         """Why decision == "flag", or None for allow.
 
         "classifier_flag"         a detector scored the text and the gateway flagged it;
+        "coverage_policy"         the gateway's coverage policy decided (v1.2 coverage_policy_applied is set):
+                                  some content was not scored, so this is never a classifier catch, even
+                                  when another part of the text scored positive;
         "gateway_failure_policy"  the gateway answered, but no detector produced a positive score and the
                                   gateway applied its failure policy (fail_closed after a timeout/error);
         "fallback"                the client could not use the gateway and applied on_unavailable="flag".
@@ -48,27 +90,36 @@ class ClassifierVerdict:
             return None
         if self.fallback:
             return "fallback"
-        positive = any(r.status == "ok" and r.predicted_injection for r in self.results)
+        if self.coverage_policy_applied is not None:
+            return "coverage_policy"
+        positive = any(r.status == "ok" and r.predicted_injection for r in self.active_results)
         if self.policy_applied == "fail_closed" and not positive:
             return "gateway_failure_policy"
         return "classifier_flag"
 
     @property
     def truncated(self) -> bool:
-        """True when any detector result says part of the input was not scored."""
-        return any(r.truncated for r in self.results)
+        """True when any active detector result says part of the input was not scored."""
+        return any(r.truncated for r in self.active_results)
 
     def as_detail(self) -> dict:
         return {
             "decision": self.decision,
             "decided_by": self.decided_by,
             "policy_applied": self.policy_applied,
+            "coverage_policy_applied": self.coverage_policy_applied,
+            "stages_run": list(self.stages_run),
+            "failure_reasons": list(self.failure_reasons),
+            "observe_failure_reasons": list(self.observe_failure_reasons),
+            "observe_detector_version": self.observe_detector_version,
             "gateway_status": self.gateway_status,
             "fallback": self.fallback,
             "flag_cause": self.flag_cause,
             "truncated": self.truncated,
             "error": self.error,
             "latency_ms": self.latency_ms,
+            # Every result, observe-only ones included; each carries its role, and consumers that count
+            # catches, truncations or failures must skip role == "shadow".
             "results": [r.model_dump(mode="json") for r in self.results],
         }
 

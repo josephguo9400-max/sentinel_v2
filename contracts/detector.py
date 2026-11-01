@@ -1,4 +1,6 @@
-"""DetectorResult v1.1 — the only shape any detector (stage1, stage2, shadow) may return.
+"""DetectorResult v1.2 — the only shape any detector (stage1, stage2, shadow) may return.
+
+v1.2 adds `failure_reason`. Readers accept 1.1 and 1.2; writers emit 1.2.
 
 Owned by the project owner. Agents must not edit this file; file a request in docs/contract_requests.md.
 """
@@ -9,7 +11,8 @@ from pydantic import BaseModel, BeforeValidator, ConfigDict, Field, StrictBool, 
 
 from ._validators import coerce_bool
 
-SCHEMA_VERSION = "1.1"
+SCHEMA_VERSION = "1.2"
+SUPPORTED_SCHEMA_VERSIONS = ("1.1", "1.2")
 # Producers compute scores in float32 (onnxruntime). Within this distance of the threshold either
 # decision is accepted, so float32-vs-float64 rounding never makes a valid result fail validation.
 THRESHOLD_TOLERANCE = 1e-6
@@ -22,7 +25,7 @@ Bool = Annotated[StrictBool, BeforeValidator(coerce_bool)]
 class DetectorResult(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    schema_version: Literal["1.1"] = SCHEMA_VERSION
+    schema_version: Literal["1.1", "1.2"] = SCHEMA_VERSION
     request_id: str
     detector_id: str
     detector_version: str
@@ -38,6 +41,10 @@ class DetectorResult(BaseModel):
     aggregation: Literal["max", "mean", "none"] = "max"
     stage: Literal["stage1", "stage2", "single"] = "single"
     role: Literal["active", "shadow"] = "active"
+    # v1.2: why a non-ok result failed. "overloaded" = the gateway shed load before inference, which the gate's
+    # error-rate check must count separately from detector timeouts and exceptions.
+    failure_reason: Literal["timeout", "exception", "overloaded"] | None = None
+    # Units of input_tokens: the declaring detector's own tokenizer (named in its manifest).
 
     @model_validator(mode="after")
     def _consistency(self) -> "DetectorResult":
@@ -50,6 +57,13 @@ class DetectorResult(BaseModel):
         else:
             if self.score is not None or self.predicted_injection is not None:
                 raise ValueError("score and predicted_injection must be None unless status=ok")
+        if self.failure_reason is not None:
+            if self.schema_version == "1.1":
+                raise ValueError("failure_reason requires schema_version 1.2")
+            if self.status == "ok":
+                raise ValueError("failure_reason must be None when status=ok")
+            if self.status == "timeout" and self.failure_reason != "timeout":
+                raise ValueError("status=timeout implies failure_reason=timeout")
         if self.n_chunks > 1 and self.aggregation == "none":
             raise ValueError("n_chunks > 1 requires an aggregation of max or mean")
         if not math.isfinite(self.latency_ms):

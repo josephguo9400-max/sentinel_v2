@@ -10,6 +10,7 @@ python -m training.stage2_overlap --fetch   # Stage 2 reference datasets (~200 M
 python -m training.stage2_overlap           # -> data/stage2_overlap.json, data/stage2_overlap_keys.txt
 python -m training.build_splits             # -> data/splits/*.jsonl, MANIFEST.json, data/frozen_test.sha256
 python -m training.check_leakage            # exit 0 = no exact/near duplicate and no shared benign-hard sentence
+                                            # (also checks data/replay/, section 8)
 python -m training.language_mix             # -> data/language_mix.json (language column of section 1)
 python -m training.train_stage1             # -> artifacts/candidates/stage1-tfidf-v2/ (refuses to overwrite)
 python -m training.eval_harness --backend local --artifact artifacts/candidates/stage1-tfidf-v2 \
@@ -282,7 +283,9 @@ These numbers are not comparable one-to-one with the deleted v1 numbers: the fro
 - **Stage 1 does not generalize to non-English injections**: yanis recall is 22.5%. The train set has
   only deepset's German as non-English data. As a cascade Stage 1, the gray zone sends 563 / 951 yanis
   injections to "final benign" without Stage 2 ever seeing them. This argues for a language gate in the
-  router (escalate non-English) or multilingual Stage 1 training data. It is not fixed here.
+  router (escalate non-English) or multilingual Stage 1 training data. `stage1-tfidf-v2.1` declares
+  `input_languages: ["en"]` (contracts v1.2), so the router must escalate everything else; the training data
+  is unchanged.
 - **benign-hard FPR fails the RFC gate** (28.3% vs a 5% Wilson upper bound). Instruction-like benign mail
   is exactly what TF-IDF confuses with injections; most of those records land in the gray zone, so the
   cascade decision depends on Stage 2 for them.
@@ -293,14 +296,23 @@ These numbers are not comparable one-to-one with the deleted v1 numbers: the fro
   sources show the shift (97.9% -> 83.5% recall).
 - spml labels depend on a system prompt that we drop; some "injections" look benign out of context.
 - Language tags come from langdetect and are noisy on short texts.
+- **Cascade kill criterion triggered on val** (`training/CASCADE.md`): with Stage 1 allowed to finalize only
+  allow, it saves 23.6% of Stage 2 requests at strictly equal recall and 28.7% within the 2-point recall
+  margin, both under the RFC's 30%. Savings are bounded by the benign share, and val is 70% injections.
 - No Stage 2 (gateway) result on the current frozen test is committed; see the changelog. The HTTP backend
   is tested against a mock transport, a local fake server, and the real serving app with a fake detector
   (`test_http_backend_against_real_gateway_app_contract`), including the timeout -> fail_closed path.
 
 ### How the HTTP (gateway) backend counts
 
-A response is a **model prediction** only if every active `DetectorResult` has `status == "ok"` and
-`policy_applied` is null; then `predicted = decision == "flag"`. A response decided by a failure policy
+Every response is validated with `contracts.ClassifyResponse` (v1.2, `extra="forbid"`); one that does not
+validate is an error. A response is a **model prediction** only if every active `DetectorResult` has
+`status == "ok"`, `policy_applied` is null and `coverage_policy_applied` is not `flag` / `allow` /
+`quarantine` (`deep_scan` is still a model decision); then `predicted = decision == "flag"`. Per slice, `served`
+counts `stages_run` combinations, `coverage_policy_applied` by policy, decision and label, and the
+`failure_reason` of failed active results, with `overloaded` (load shedding) counted apart from timeouts and
+exceptions (`served.failures`); shadow failures are counted separately and never change a decision. The
+as-served view (`as_served`, failure-policy and coverage-policy decisions counted as served) is the gate view. A response decided by a failure policy
 (timeout, error or skipped -> fail_open / fail_closed) is excluded from precision, recall and FPR and
 reported per slice under `policy_decisions` (by status, by policy_applied, by decision and label).
 Transport errors (after 2 retries by default), non-200 responses and malformed responses go to `errors`, and
@@ -308,8 +320,98 @@ the run continues. Each slice reports `truncated` (responses with any unscored c
 predictions stay in the metrics, since they are the decision the gateway made. With `--out`, partial results
 are written every 500 items and at the end, with `complete` and `aborted` fields.
 
+## 8. Traffic replay set (`training/replay.py` -> `data/replay/replay-v1.jsonl`, `replay-v1`)
+
+A set of 2,000 items for **systems** measurements in the cascade-and-shadow milestone (shadow agreement, latency
+overhead, error counts, and whether drift shows up over time). It is **not** an accuracy test set: 509 items are
+unlabeled, label definitions differ by source, and none of it is the gate's data. Every number below is in
+`data/replay/MANIFEST.json`. Licenses and attribution: `data/replay/NOTICE.md`.
+
+```bash
+python -m training.replay --fetch                                  # 4 new sources -> data/raw/, sha256-verified
+flock /home/claude/measure.lock -c 'python -m training.replay'     # byte-identical on rebuild (tested)
+python -m training.check_leakage                                   # now also checks data/replay/*.jsonl
+```
+
+**Nothing is drawn from train, val or frozen_test.** All public text is from four sources the splits never used:
+
+| `source` | Dataset @ revision | License | Label | Pool -> kept |
+| --- | --- | --- | --- | --- |
+| mosscap | `Lakera/mosscap_prompt_injection` @ `b7e495ff` (test split) | MIT | **null** (the card says many prompts are not injections) | 700 -> 509 |
+| gandalf_summ | `Lakera/gandalf_summarization` @ `8e213cc8` (all splits) | MIT | 1 (successful indirect injections inside text to summarize) | 140 -> 140 |
+| itw_jailbreak | `TrustAIRLab/in-the-wild-jailbreak-prompts` @ `a10aab8e` (`jailbreak_2023_12_25`) | MIT | 1 (jailbreak, not injection; same caveat as jackhhao) | 260 -> 93 |
+| itw_regular | same repo (`regular_2023_12_25`) | MIT | 0 | 420 -> 295 |
+| aya | `CohereLabs/aya_dataset` @ `f9ea0458` (test split: ar, en, pt, te, tr, yo, zh) | Apache-2.0 | 0 | 1,750 -> 492 |
+| replay_email | `training/replay_emails.py` (`replay-emails-v1`, **new templates**) | this repo | 0 (390) / 1 (70) | 460 -> 460 |
+| sandbox_dev | `fixtures/scenarios/dev/*.json` email bodies (dev only; held-out scenarios are never read) | this repo | 1 for the scenario's attacker email (3), else 0 (8) | 11 -> 11 |
+
+"Pool" is a seeded random sample per source; "kept" is after dedup and the drift-schedule draw (replay_email,
+sandbox_dev and gandalf_summ are always kept in full). Texts over 20,000 characters are dropped, not cut.
+`replay_email` has ten English families (shipping, expense approval, code review, minutes, benefits, support,
+travel, facilities, a long quarterly report with a repeated disclaimer, and a long quoted reply thread) and
+hand-written benign and injection emails in de, fr, es, it and pt (14 each, 140 in total). None of these
+families or sentences comes from `training/benign_hard.py`.
+
+Totals: 306 positive, 1,185 negative, 509 null. Language (langdetect, same settings as the splits): 1,550 en,
+then pt 92, te 59, ar 49, zh-cn 46, tr 41, de 32, fr 30, es 29, it 29 and smaller tags.
+
+**Dedup** (same definitions as `build_splits`), against every record of train, val and frozen_test and within the
+replay set. frozen_test is read only to compute dedup keys; no text, label or metric of it is used or written.
+Removed: 112 exact and 26 near duplicates of split records (itw_jailbreak 110 + 24: the in-the-wild jailbreaks
+overlap jackhhao, as expected for DAN-style prompts; itw_regular 2 + 1; mosscap 0 + 1), 30 exact and 32 near
+duplicates within the replay set, 2 empty after normalization. 263 near-duplicate pairs among the synthetic template
+emails are kept on purpose: templated mail repeats in real traffic too. Synthetic items must also share no
+benign-hard sentence (> 30 characters, exact or skeleton) with val or frozen benign-hard records.
+`check_leakage` re-checks all of this from the committed files (check 6); `tests/training/test_replay.py` plants an
+exact, a near, an in-set and a benign-hard-sentence leak, and each makes it exit 1.
+
+**Fields**: `id`, `text`, `source`, `source_label`, `lang`, `label` (0 / 1 / null), `synthetic`, `seq`,
+`arrival_offset_s`, `label_available_after_s` (and `family`, `generator` for synthetic emails).
+
+**Drift schedule**: the target non-English share rises linearly from 5% to 40% along `seq`; the order is built
+greedily against that target. Measured non-English share per tenth of the run: 6.5%, 10.5%, 13.5%, 17.5%,
+20.5%, 24.5%, 27.5%, 31.5%, 34.5%, 38.5%.
+
+**Timing and delayed labels**: arrivals are Poisson at a nominal 10 rps (197.5 s nominal). A labeled item has its
+label revealed with probability 0.3, after a delay uniform in [30, 120] s nominal; 452 of 1,491 labeled items get
+one, the rest never do. A runner at rate R scales offsets and delays by 10 / R.
+
+Caveats: the in-the-wild repository contains harmful language and may contain personal information (its card
+says so); Stage 2 training overlap with these sources is unknown; aya prompts are questions and instructions,
+not emails, so they test language drift, not email-shaped content.
+
+### Replay runner (`training/replay_runner.py`)
+
+```bash
+python -m training.replay_runner --url http://127.0.0.1:8000 --rps 5 --mode open --window-s 20 \
+    --out-dir training/results/replay_runs/<name>          # add --drain-labels to wait for delayed labels
+```
+
+Replays `replay-v1` to a gateway at a fixed rate: **open loop** (scheduled Poisson offsets scaled to `--rps`, or
+uniform; outstanding requests over `--max-inflight` are counted as `client_saturated` instead of slowing the
+run down) or **closed loop** (`--concurrency` workers, rate-capped). One attempt per item, no retries. Every
+response is validated with `contracts.ClassifyResponse`. Per wall-clock window (`windows.jsonl`, appended while
+the run is going) it reports flag rate and escalation rate (from `stages_run`) with Wilson intervals, `stages_run`,
+`decided_by`, `policy_applied` and `coverage_policy_applied` counts, `failure_reason` counts with `overloaded`
+apart from timeouts and exceptions, transport/HTTP/invalid-response error counts, shadow agreement with the served
+decision and shadow failure reasons, client latency percentiles, and the window's non-English share (replay
+metadata the gateway never sees). A label is used only once `send time + label_available_after_s x scale` has
+passed; each window reports the labels revealed in it and cumulatively. Tested against a fake gateway
+(`tests/training/test_replay_runner.py`) and run against the real gateway twice in this milestone: the route-mode
+cascade (`reports/cascade-and-shadow/replay_after/`) and the D23 deployment, DeBERTa deciding with Stage 1
+observe-only (`reports/cascade-and-shadow/d23/replay/`). Both at 2 req/s on the shared 2-core host. Results: the route-mode run in
+`reports/cascade-and-shadow/replay_counterfactual.json` (`views.served`) and
+`replay_counterfactual_served_faithful.json`, the D23 run in `reports/cascade-and-shadow/d23/replay_counterfactual.json`
+(`views.served.same_items`); their reading is in `training/CASCADE.md` (D23 outcome) and `docs/RFC.md` (milestone 3
+row).
+
 ## Changelog
 
+- **2026-10-30, cascade-and-shadow**: cascade sweep on val (`training/CASCADE.md`); `stage1-tfidf-v2.1`
+  (same model bytes, manifest 1.2, swept gray zone); traffic replay set `replay-v1` and replay runner (section 8);
+  `check_leakage` check 6 (replay set vs all splits); the eval harness validates responses with
+  `contracts.ClassifyResponse` v1.2 and reports `stages_run`, `coverage_policy_applied` and `failure_reason`
+  counts per slice.
 - **2026-10-29, splits-v2 / benign-hard-v2 / stage1-tfidf-v2** (review round 1):
   - Benign-hard sentence pools split by split. Under splits-v1, 56 distinct sentences (828 of 3,495
     sentence occurrences longer than 30 characters in frozen benign-hard records, counted by

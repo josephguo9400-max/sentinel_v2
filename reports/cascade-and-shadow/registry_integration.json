@@ -1,0 +1,7 @@
+{
+  "schema": "sentinel-registry-v1",
+  "comment": "Integration measurement registry for milestone cascade-and-shadow: stage1 points at stage1-tfidf-v2.1 (same model as v2, v1.2 manifest, gray zone from the val sweep). Not the committed active registry.",
+  "stage1": "candidates/stage1-tfidf-v2.1",
+  "stage2": "baseline/deberta-pi-v2",
+  "shadow": null
+}

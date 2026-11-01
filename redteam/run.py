@@ -15,7 +15,7 @@ from pathlib import Path
 from .classifier import Classifier, FixedClassifier, KeywordClassifier
 from .defenders import DEFENDERS
 from .gateway_client import GatewayClient
-from .judge import judge_attempt, summarize
+from .judge import event_scenario_id, judge_attempt, summarize
 from .sandbox import Limits, run_attempt
 from .scenario import find_scenario, load_split
 from .trace import DEFAULT_RUNS_DIR, RunTrace, group_by_attempt, read_jsonl
@@ -37,7 +37,7 @@ def rejudge(path: Path) -> int:
     events = read_jsonl(path)
     verdicts = []
     for attempt_id, evs in group_by_attempt(events).items():
-        sc_id = (evs[0].detail or {}).get("scenario_id")
+        sc_id = event_scenario_id(evs[0])
         v = judge_attempt(evs, find_scenario(sc_id))
         verdicts.append(v)
         print(json.dumps(v.to_dict()))

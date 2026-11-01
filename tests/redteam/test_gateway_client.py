@@ -12,8 +12,8 @@ from redteam.judge import judge_attempt
 from redteam.sandbox import run_attempt
 
 
-def detector_result(request_id, text, score):
-    return {"schema_version": "1.1", "request_id": request_id, "detector_id": "stage1-tfidf",
+def detector_result(request_id, text, score, schema_version="1.1"):
+    return {"schema_version": schema_version, "request_id": request_id, "detector_id": "stage1-tfidf",
             "detector_version": "v1", "status": "ok", "score": score, "threshold": 0.5,
             "predicted_injection": score > 0.5, "latency_ms": 1.5,
             "input_sha256": hashlib.sha256(text.encode()).hexdigest(), "input_tokens": 10,
@@ -30,9 +30,10 @@ def fake_gateway(requests):
         requests.append(body)
         flag = "send_email" in body["text"] or "forward" in body["text"]
         return httpx.Response(200, json={
-            "decision": "flag" if flag else "allow", "decided_by": "stage1", "policy_applied": "cascade",
-            "results": [detector_result(body["request_id"], body["text"], 0.97 if flag else 0.02)],
-            "extra_field_from_future_gateway": True})
+            "request_id": body["request_id"],
+            "decision": "flag" if flag else "allow", "decided_by": "stage1", "policy_applied": None,
+            "stages_run": ["stage1"],
+            "results": [detector_result(body["request_id"], body["text"], 0.97 if flag else 0.02)]})
     return handler
 
 
@@ -154,7 +155,8 @@ def test_flag_decision_with_low_score_still_quarantines_and_allow_with_high_scor
     """The client trusts the gateway's decision (it applies cascade policy), not raw scores."""
     def handler(request):
         body = json.loads(request.content)
-        return httpx.Response(200, json={"decision": "allow", "decided_by": "stage2", "policy_applied": "p",
+        return httpx.Response(200, json={"request_id": body["request_id"], "decision": "allow",
+                                         "decided_by": "stage2", "policy_applied": None,
                                          "results": [detector_result(body["request_id"], body["text"], 0.99)]})
     with client(handler) as c:
         assert c.classify("x", "r").decision == "allow"
@@ -235,7 +237,8 @@ def test_fallback_quarantine_is_not_reported_as_classifier_stop(manager, trace):
     s = summarize([v])
     assert s["attack_stopped_by_classifier"] == 0
     assert s["attacker_email_quarantined_by_cause"] == {"classifier_flag": 0, "fallback": 1,
-                                                       "gateway_failure_policy": 0, "unknown": 0}
+                                                       "gateway_failure_policy": 0, "coverage_policy": 0,
+                                                       "unknown": 0}
     assert s["quarantined_emails_by_cause"]["fallback"] == len(manager.emails)
 
 
@@ -257,8 +260,8 @@ def test_truncated_flag_recorded_and_counted(manager, trace):
         body = json.loads(request.content)
         r = detector_result(body["request_id"], body["text"], 0.02)
         r.update(n_chunks=4, truncated=True)
-        return httpx.Response(200, json={"decision": "allow", "decided_by": "stage1",
-                                         "policy_applied": None, "results": [r]})
+        return httpx.Response(200, json={"request_id": body["request_id"], "decision": "allow",
+                                         "decided_by": "stage1", "policy_applied": None, "results": [r]})
     with client(handler) as c:
         res = run_attempt(manager, "B", GullibleDefender(), trace, classifier=c)
     preds = [e for e in trace.attempt_events(res.attempt_id) if e.event_type == "detector_prediction"]

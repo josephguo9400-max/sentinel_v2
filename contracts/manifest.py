@@ -1,4 +1,5 @@
-"""Artifact manifest v1.1 — what a researcher publishes to get a detector loaded (into shadow, never straight to active)."""
+"""Artifact manifest v1.2 — what a researcher publishes to get a detector loaded (into shadow, never straight to active)."""
+import re
 from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
@@ -24,7 +25,8 @@ class Runtime(BaseModel):
 class ArtifactManifest(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    schema_version: Literal["1.1"] = "1.1"
+    # Readers accept 1.1 manifests (no tokenizer or input_languages); 1.2 requires `tokenizer`.
+    schema_version: Literal["1.1", "1.2"] = "1.2"
     detector_id: str
     detector_version: str
     artifact_format: Literal["onnx"]  # pickle/joblib are not accepted
@@ -41,6 +43,12 @@ class ArtifactManifest(BaseModel):
     cascade_role: Literal["stage1", "stage2", "single"]
     # stage1 only: below low -> final benign, above high -> final injection, inside -> escalate to stage2.
     gray_zone: tuple[float, float] | None = None
+    # v1.2: the tokenizer whose units max_input_tokens and DetectorResult.input_tokens use,
+    # e.g. "hf:deberta-v3" or "regex:[\\p{L}\\p{N}_]{2,}".
+    tokenizer: str | None = Field(default=None, pattern=r"^(hf|regex):.+$")
+    # v1.2: lowercase ISO 639 codes this detector is validated for; inputs outside them must not be
+    # finalized by this detector (the router escalates them). None = no restriction declared.
+    input_languages: list[str] | None = None
     training_data_version: str | None = None
     evaluation_dataset_version: str | None = None
     created_at: str  # ISO-8601 UTC
@@ -63,6 +71,14 @@ class ArtifactManifest(BaseModel):
 
     @model_validator(mode="after")
     def _checks(self) -> "ArtifactManifest":
+        if self.schema_version == "1.2" and self.tokenizer is None:
+            raise ValueError("schema_version 1.2 manifests must declare tokenizer")
+        if self.schema_version == "1.1" and (self.tokenizer is not None or self.input_languages is not None):
+            raise ValueError("tokenizer and input_languages require schema_version 1.2")
+        if self.input_languages is not None:
+            if not self.input_languages or len(set(self.input_languages)) != len(self.input_languages) or not all(
+                    re.fullmatch(r"[a-z]{2,3}", code) for code in self.input_languages):
+                raise ValueError("input_languages must be a non-empty list of distinct lowercase ISO 639 codes")
         if len(self.label_mapping) != 2 or set(self.label_mapping.values()) != {"benign", "injection"}:
             raise ValueError("label_mapping must map indices 0 and 1 to benign and injection")
         if self.cascade_role == "stage1":

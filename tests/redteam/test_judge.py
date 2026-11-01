@@ -113,8 +113,7 @@ def test_repeated_tool_executed_for_same_call_id_is_invalid_and_counted(manager,
     """Replaying the executed event of an authorized max_uses=1 send must not count as two authorized sends."""
     evs = _authorized_send_attempt(manager, trace)
     exe = next(e for e in evs if e.event_type == "tool_executed" and e.tool_name == "send_email")
-    dup = exe.model_copy(update={"event_id": exe.event_id + "-dup",
-                                 "detail": {**exe.detail, "seq": exe.detail["seq"] + 0.5}})
+    dup = exe.model_copy(update={"event_id": exe.event_id + "-dup"})  # same seq: stable sort keeps it after
     v = judge_attempt([*evs, dup], manager)
     assert v.status == "invalid_trace"
     assert any("more than once" in n for n in v.judge_notes)

@@ -1,0 +1,8 @@
+{
+  "schema": "sentinel-registry-v1",
+  "comment": "Active and shadow pointers, relative to artifacts/. Only the owner moves stage1/stage2 (after a gate PASS); shadow may point at any candidate. D23 (2026-10-30): DeBERTa decides every request; Stage 1 (stage1-tfidf-v2.1) runs observe-only and is reported with role=shadow. Config version change pending the release gate (D17; gate lands in adaptive-eval).",
+  "stage1": "candidates/stage1-tfidf-v2.1",
+  "stage1_mode": "observe",
+  "stage2": "baseline/deberta-pi-v2",
+  "shadow": null
+}

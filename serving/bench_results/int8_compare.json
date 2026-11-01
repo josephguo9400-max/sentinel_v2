@@ -1,0 +1,393 @@
+{
+  "agreement": {
+    "abs_score_diff": {
+      "max": 0.9999657121555855,
+      "mean": 0.032106056228947626,
+      "p50": 6.030223644870603e-07,
+      "p95": 0.051301124487219574,
+      "p99": 0.988922086073533
+    },
+    "by_label": {
+      "0": {
+        "agree": 142,
+        "fp32_flag": 15,
+        "int8_flag": 10,
+        "n": 147
+      },
+      "1": {
+        "agree": 342,
+        "fp32_flag": 341,
+        "int8_flag": 332,
+        "n": 353
+      }
+    },
+    "data": "data/splits/val.jsonl, first 500 rows in file order",
+    "decision_agree": 484,
+    "elapsed_s": 148.4,
+    "flip_fp32_allow_int8_flag": 1,
+    "flip_fp32_flag_int8_allow": 15,
+    "n": 500,
+    "scoring": "structure-aware windows (510 content tokens, stride 384), max over all windows, no cap",
+    "sources": {
+      "benign_hard": 20,
+      "deepset": 16,
+      "jackhhao": 52,
+      "spml": 412
+    }
+  },
+  "artifacts": {
+    "fp32": {
+      "detector_version": "2.0.0+90c9989b.onnx.fp32",
+      "dir": "baseline/deberta-pi-v2",
+      "sha256": "f0ea7f239f765aedbde7c9e163a7cb38a79c5b8853d3f76db5152172047b228c",
+      "threshold": 0.5
+    },
+    "int8": {
+      "detector_version": "2.0.0+90c9989b.onnx.int8-dyn-qint8-matmul-perchannel.v2",
+      "dir": "candidates/deberta-pi-v2-int8",
+      "sha256": "3c91d31e6926a3c8c80f1061e3dddca0cc81bc245456ec2c702e036c6dc99c33",
+      "threshold": 0.5
+    }
+  },
+  "at": "2026-10-30T07:08:52Z",
+  "generated_by": "python -m serving.bench.int8_compare",
+  "host": {
+    "cpu": "Intel(R) Xeon(R) Processor @ 2.10GHz",
+    "logical_cores": 2,
+    "onnxruntime": "1.29.0",
+    "platform": "Linux-6.18.44-fc-v185-x86_64-with-glibc2.39",
+    "python": "3.13.18",
+    "tokenizers": "0.23.3"
+  },
+  "latency": {
+    "conditions": {
+      "batch": 1,
+      "calls_per_length": 100,
+      "intra_op_threads": "onnxruntime default",
+      "lengths_content_tokens": [
+        64,
+        128,
+        256,
+        510
+      ],
+      "order": "fp32 then int8 within each repeat",
+      "repeats": 3,
+      "timed": "OnnxDebertaDetector.infer only (no tokenization, no HTTP)",
+      "warmup_calls": 5
+    },
+    "per_repeat": [
+      {
+        "fp32_128": {
+          "max_ms": 271.52,
+          "mean_ms": 148.03,
+          "n": 100,
+          "p50_ms": 143.36,
+          "p95_ms": 165.43,
+          "p99_is_max": false,
+          "p99_ms": 192.68
+        },
+        "fp32_256": {
+          "max_ms": 361.48,
+          "mean_ms": 308.96,
+          "n": 100,
+          "p50_ms": 306.06,
+          "p95_ms": 346.02,
+          "p99_is_max": false,
+          "p99_ms": 361.27
+        },
+        "fp32_510": {
+          "max_ms": 898.16,
+          "mean_ms": 765.24,
+          "n": 100,
+          "p50_ms": 757.17,
+          "p95_ms": 833.37,
+          "p99_is_max": false,
+          "p99_ms": 888.26
+        },
+        "fp32_64": {
+          "max_ms": 137.17,
+          "mean_ms": 85.1,
+          "n": 100,
+          "p50_ms": 82.13,
+          "p95_ms": 98.86,
+          "p99_is_max": false,
+          "p99_ms": 127.29
+        },
+        "int8_128": {
+          "max_ms": 104.48,
+          "mean_ms": 71.71,
+          "n": 100,
+          "p50_ms": 68.71,
+          "p95_ms": 84.16,
+          "p99_is_max": false,
+          "p99_ms": 90.54
+        },
+        "int8_256": {
+          "max_ms": 194.79,
+          "mean_ms": 154.41,
+          "n": 100,
+          "p50_ms": 150.91,
+          "p95_ms": 175.54,
+          "p99_is_max": false,
+          "p99_ms": 189.21
+        },
+        "int8_510": {
+          "max_ms": 526.62,
+          "mean_ms": 443.48,
+          "n": 100,
+          "p50_ms": 440.39,
+          "p95_ms": 492.22,
+          "p99_is_max": false,
+          "p99_ms": 514.27
+        },
+        "int8_64": {
+          "max_ms": 51.5,
+          "mean_ms": 39.23,
+          "n": 100,
+          "p50_ms": 37.34,
+          "p95_ms": 46.78,
+          "p99_is_max": false,
+          "p99_ms": 48.79
+        },
+        "repeat": 1,
+        "uptime_start": "00:08:52 up  1:59,  0 user,  load average: 1.01, 1.74, 1.67"
+      },
+      {
+        "fp32_128": {
+          "max_ms": 243.95,
+          "mean_ms": 157.62,
+          "n": 100,
+          "p50_ms": 152.13,
+          "p95_ms": 200.67,
+          "p99_is_max": false,
+          "p99_ms": 237.39
+        },
+        "fp32_256": {
+          "max_ms": 661.11,
+          "mean_ms": 316.37,
+          "n": 100,
+          "p50_ms": 304.11,
+          "p95_ms": 355.87,
+          "p99_is_max": false,
+          "p99_ms": 653.75
+        },
+        "fp32_510": {
+          "max_ms": 937.98,
+          "mean_ms": 773.08,
+          "n": 100,
+          "p50_ms": 767.84,
+          "p95_ms": 840.57,
+          "p99_is_max": false,
+          "p99_ms": 874.31
+        },
+        "fp32_64": {
+          "max_ms": 119.85,
+          "mean_ms": 87.14,
+          "n": 100,
+          "p50_ms": 83.48,
+          "p95_ms": 105.21,
+          "p99_is_max": false,
+          "p99_ms": 119.59
+        },
+        "int8_128": {
+          "max_ms": 83.52,
+          "mean_ms": 68.19,
+          "n": 100,
+          "p50_ms": 66.39,
+          "p95_ms": 81.24,
+          "p99_is_max": false,
+          "p99_ms": 82.78
+        },
+        "int8_256": {
+          "max_ms": 177.42,
+          "mean_ms": 149.38,
+          "n": 100,
+          "p50_ms": 146.2,
+          "p95_ms": 168.71,
+          "p99_is_max": false,
+          "p99_ms": 174.9
+        },
+        "int8_510": {
+          "max_ms": 562.86,
+          "mean_ms": 446.83,
+          "n": 100,
+          "p50_ms": 437.41,
+          "p95_ms": 518.39,
+          "p99_is_max": false,
+          "p99_ms": 554.57
+        },
+        "int8_64": {
+          "max_ms": 59.4,
+          "mean_ms": 40.81,
+          "n": 100,
+          "p50_ms": 38.79,
+          "p95_ms": 49.36,
+          "p99_is_max": false,
+          "p99_ms": 54.42
+        },
+        "repeat": 2,
+        "uptime_start": "00:12:24 up  2:03,  0 user,  load average: 1.98, 1.89, 1.75"
+      },
+      {
+        "fp32_128": {
+          "max_ms": 184.68,
+          "mean_ms": 145.06,
+          "n": 100,
+          "p50_ms": 142.91,
+          "p95_ms": 164.73,
+          "p99_is_max": false,
+          "p99_ms": 177.61
+        },
+        "fp32_256": {
+          "max_ms": 389.11,
+          "mean_ms": 313.14,
+          "n": 100,
+          "p50_ms": 308.67,
+          "p95_ms": 354.76,
+          "p99_is_max": false,
+          "p99_ms": 385.01
+        },
+        "fp32_510": {
+          "max_ms": 1087.87,
+          "mean_ms": 798.47,
+          "n": 100,
+          "p50_ms": 770.35,
+          "p95_ms": 1054.35,
+          "p99_is_max": false,
+          "p99_ms": 1086.43
+        },
+        "fp32_64": {
+          "max_ms": 117.75,
+          "mean_ms": 84.21,
+          "n": 100,
+          "p50_ms": 81.78,
+          "p95_ms": 97.62,
+          "p99_is_max": false,
+          "p99_ms": 106.8
+        },
+        "int8_128": {
+          "max_ms": 118.85,
+          "mean_ms": 73.74,
+          "n": 100,
+          "p50_ms": 70.93,
+          "p95_ms": 89.4,
+          "p99_is_max": false,
+          "p99_ms": 114.71
+        },
+        "int8_256": {
+          "max_ms": 199.5,
+          "mean_ms": 154.43,
+          "n": 100,
+          "p50_ms": 151.98,
+          "p95_ms": 171.17,
+          "p99_is_max": false,
+          "p99_ms": 192.13
+        },
+        "int8_510": {
+          "max_ms": 517.77,
+          "mean_ms": 449.04,
+          "n": 100,
+          "p50_ms": 443.68,
+          "p95_ms": 500.04,
+          "p99_is_max": false,
+          "p99_ms": 515.79
+        },
+        "int8_64": {
+          "max_ms": 76.14,
+          "mean_ms": 44.22,
+          "n": 100,
+          "p50_ms": 42.54,
+          "p95_ms": 57.48,
+          "p99_is_max": false,
+          "p99_ms": 66.05
+        },
+        "repeat": 3,
+        "uptime_start": "00:15:58 up  2:06,  0 user,  load average: 2.00, 1.95, 1.81"
+      }
+    ],
+    "pooled": {
+      "fp32_128": {
+        "max_ms": 271.52,
+        "mean_ms": 150.24,
+        "n": 300,
+        "p50_ms": 145.48,
+        "p95_ms": 178.57,
+        "p99_is_max": false,
+        "p99_ms": 226.08
+      },
+      "fp32_256": {
+        "max_ms": 661.11,
+        "mean_ms": 312.83,
+        "n": 300,
+        "p50_ms": 306.76,
+        "p95_ms": 354.76,
+        "p99_is_max": false,
+        "p99_ms": 385.01
+      },
+      "fp32_510": {
+        "max_ms": 1087.87,
+        "mean_ms": 778.93,
+        "n": 300,
+        "p50_ms": 765.58,
+        "p95_ms": 886.49,
+        "p99_is_max": false,
+        "p99_ms": 1066.57
+      },
+      "fp32_64": {
+        "max_ms": 137.17,
+        "mean_ms": 85.48,
+        "n": 300,
+        "p50_ms": 82.33,
+        "p95_ms": 101.83,
+        "p99_is_max": false,
+        "p99_ms": 119.59
+      },
+      "int8_128": {
+        "max_ms": 118.85,
+        "mean_ms": 71.21,
+        "n": 300,
+        "p50_ms": 67.99,
+        "p95_ms": 84.82,
+        "p99_is_max": false,
+        "p99_ms": 104.48
+      },
+      "int8_256": {
+        "max_ms": 199.5,
+        "mean_ms": 152.74,
+        "n": 300,
+        "p50_ms": 149.65,
+        "p95_ms": 172.6,
+        "p99_is_max": false,
+        "p99_ms": 189.21
+      },
+      "int8_510": {
+        "max_ms": 562.86,
+        "mean_ms": 446.45,
+        "n": 300,
+        "p50_ms": 440.39,
+        "p95_ms": 501.76,
+        "p99_is_max": false,
+        "p99_ms": 553.49
+      },
+      "int8_64": {
+        "max_ms": 76.14,
+        "mean_ms": 41.42,
+        "n": 300,
+        "p50_ms": 39.06,
+        "p95_ms": 50.63,
+        "p99_is_max": false,
+        "p99_ms": 59.4
+      },
+      "speedup_p50_128": 2.14,
+      "speedup_p50_256": 2.05,
+      "speedup_p50_510": 1.738,
+      "speedup_p50_64": 2.108
+    }
+  },
+  "model_bytes": {
+    "fp32": 738563188,
+    "int8": 539437861
+  },
+  "uptime_after": "00:22:03 up  2:12,  0 user,  load average: 2.56, 2.18, 1.96",
+  "uptime_before": "00:08:52 up  1:59,  0 user,  load average: 1.01, 1.74, 1.67"
+}

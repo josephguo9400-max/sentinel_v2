@@ -1,0 +1,8 @@
+{
+  "schema": "sentinel-registry-v1",
+  "comment": "Loadable copy of registry_integration.json (the input of the cascade-and-shadow checkpoint run at d8dfca0) with stage1_mode made explicit. Since stage1_mode is required whenever stage1 is set, the original file is kept byte-identical as the historical record but no longer loads Stage 1 (rejection stage1_mode_missing). Not the committed active registry.",
+  "stage1": "candidates/stage1-tfidf-v2.1",
+  "stage1_mode": "route",
+  "stage2": "baseline/deberta-pi-v2",
+  "shadow": null
+}
