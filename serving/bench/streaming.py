@@ -343,6 +343,11 @@ def cmd_run(a) -> int:
     return 0
 
 
+def _spread(v):
+    return {"n": len(v), "min": round(min(v), 4), "p50": round(statistics.median(v), 4), "max": round(max(v), 4)} \
+        if v else None
+
+
 def _strip(x):
     return {"config": x["config"], "metrics": x["metrics"]}
 
@@ -398,9 +403,15 @@ def cmd_live(a) -> int:
               "config": {"B": 16, "k": 16, "W": a.window or "full", "rate_tok_s": a.rate, "n": len(pick)},
               "same_outcome": prop(sum(r["same_outcome"] for r in rows), len(rows)),
               "same_stop_check_end": sum(r["live"]["stop_check_end"] == r["sim"]["stop_check_end"] for r in rows),
+              "same_released_tokens": sum(r["live"]["released"] == r["sim"]["released"] for r in rows),
+              "same_check_count": sum(r["live"]["checks"] == r["sim"]["checks"] for r in rows),
+              "first_visible_live_minus_sim_s": _spread([r["live"]["first_visible_s"] - r["sim"]["first_visible_s"]
+                                                         for r in rows if r["live"]["first_visible_s"] is not None
+                                                         and r["sim"]["first_visible_s"] is not None]),
               "rows": rows, "wall_s": round(time.perf_counter() - t0, 1)}
     write_result(a.out_live, result)
-    print(json.dumps({k: result[k] for k in ("same_outcome", "same_stop_check_end", "wall_s")}))
+    print(json.dumps({k: result[k] for k in ("same_outcome", "same_stop_check_end", "same_released_tokens",
+                                             "first_visible_live_minus_sim_s", "wall_s")}))
     return 0
 
 
