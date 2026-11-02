@@ -1,0 +1,119 @@
+{
+  "comparisons": [
+    {
+      "a": {
+        "B": 16,
+        "W": "full",
+        "group": "sweep",
+        "k": 16
+      },
+      "a_only": 4,
+      "b": {
+        "group": "whole_response_once"
+      },
+      "b_only": 0,
+      "both": 23,
+      "caught_a": 27,
+      "caught_b": 23,
+      "mcnemar_exact_p": 0.125,
+      "n": 62,
+      "name": "full_k16_B16_vs_whole_once_newsletter",
+      "pool": "newsletter"
+    },
+    {
+      "a": {
+        "B": 16,
+        "W": "full",
+        "group": "sweep",
+        "k": 8
+      },
+      "a_only": 4,
+      "b": {
+        "B": 16,
+        "W": "full",
+        "group": "sweep",
+        "k": 64
+      },
+      "b_only": 1,
+      "both": 47,
+      "caught_a": 51,
+      "caught_b": 48,
+      "mcnemar_exact_p": 0.375,
+      "n": 124,
+      "name": "full_B16_k8_vs_k64",
+      "pool": null
+    },
+    {
+      "a": {
+        "B": 16,
+        "W": "full",
+        "group": "sweep",
+        "k": 16
+      },
+      "a_only": 4,
+      "b": {
+        "B": 16,
+        "W": "full",
+        "group": "sweep",
+        "k": 64
+      },
+      "b_only": 1,
+      "both": 47,
+      "caught_a": 51,
+      "caught_b": 48,
+      "mcnemar_exact_p": 0.375,
+      "n": 124,
+      "name": "full_B16_k16_vs_k64",
+      "pool": null
+    },
+    {
+      "a": {
+        "B": 16,
+        "W": "full",
+        "group": "sweep",
+        "k": 16
+      },
+      "a_only": 3,
+      "b": {
+        "B": 16,
+        "W": 64,
+        "group": "sweep",
+        "k": 16
+      },
+      "b_only": 20,
+      "both": 48,
+      "caught_a": 51,
+      "caught_b": 68,
+      "mcnemar_exact_p": 0.0005,
+      "n": 124,
+      "name": "B16_k16_full_vs_W64",
+      "pool": null
+    },
+    {
+      "a": {
+        "B": 16,
+        "W": "full",
+        "group": "sweep",
+        "k": 16
+      },
+      "a_only": 0,
+      "b": {
+        "B": 16,
+        "W": 64,
+        "group": "sweep",
+        "k": 16
+      },
+      "b_only": 12,
+      "both": 27,
+      "caught_a": 27,
+      "caught_b": 39,
+      "mcnemar_exact_p": 0.0005,
+      "n": 62,
+      "name": "B16_k16_full_vs_W64_newsletter",
+      "pool": "newsletter"
+    }
+  ],
+  "generated_at": "2026-11-02T00:13:31Z",
+  "metric": "caught (injection streams)",
+  "source": "streaming_sweep_per_stream.json"
+}

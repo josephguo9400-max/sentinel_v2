@@ -1,0 +1,6499 @@
+{
+  "aligned_rows_match_sweep": {
+    "all_equal": true,
+    "compared": 16
+  },
+  "cache": {
+    "bundle_sha256_prefixes": [
+      "2ebc7d9ae676"
+    ],
+    "misses_this_run": 1975,
+    "rows": 11707
+  },
+  "configs": [
+    {
+      "config": {
+        "B": 0,
+        "W": "full",
+        "injection_start": 128,
+        "k": 16,
+        "mode": "stall",
+        "offset_in_window": 0,
+        "rate_tok_s": 50.0
+      },
+      "injection": {
+        "any_leak": {
+          "ci95": [
+            0.5332,
+            0.7015
+          ],
+          "k": 77,
+          "n": 124,
+          "rate": 0.621
+        },
+        "any_leak_among_caught": {
+          "ci95": [
+            0.305,
+            0.5673
+          ],
+          "k": 22,
+          "n": 51,
+          "rate": 0.4314
+        },
+        "caught": {
+          "ci95": [
+            0.3286,
+            0.4993
+          ],
+          "k": 51,
+          "n": 124,
+          "rate": 0.4113
+        },
+        "caught_excluding_stopped_before": {
+          "ci95": [
+            0.3884,
+            0.5752
+          ],
+          "k": 51,
+          "n": 106,
+          "rate": 0.4811
+        },
+        "caught_zero_leak": {
+          "ci95": [
+            0.1681,
+            0.3157
+          ],
+          "k": 29,
+          "n": 124,
+          "rate": 0.2339
+        },
+        "caught_zero_leak_excluding_stopped_before": {
+          "ci95": [
+            0.1978,
+            0.3652
+          ],
+          "k": 29,
+          "n": 106,
+          "rate": 0.2736
+        },
+        "delay_tokens_caught": {
+          "max": 77,
+          "n": 51,
+          "p50": 27,
+          "p90": 44
+        },
+        "injection_never_shown": {
+          "ci95": [
+            0.2985,
+            0.4668
+          ],
+          "k": 47,
+          "n": 124,
+          "rate": 0.379
+        },
+        "leaked_fraction_mean_caught": 0.2032,
+        "leaked_tokens_max_caught": 44,
+        "leaked_tokens_mean_caught": 8.71,
+        "stop_reasons": {
+          "flag": 69
+        },
+        "stopped_before_injection": {
+          "ci95": [
+            0.0938,
+            0.2178
+          ],
+          "k": 18,
+          "n": 124,
+          "rate": 0.1452
+        },
+        "stopped_before_injection_by_flag": {
+          "ci95": [
+            0.0938,
+            0.2178
+          ],
+          "k": 18,
+          "n": 124,
+          "rate": 0.1452
+        },
+        "stopped_by_failure_or_lag": {
+          "ci95": [
+            0.0,
+            0.03
+          ],
+          "k": 0,
+          "n": 124,
+          "rate": 0.0
+        },
+        "stopped_by_flag_outside_injection": {
+          "ci95": [
+            0.0938,
+            0.2178
+          ],
+          "k": 18,
+          "n": 124,
+          "rate": 0.1452
+        }
+      }
+    },
+    {
+      "config": {
+        "B": 8,
+        "W": "full",
+        "injection_start": 128,
+        "k": 16,
+        "mode": "stall",
+        "offset_in_window": 0,
+        "rate_tok_s": 50.0
+      },
+      "injection": {
+        "any_leak": {
+          "ci95": [
+            0.5332,
+            0.7015
+          ],
+          "k": 77,
+          "n": 124,
+          "rate": 0.621
+        },
+        "any_leak_among_caught": {
+          "ci95": [
+            0.305,
+            0.5673
+          ],
+          "k": 22,
+          "n": 51,
+          "rate": 0.4314
+        },
+        "caught": {
+          "ci95": [
+            0.3286,
+            0.4993
+          ],
+          "k": 51,
+          "n": 124,
+          "rate": 0.4113
+        },
+        "caught_excluding_stopped_before": {
+          "ci95": [
+            0.3884,
+            0.5752
+          ],
+          "k": 51,
+          "n": 106,
+          "rate": 0.4811
+        },
+        "caught_zero_leak": {
+          "ci95": [
+            0.1681,
+            0.3157
+          ],
+          "k": 29,
+          "n": 124,
+          "rate": 0.2339
+        },
+        "caught_zero_leak_excluding_stopped_before": {
+          "ci95": [
+            0.1978,
+            0.3652
+          ],
+          "k": 29,
+          "n": 106,
+          "rate": 0.2736
+        },
+        "delay_tokens_caught": {
+          "max": 77,
+          "n": 51,
+          "p50": 27,
+          "p90": 44
+        },
+        "injection_never_shown": {
+          "ci95": [
+            0.2985,
+            0.4668
+          ],
+          "k": 47,
+          "n": 124,
+          "rate": 0.379
+        },
+        "leaked_fraction_mean_caught": 0.1215,
+        "leaked_tokens_max_caught": 40,
+        "leaked_tokens_mean_caught": 5.33,
+        "stop_reasons": {
+          "flag": 69
+        },
+        "stopped_before_injection": {
+          "ci95": [
+            0.0938,
+            0.2178
+          ],
+          "k": 18,
+          "n": 124,
+          "rate": 0.1452
+        },
+        "stopped_before_injection_by_flag": {
+          "ci95": [
+            0.0938,
+            0.2178
+          ],
+          "k": 18,
+          "n": 124,
+          "rate": 0.1452
+        },
+        "stopped_by_failure_or_lag": {
+          "ci95": [
+            0.0,
+            0.03
+          ],
+          "k": 0,
+          "n": 124,
+          "rate": 0.0
+        },
+        "stopped_by_flag_outside_injection": {
+          "ci95": [
+            0.0938,
+            0.2178
+          ],
+          "k": 18,
+          "n": 124,
+          "rate": 0.1452
+        }
+      }
+    },
+    {
+      "config": {
+        "B": 16,
+        "W": "full",
+        "injection_start": 128,
+        "k": 16,
+        "mode": "stall",
+        "offset_in_window": 0,
+        "rate_tok_s": 50.0
+      },
+      "injection": {
+        "any_leak": {
+          "ci95": [
+            0.3977,
+            0.571
+          ],
+          "k": 60,
+          "n": 124,
+          "rate": 0.4839
+        },
+        "any_leak_among_caught": {
+          "ci95": [
+            0.0426,
+            0.2098
+          ],
+          "k": 5,
+          "n": 51,
+          "rate": 0.098
+        },
+        "caught": {
+          "ci95": [
+            0.3286,
+            0.4993
+          ],
+          "k": 51,
+          "n": 124,
+          "rate": 0.4113
+        },
+        "caught_excluding_stopped_before": {
+          "ci95": [
+            0.3884,
+            0.5752
+          ],
+          "k": 51,
+          "n": 106,
+          "rate": 0.4811
+        },
+        "caught_zero_leak": {
+          "ci95": [
+            0.291,
+            0.4587
+          ],
+          "k": 46,
+          "n": 124,
+          "rate": 0.371
+        },
+        "caught_zero_leak_excluding_stopped_before": {
+          "ci95": [
+            0.3436,
+            0.529
+          ],
+          "k": 46,
+          "n": 106,
+          "rate": 0.434
+        },
+        "delay_tokens_caught": {
+          "max": 77,
+          "n": 51,
+          "p50": 27,
+          "p90": 44
+        },
+        "injection_never_shown": {
+          "ci95": [
+            0.429,
+            0.6023
+          ],
+          "k": 64,
+          "n": 124,
+          "rate": 0.5161
+        },
+        "leaked_fraction_mean_caught": 0.038,
+        "leaked_tokens_max_caught": 32,
+        "leaked_tokens_mean_caught": 1.88,
+        "stop_reasons": {
+          "flag": 69
+        },
+        "stopped_before_injection": {
+          "ci95": [
+            0.0938,
+            0.2178
+          ],
+          "k": 18,
+          "n": 124,
+          "rate": 0.1452
+        },
+        "stopped_before_injection_by_flag": {
+          "ci95": [
+            0.0938,
+            0.2178
+          ],
+          "k": 18,
+          "n": 124,
+          "rate": 0.1452
+        },
+        "stopped_by_failure_or_lag": {
+          "ci95": [
+            0.0,
+            0.03
+          ],
+          "k": 0,
+          "n": 124,
+          "rate": 0.0
+        },
+        "stopped_by_flag_outside_injection": {
+          "ci95": [
+            0.0938,
+            0.2178
+          ],
+          "k": 18,
+          "n": 124,
+          "rate": 0.1452
+        }
+      }
+    },
+    {
+      "config": {
+        "B": 32,
+        "W": "full",
+        "injection_start": 128,
+        "k": 16,
+        "mode": "stall",
+        "offset_in_window": 0,
+        "rate_tok_s": 50.0
+      },
+      "injection": {
+        "any_leak": {
+          "ci95": [
+            0.3668,
+            0.5393
+          ],
+          "k": 56,
+          "n": 124,
+          "rate": 0.4516
+        },
+        "any_leak_among_caught": {
+          "ci95": [
+            0.0035,
+            0.103
+          ],
+          "k": 1,
+          "n": 51,
+          "rate": 0.0196
+        },
+        "caught": {
+          "ci95": [
+            0.3286,
+            0.4993
+          ],
+          "k": 51,
+          "n": 124,
+          "rate": 0.4113
+        },
+        "caught_excluding_stopped_before": {
+          "ci95": [
+            0.3884,
+            0.5752
+          ],
+          "k": 51,
+          "n": 106,
+          "rate": 0.4811
+        },
+        "caught_zero_leak": {
+          "ci95": [
+            0.3211,
+            0.4912
+          ],
+          "k": 50,
+          "n": 124,
+          "rate": 0.4032
+        },
+        "caught_zero_leak_excluding_stopped_before": {
+          "ci95": [
+            0.3793,
+            0.566
+          ],
+          "k": 50,
+          "n": 106,
+          "rate": 0.4717
+        },
+        "delay_tokens_caught": {
+          "max": 77,
+          "n": 51,
+          "p50": 27,
+          "p90": 44
+        },
+        "injection_never_shown": {
+          "ci95": [
+            0.4607,
+            0.6332
+          ],
+          "k": 68,
+          "n": 124,
+          "rate": 0.5484
+        },
+        "leaked_fraction_mean_caught": 0.0071,
+        "leaked_tokens_max_caught": 16,
+        "leaked_tokens_mean_caught": 0.31,
+        "stop_reasons": {
+          "flag": 69
+        },
+        "stopped_before_injection": {
+          "ci95": [
+            0.0938,
+            0.2178
+          ],
+          "k": 18,
+          "n": 124,
+          "rate": 0.1452
+        },
+        "stopped_before_injection_by_flag": {
+          "ci95": [
+            0.0938,
+            0.2178
+          ],
+          "k": 18,
+          "n": 124,
+          "rate": 0.1452
+        },
+        "stopped_by_failure_or_lag": {
+          "ci95": [
+            0.0,
+            0.03
+          ],
+          "k": 0,
+          "n": 124,
+          "rate": 0.0
+        },
+        "stopped_by_flag_outside_injection": {
+          "ci95": [
+            0.0938,
+            0.2178
+          ],
+          "k": 18,
+          "n": 124,
+          "rate": 0.1452
+        }
+      }
+    },
+    {
+      "config": {
+        "B": 0,
+        "W": "full",
+        "injection_start": 128,
+        "k": 64,
+        "mode": "stall",
+        "offset_in_window": 0,
+        "rate_tok_s": 50.0
+      },
+      "injection": {
+        "any_leak": {
+          "ci95": [
+            0.3977,
+            0.571
+          ],
+          "k": 60,
+          "n": 124,
+          "rate": 0.4839
+        },
+        "any_leak_among_caught": {
+          "ci95": [
+            0.0,
+            0.0741
+          ],
+          "k": 0,
+          "n": 48,
+          "rate": 0.0
+        },
+        "caught": {
+          "ci95": [
+            0.306,
+            0.475
+          ],
+          "k": 48,
+          "n": 124,
+          "rate": 0.3871
+        },
+        "caught_excluding_stopped_before": {
+          "ci95": [
+            0.3542,
+            0.5385
+          ],
+          "k": 48,
+          "n": 108,
+          "rate": 0.4444
+        },
+        "caught_zero_leak": {
+          "ci95": [
+            0.306,
+            0.475
+          ],
+          "k": 48,
+          "n": 124,
+          "rate": 0.3871
+        },
+        "caught_zero_leak_excluding_stopped_before": {
+          "ci95": [
+            0.3542,
+            0.5385
+          ],
+          "k": 48,
+          "n": 108,
+          "rate": 0.4444
+        },
+        "delay_tokens_caught": {
+          "max": 83,
+          "n": 48,
+          "p50": 76,
+          "p90": 80
+        },
+        "injection_never_shown": {
+          "ci95": [
+            0.429,
+            0.6023
+          ],
+          "k": 64,
+          "n": 124,
+          "rate": 0.5161
+        },
+        "leaked_fraction_mean_caught": 0.0,
+        "leaked_tokens_max_caught": 0,
+        "leaked_tokens_mean_caught": 0.0,
+        "stop_reasons": {
+          "flag": 64
+        },
+        "stopped_before_injection": {
+          "ci95": [
+            0.081,
+            0.1994
+          ],
+          "k": 16,
+          "n": 124,
+          "rate": 0.129
+        },
+        "stopped_before_injection_by_flag": {
+          "ci95": [
+            0.081,
+            0.1994
+          ],
+          "k": 16,
+          "n": 124,
+          "rate": 0.129
+        },
+        "stopped_by_failure_or_lag": {
+          "ci95": [
+            0.0,
+            0.03
+          ],
+          "k": 0,
+          "n": 124,
+          "rate": 0.0
+        },
+        "stopped_by_flag_outside_injection": {
+          "ci95": [
+            0.081,
+            0.1994
+          ],
+          "k": 16,
+          "n": 124,
+          "rate": 0.129
+        }
+      }
+    },
+    {
+      "config": {
+        "B": 8,
+        "W": "full",
+        "injection_start": 128,
+        "k": 64,
+        "mode": "stall",
+        "offset_in_window": 0,
+        "rate_tok_s": 50.0
+      },
+      "injection": {
+        "any_leak": {
+          "ci95": [
+            0.3977,
+            0.571
+          ],
+          "k": 60,
+          "n": 124,
+          "rate": 0.4839
+        },
+        "any_leak_among_caught": {
+          "ci95": [
+            0.0,
+            0.0741
+          ],
+          "k": 0,
+          "n": 48,
+          "rate": 0.0
+        },
+        "caught": {
+          "ci95": [
+            0.306,
+            0.475
+          ],
+          "k": 48,
+          "n": 124,
+          "rate": 0.3871
+        },
+        "caught_excluding_stopped_before": {
+          "ci95": [
+            0.3542,
+            0.5385
+          ],
+          "k": 48,
+          "n": 108,
+          "rate": 0.4444
+        },
+        "caught_zero_leak": {
+          "ci95": [
+            0.306,
+            0.475
+          ],
+          "k": 48,
+          "n": 124,
+          "rate": 0.3871
+        },
+        "caught_zero_leak_excluding_stopped_before": {
+          "ci95": [
+            0.3542,
+            0.5385
+          ],
+          "k": 48,
+          "n": 108,
+          "rate": 0.4444
+        },
+        "delay_tokens_caught": {
+          "max": 83,
+          "n": 48,
+          "p50": 76,
+          "p90": 80
+        },
+        "injection_never_shown": {
+          "ci95": [
+            0.429,
+            0.6023
+          ],
+          "k": 64,
+          "n": 124,
+          "rate": 0.5161
+        },
+        "leaked_fraction_mean_caught": 0.0,
+        "leaked_tokens_max_caught": 0,
+        "leaked_tokens_mean_caught": 0.0,
+        "stop_reasons": {
+          "flag": 64
+        },
+        "stopped_before_injection": {
+          "ci95": [
+            0.081,
+            0.1994
+          ],
+          "k": 16,
+          "n": 124,
+          "rate": 0.129
+        },
+        "stopped_before_injection_by_flag": {
+          "ci95": [
+            0.081,
+            0.1994
+          ],
+          "k": 16,
+          "n": 124,
+          "rate": 0.129
+        },
+        "stopped_by_failure_or_lag": {
+          "ci95": [
+            0.0,
+            0.03
+          ],
+          "k": 0,
+          "n": 124,
+          "rate": 0.0
+        },
+        "stopped_by_flag_outside_injection": {
+          "ci95": [
+            0.081,
+            0.1994
+          ],
+          "k": 16,
+          "n": 124,
+          "rate": 0.129
+        }
+      }
+    },
+    {
+      "config": {
+        "B": 16,
+        "W": "full",
+        "injection_start": 128,
+        "k": 64,
+        "mode": "stall",
+        "offset_in_window": 0,
+        "rate_tok_s": 50.0
+      },
+      "injection": {
+        "any_leak": {
+          "ci95": [
+            0.3977,
+            0.571
+          ],
+          "k": 60,
+          "n": 124,
+          "rate": 0.4839
+        },
+        "any_leak_among_caught": {
+          "ci95": [
+            0.0,
+            0.0741
+          ],
+          "k": 0,
+          "n": 48,
+          "rate": 0.0
+        },
+        "caught": {
+          "ci95": [
+            0.306,
+            0.475
+          ],
+          "k": 48,
+          "n": 124,
+          "rate": 0.3871
+        },
+        "caught_excluding_stopped_before": {
+          "ci95": [
+            0.3542,
+            0.5385
+          ],
+          "k": 48,
+          "n": 108,
+          "rate": 0.4444
+        },
+        "caught_zero_leak": {
+          "ci95": [
+            0.306,
+            0.475
+          ],
+          "k": 48,
+          "n": 124,
+          "rate": 0.3871
+        },
+        "caught_zero_leak_excluding_stopped_before": {
+          "ci95": [
+            0.3542,
+            0.5385
+          ],
+          "k": 48,
+          "n": 108,
+          "rate": 0.4444
+        },
+        "delay_tokens_caught": {
+          "max": 83,
+          "n": 48,
+          "p50": 76,
+          "p90": 80
+        },
+        "injection_never_shown": {
+          "ci95": [
+            0.429,
+            0.6023
+          ],
+          "k": 64,
+          "n": 124,
+          "rate": 0.5161
+        },
+        "leaked_fraction_mean_caught": 0.0,
+        "leaked_tokens_max_caught": 0,
+        "leaked_tokens_mean_caught": 0.0,
+        "stop_reasons": {
+          "flag": 64
+        },
+        "stopped_before_injection": {
+          "ci95": [
+            0.081,
+            0.1994
+          ],
+          "k": 16,
+          "n": 124,
+          "rate": 0.129
+        },
+        "stopped_before_injection_by_flag": {
+          "ci95": [
+            0.081,
+            0.1994
+          ],
+          "k": 16,
+          "n": 124,
+          "rate": 0.129
+        },
+        "stopped_by_failure_or_lag": {
+          "ci95": [
+            0.0,
+            0.03
+          ],
+          "k": 0,
+          "n": 124,
+          "rate": 0.0
+        },
+        "stopped_by_flag_outside_injection": {
+          "ci95": [
+            0.081,
+            0.1994
+          ],
+          "k": 16,
+          "n": 124,
+          "rate": 0.129
+        }
+      }
+    },
+    {
+      "config": {
+        "B": 32,
+        "W": "full",
+        "injection_start": 128,
+        "k": 64,
+        "mode": "stall",
+        "offset_in_window": 0,
+        "rate_tok_s": 50.0
+      },
+      "injection": {
+        "any_leak": {
+          "ci95": [
+            0.3977,
+            0.571
+          ],
+          "k": 60,
+          "n": 124,
+          "rate": 0.4839
+        },
+        "any_leak_among_caught": {
+          "ci95": [
+            0.0,
+            0.0741
+          ],
+          "k": 0,
+          "n": 48,
+          "rate": 0.0
+        },
+        "caught": {
+          "ci95": [
+            0.306,
+            0.475
+          ],
+          "k": 48,
+          "n": 124,
+          "rate": 0.3871
+        },
+        "caught_excluding_stopped_before": {
+          "ci95": [
+            0.3542,
+            0.5385
+          ],
+          "k": 48,
+          "n": 108,
+          "rate": 0.4444
+        },
+        "caught_zero_leak": {
+          "ci95": [
+            0.306,
+            0.475
+          ],
+          "k": 48,
+          "n": 124,
+          "rate": 0.3871
+        },
+        "caught_zero_leak_excluding_stopped_before": {
+          "ci95": [
+            0.3542,
+            0.5385
+          ],
+          "k": 48,
+          "n": 108,
+          "rate": 0.4444
+        },
+        "delay_tokens_caught": {
+          "max": 83,
+          "n": 48,
+          "p50": 76,
+          "p90": 80
+        },
+        "injection_never_shown": {
+          "ci95": [
+            0.429,
+            0.6023
+          ],
+          "k": 64,
+          "n": 124,
+          "rate": 0.5161
+        },
+        "leaked_fraction_mean_caught": 0.0,
+        "leaked_tokens_max_caught": 0,
+        "leaked_tokens_mean_caught": 0.0,
+        "stop_reasons": {
+          "flag": 64
+        },
+        "stopped_before_injection": {
+          "ci95": [
+            0.081,
+            0.1994
+          ],
+          "k": 16,
+          "n": 124,
+          "rate": 0.129
+        },
+        "stopped_before_injection_by_flag": {
+          "ci95": [
+            0.081,
+            0.1994
+          ],
+          "k": 16,
+          "n": 124,
+          "rate": 0.129
+        },
+        "stopped_by_failure_or_lag": {
+          "ci95": [
+            0.0,
+            0.03
+          ],
+          "k": 0,
+          "n": 124,
+          "rate": 0.0
+        },
+        "stopped_by_flag_outside_injection": {
+          "ci95": [
+            0.081,
+            0.1994
+          ],
+          "k": 16,
+          "n": 124,
+          "rate": 0.129
+        }
+      }
+    },
+    {
+      "config": {
+        "B": 0,
+        "W": 64,
+        "injection_start": 128,
+        "k": 16,
+        "mode": "stall",
+        "offset_in_window": 0,
+        "rate_tok_s": 50.0
+      },
+      "injection": {
+        "any_leak": {
+          "ci95": [
+            0.4133,
+            0.5867
+          ],
+          "k": 62,
+          "n": 124,
+          "rate": 0.5
+        },
+        "any_leak_among_caught": {
+          "ci95": [
+            0.2761,
+            0.5012
+          ],
+          "k": 26,
+          "n": 68,
+          "rate": 0.3824
+        },
+        "caught": {
+          "ci95": [
+            0.4607,
+            0.6332
+          ],
+          "k": 68,
+          "n": 124,
+          "rate": 0.5484
+        },
+        "caught_excluding_stopped_before": {
+          "ci95": [
+            0.5584,
+            0.7383
+          ],
+          "k": 68,
+          "n": 104,
+          "rate": 0.6538
+        },
+        "caught_zero_leak": {
+          "ci95": [
+            0.2614,
+            0.4257
+          ],
+          "k": 42,
+          "n": 124,
+          "rate": 0.3387
+        },
+        "caught_zero_leak_excluding_stopped_before": {
+          "ci95": [
+            0.3146,
+            0.4999
+          ],
+          "k": 42,
+          "n": 104,
+          "rate": 0.4038
+        },
+        "delay_tokens_caught": {
+          "max": 68,
+          "n": 68,
+          "p50": 20,
+          "p90": 51
+        },
+        "injection_never_shown": {
+          "ci95": [
+            0.4133,
+            0.5867
+          ],
+          "k": 62,
+          "n": 124,
+          "rate": 0.5
+        },
+        "leaked_fraction_mean_caught": 0.1833,
+        "leaked_tokens_max_caught": 48,
+        "leaked_tokens_mean_caught": 8.85,
+        "stop_reasons": {
+          "flag": 88
+        },
+        "stopped_before_injection": {
+          "ci95": [
+            0.1069,
+            0.236
+          ],
+          "k": 20,
+          "n": 124,
+          "rate": 0.1613
+        },
+        "stopped_before_injection_by_flag": {
+          "ci95": [
+            0.1069,
+            0.236
+          ],
+          "k": 20,
+          "n": 124,
+          "rate": 0.1613
+        },
+        "stopped_by_failure_or_lag": {
+          "ci95": [
+            0.0,
+            0.03
+          ],
+          "k": 0,
+          "n": 124,
+          "rate": 0.0
+        },
+        "stopped_by_flag_outside_injection": {
+          "ci95": [
+            0.1069,
+            0.236
+          ],
+          "k": 20,
+          "n": 124,
+          "rate": 0.1613
+        }
+      }
+    },
+    {
+      "config": {
+        "B": 8,
+        "W": 64,
+        "injection_start": 128,
+        "k": 16,
+        "mode": "stall",
+        "offset_in_window": 0,
+        "rate_tok_s": 50.0
+      },
+      "injection": {
+        "any_leak": {
+          "ci95": [
+            0.4133,
+            0.5867
+          ],
+          "k": 62,
+          "n": 124,
+          "rate": 0.5
+        },
+        "any_leak_among_caught": {
+          "ci95": [
+            0.2761,
+            0.5012
+          ],
+          "k": 26,
+          "n": 68,
+          "rate": 0.3824
+        },
+        "caught": {
+          "ci95": [
+            0.4607,
+            0.6332
+          ],
+          "k": 68,
+          "n": 124,
+          "rate": 0.5484
+        },
+        "caught_excluding_stopped_before": {
+          "ci95": [
+            0.5584,
+            0.7383
+          ],
+          "k": 68,
+          "n": 104,
+          "rate": 0.6538
+        },
+        "caught_zero_leak": {
+          "ci95": [
+            0.2614,
+            0.4257
+          ],
+          "k": 42,
+          "n": 124,
+          "rate": 0.3387
+        },
+        "caught_zero_leak_excluding_stopped_before": {
+          "ci95": [
+            0.3146,
+            0.4999
+          ],
+          "k": 42,
+          "n": 104,
+          "rate": 0.4038
+        },
+        "delay_tokens_caught": {
+          "max": 68,
+          "n": 68,
+          "p50": 20,
+          "p90": 51
+        },
+        "injection_never_shown": {
+          "ci95": [
+            0.4133,
+            0.5867
+          ],
+          "k": 62,
+          "n": 124,
+          "rate": 0.5
+        },
+        "leaked_fraction_mean_caught": 0.1187,
+        "leaked_tokens_max_caught": 40,
+        "leaked_tokens_mean_caught": 5.88,
+        "stop_reasons": {
+          "flag": 88
+        },
+        "stopped_before_injection": {
+          "ci95": [
+            0.1069,
+            0.236
+          ],
+          "k": 20,
+          "n": 124,
+          "rate": 0.1613
+        },
+        "stopped_before_injection_by_flag": {
+          "ci95": [
+            0.1069,
+            0.236
+          ],
+          "k": 20,
+          "n": 124,
+          "rate": 0.1613
+        },
+        "stopped_by_failure_or_lag": {
+          "ci95": [
+            0.0,
+            0.03
+          ],
+          "k": 0,
+          "n": 124,
+          "rate": 0.0
+        },
+        "stopped_by_flag_outside_injection": {
+          "ci95": [
+            0.1069,
+            0.236
+          ],
+          "k": 20,
+          "n": 124,
+          "rate": 0.1613
+        }
+      }
+    },
+    {
+      "config": {
+        "B": 16,
+        "W": 64,
+        "injection_start": 128,
+        "k": 16,
+        "mode": "stall",
+        "offset_in_window": 0,
+        "rate_tok_s": 50.0
+      },
+      "injection": {
+        "any_leak": {
+          "ci95": [
+            0.2761,
+            0.4423
+          ],
+          "k": 44,
+          "n": 124,
+          "rate": 0.3548
+        },
+        "any_leak_among_caught": {
+          "ci95": [
+            0.0608,
+            0.2153
+          ],
+          "k": 8,
+          "n": 68,
+          "rate": 0.1176
+        },
+        "caught": {
+          "ci95": [
+            0.4607,
+            0.6332
+          ],
+          "k": 68,
+          "n": 124,
+          "rate": 0.5484
+        },
+        "caught_excluding_stopped_before": {
+          "ci95": [
+            0.5584,
+            0.7383
+          ],
+          "k": 68,
+          "n": 104,
+          "rate": 0.6538
+        },
+        "caught_zero_leak": {
+          "ci95": [
+            0.3977,
+            0.571
+          ],
+          "k": 60,
+          "n": 124,
+          "rate": 0.4839
+        },
+        "caught_zero_leak_excluding_stopped_before": {
+          "ci95": [
+            0.4809,
+            0.6675
+          ],
+          "k": 60,
+          "n": 104,
+          "rate": 0.5769
+        },
+        "delay_tokens_caught": {
+          "max": 68,
+          "n": 68,
+          "p50": 20,
+          "p90": 51
+        },
+        "injection_never_shown": {
+          "ci95": [
+            0.5577,
+            0.7239
+          ],
+          "k": 80,
+          "n": 124,
+          "rate": 0.6452
+        },
+        "leaked_fraction_mean_caught": 0.0519,
+        "leaked_tokens_max_caught": 32,
+        "leaked_tokens_mean_caught": 2.82,
+        "stop_reasons": {
+          "flag": 88
+        },
+        "stopped_before_injection": {
+          "ci95": [
+            0.1069,
+            0.236
+          ],
+          "k": 20,
+          "n": 124,
+          "rate": 0.1613
+        },
+        "stopped_before_injection_by_flag": {
+          "ci95": [
+            0.1069,
+            0.236
+          ],
+          "k": 20,
+          "n": 124,
+          "rate": 0.1613
+        },
+        "stopped_by_failure_or_lag": {
+          "ci95": [
+            0.0,
+            0.03
+          ],
+          "k": 0,
+          "n": 124,
+          "rate": 0.0
+        },
+        "stopped_by_flag_outside_injection": {
+          "ci95": [
+            0.1069,
+            0.236
+          ],
+          "k": 20,
+          "n": 124,
+          "rate": 0.1613
+        }
+      }
+    },
+    {
+      "config": {
+        "B": 32,
+        "W": 64,
+        "injection_start": 128,
+        "k": 16,
+        "mode": "stall",
+        "offset_in_window": 0,
+        "rate_tok_s": 50.0
+      },
+      "injection": {
+        "any_leak": {
+          "ci95": [
+            0.2467,
+            0.4091
+          ],
+          "k": 40,
+          "n": 124,
+          "rate": 0.3226
+        },
+        "any_leak_among_caught": {
+          "ci95": [
+            0.0231,
+            0.1417
+          ],
+          "k": 4,
+          "n": 68,
+          "rate": 0.0588
+        },
+        "caught": {
+          "ci95": [
+            0.4607,
+            0.6332
+          ],
+          "k": 68,
+          "n": 124,
+          "rate": 0.5484
+        },
+        "caught_excluding_stopped_before": {
+          "ci95": [
+            0.5584,
+            0.7383
+          ],
+          "k": 68,
+          "n": 104,
+          "rate": 0.6538
+        },
+        "caught_zero_leak": {
+          "ci95": [
+            0.429,
+            0.6023
+          ],
+          "k": 64,
+          "n": 124,
+          "rate": 0.5161
+        },
+        "caught_zero_leak_excluding_stopped_before": {
+          "ci95": [
+            0.5194,
+            0.7032
+          ],
+          "k": 64,
+          "n": 104,
+          "rate": 0.6154
+        },
+        "delay_tokens_caught": {
+          "max": 68,
+          "n": 68,
+          "p50": 20,
+          "p90": 51
+        },
+        "injection_never_shown": {
+          "ci95": [
+            0.5909,
+            0.7533
+          ],
+          "k": 84,
+          "n": 124,
+          "rate": 0.6774
+        },
+        "leaked_fraction_mean_caught": 0.0167,
+        "leaked_tokens_max_caught": 16,
+        "leaked_tokens_mean_caught": 0.94,
+        "stop_reasons": {
+          "flag": 88
+        },
+        "stopped_before_injection": {
+          "ci95": [
+            0.1069,
+            0.236
+          ],
+          "k": 20,
+          "n": 124,
+          "rate": 0.1613
+        },
+        "stopped_before_injection_by_flag": {
+          "ci95": [
+            0.1069,
+            0.236
+          ],
+          "k": 20,
+          "n": 124,
+          "rate": 0.1613
+        },
+        "stopped_by_failure_or_lag": {
+          "ci95": [
+            0.0,
+            0.03
+          ],
+          "k": 0,
+          "n": 124,
+          "rate": 0.0
+        },
+        "stopped_by_flag_outside_injection": {
+          "ci95": [
+            0.1069,
+            0.236
+          ],
+          "k": 20,
+          "n": 124,
+          "rate": 0.1613
+        }
+      }
+    },
+    {
+      "config": {
+        "B": 0,
+        "W": 64,
+        "injection_start": 128,
+        "k": 64,
+        "mode": "stall",
+        "offset_in_window": 0,
+        "rate_tok_s": 50.0
+      },
+      "injection": {
+        "any_leak": {
+          "ci95": [
+            0.2394,
+            0.4008
+          ],
+          "k": 39,
+          "n": 124,
+          "rate": 0.3145
+        },
+        "any_leak_among_caught": {
+          "ci95": [
+            0.0025,
+            0.0766
+          ],
+          "k": 1,
+          "n": 70,
+          "rate": 0.0143
+        },
+        "caught": {
+          "ci95": [
+            0.4766,
+            0.6485
+          ],
+          "k": 70,
+          "n": 124,
+          "rate": 0.5645
+        },
+        "caught_excluding_stopped_before": {
+          "ci95": [
+            0.5544,
+            0.7317
+          ],
+          "k": 70,
+          "n": 108,
+          "rate": 0.6481
+        },
+        "caught_zero_leak": {
+          "ci95": [
+            0.4686,
+            0.6409
+          ],
+          "k": 69,
+          "n": 124,
+          "rate": 0.5565
+        },
+        "caught_zero_leak_excluding_stopped_before": {
+          "ci95": [
+            0.545,
+            0.7233
+          ],
+          "k": 69,
+          "n": 108,
+          "rate": 0.6389
+        },
+        "delay_tokens_caught": {
+          "max": 132,
+          "n": 70,
+          "p50": 68,
+          "p90": 68
+        },
+        "injection_never_shown": {
+          "ci95": [
+            0.5992,
+            0.7606
+          ],
+          "k": 85,
+          "n": 124,
+          "rate": 0.6855
+        },
+        "leaked_fraction_mean_caught": 0.012,
+        "leaked_tokens_max_caught": 64,
+        "leaked_tokens_mean_caught": 0.91,
+        "stop_reasons": {
+          "flag": 86
+        },
+        "stopped_before_injection": {
+          "ci95": [
+            0.081,
+            0.1994
+          ],
+          "k": 16,
+          "n": 124,
+          "rate": 0.129
+        },
+        "stopped_before_injection_by_flag": {
+          "ci95": [
+            0.081,
+            0.1994
+          ],
+          "k": 16,
+          "n": 124,
+          "rate": 0.129
+        },
+        "stopped_by_failure_or_lag": {
+          "ci95": [
+            0.0,
+            0.03
+          ],
+          "k": 0,
+          "n": 124,
+          "rate": 0.0
+        },
+        "stopped_by_flag_outside_injection": {
+          "ci95": [
+            0.081,
+            0.1994
+          ],
+          "k": 16,
+          "n": 124,
+          "rate": 0.129
+        }
+      }
+    },
+    {
+      "config": {
+        "B": 8,
+        "W": 64,
+        "injection_start": 128,
+        "k": 64,
+        "mode": "stall",
+        "offset_in_window": 0,
+        "rate_tok_s": 50.0
+      },
+      "injection": {
+        "any_leak": {
+          "ci95": [
+            0.2394,
+            0.4008
+          ],
+          "k": 39,
+          "n": 124,
+          "rate": 0.3145
+        },
+        "any_leak_among_caught": {
+          "ci95": [
+            0.0025,
+            0.0766
+          ],
+          "k": 1,
+          "n": 70,
+          "rate": 0.0143
+        },
+        "caught": {
+          "ci95": [
+            0.4766,
+            0.6485
+          ],
+          "k": 70,
+          "n": 124,
+          "rate": 0.5645
+        },
+        "caught_excluding_stopped_before": {
+          "ci95": [
+            0.5544,
+            0.7317
+          ],
+          "k": 70,
+          "n": 108,
+          "rate": 0.6481
+        },
+        "caught_zero_leak": {
+          "ci95": [
+            0.4686,
+            0.6409
+          ],
+          "k": 69,
+          "n": 124,
+          "rate": 0.5565
+        },
+        "caught_zero_leak_excluding_stopped_before": {
+          "ci95": [
+            0.545,
+            0.7233
+          ],
+          "k": 69,
+          "n": 108,
+          "rate": 0.6389
+        },
+        "delay_tokens_caught": {
+          "max": 132,
+          "n": 70,
+          "p50": 68,
+          "p90": 68
+        },
+        "injection_never_shown": {
+          "ci95": [
+            0.5992,
+            0.7606
+          ],
+          "k": 85,
+          "n": 124,
+          "rate": 0.6855
+        },
+        "leaked_fraction_mean_caught": 0.0105,
+        "leaked_tokens_max_caught": 56,
+        "leaked_tokens_mean_caught": 0.8,
+        "stop_reasons": {
+          "flag": 86
+        },
+        "stopped_before_injection": {
+          "ci95": [
+            0.081,
+            0.1994
+          ],
+          "k": 16,
+          "n": 124,
+          "rate": 0.129
+        },
+        "stopped_before_injection_by_flag": {
+          "ci95": [
+            0.081,
+            0.1994
+          ],
+          "k": 16,
+          "n": 124,
+          "rate": 0.129
+        },
+        "stopped_by_failure_or_lag": {
+          "ci95": [
+            0.0,
+            0.03
+          ],
+          "k": 0,
+          "n": 124,
+          "rate": 0.0
+        },
+        "stopped_by_flag_outside_injection": {
+          "ci95": [
+            0.081,
+            0.1994
+          ],
+          "k": 16,
+          "n": 124,
+          "rate": 0.129
+        }
+      }
+    },
+    {
+      "config": {
+        "B": 16,
+        "W": 64,
+        "injection_start": 128,
+        "k": 64,
+        "mode": "stall",
+        "offset_in_window": 0,
+        "rate_tok_s": 50.0
+      },
+      "injection": {
+        "any_leak": {
+          "ci95": [
+            0.2394,
+            0.4008
+          ],
+          "k": 39,
+          "n": 124,
+          "rate": 0.3145
+        },
+        "any_leak_among_caught": {
+          "ci95": [
+            0.0025,
+            0.0766
+          ],
+          "k": 1,
+          "n": 70,
+          "rate": 0.0143
+        },
+        "caught": {
+          "ci95": [
+            0.4766,
+            0.6485
+          ],
+          "k": 70,
+          "n": 124,
+          "rate": 0.5645
+        },
+        "caught_excluding_stopped_before": {
+          "ci95": [
+            0.5544,
+            0.7317
+          ],
+          "k": 70,
+          "n": 108,
+          "rate": 0.6481
+        },
+        "caught_zero_leak": {
+          "ci95": [
+            0.4686,
+            0.6409
+          ],
+          "k": 69,
+          "n": 124,
+          "rate": 0.5565
+        },
+        "caught_zero_leak_excluding_stopped_before": {
+          "ci95": [
+            0.545,
+            0.7233
+          ],
+          "k": 69,
+          "n": 108,
+          "rate": 0.6389
+        },
+        "delay_tokens_caught": {
+          "max": 132,
+          "n": 70,
+          "p50": 68,
+          "p90": 68
+        },
+        "injection_never_shown": {
+          "ci95": [
+            0.5992,
+            0.7606
+          ],
+          "k": 85,
+          "n": 124,
+          "rate": 0.6855
+        },
+        "leaked_fraction_mean_caught": 0.009,
+        "leaked_tokens_max_caught": 48,
+        "leaked_tokens_mean_caught": 0.69,
+        "stop_reasons": {
+          "flag": 86
+        },
+        "stopped_before_injection": {
+          "ci95": [
+            0.081,
+            0.1994
+          ],
+          "k": 16,
+          "n": 124,
+          "rate": 0.129
+        },
+        "stopped_before_injection_by_flag": {
+          "ci95": [
+            0.081,
+            0.1994
+          ],
+          "k": 16,
+          "n": 124,
+          "rate": 0.129
+        },
+        "stopped_by_failure_or_lag": {
+          "ci95": [
+            0.0,
+            0.03
+          ],
+          "k": 0,
+          "n": 124,
+          "rate": 0.0
+        },
+        "stopped_by_flag_outside_injection": {
+          "ci95": [
+            0.081,
+            0.1994
+          ],
+          "k": 16,
+          "n": 124,
+          "rate": 0.129
+        }
+      }
+    },
+    {
+      "config": {
+        "B": 32,
+        "W": 64,
+        "injection_start": 128,
+        "k": 64,
+        "mode": "stall",
+        "offset_in_window": 0,
+        "rate_tok_s": 50.0
+      },
+      "injection": {
+        "any_leak": {
+          "ci95": [
+            0.2394,
+            0.4008
+          ],
+          "k": 39,
+          "n": 124,
+          "rate": 0.3145
+        },
+        "any_leak_among_caught": {
+          "ci95": [
+            0.0025,
+            0.0766
+          ],
+          "k": 1,
+          "n": 70,
+          "rate": 0.0143
+        },
+        "caught": {
+          "ci95": [
+            0.4766,
+            0.6485
+          ],
+          "k": 70,
+          "n": 124,
+          "rate": 0.5645
+        },
+        "caught_excluding_stopped_before": {
+          "ci95": [
+            0.5544,
+            0.7317
+          ],
+          "k": 70,
+          "n": 108,
+          "rate": 0.6481
+        },
+        "caught_zero_leak": {
+          "ci95": [
+            0.4686,
+            0.6409
+          ],
+          "k": 69,
+          "n": 124,
+          "rate": 0.5565
+        },
+        "caught_zero_leak_excluding_stopped_before": {
+          "ci95": [
+            0.545,
+            0.7233
+          ],
+          "k": 69,
+          "n": 108,
+          "rate": 0.6389
+        },
+        "delay_tokens_caught": {
+          "max": 132,
+          "n": 70,
+          "p50": 68,
+          "p90": 68
+        },
+        "injection_never_shown": {
+          "ci95": [
+            0.5992,
+            0.7606
+          ],
+          "k": 85,
+          "n": 124,
+          "rate": 0.6855
+        },
+        "leaked_fraction_mean_caught": 0.006,
+        "leaked_tokens_max_caught": 32,
+        "leaked_tokens_mean_caught": 0.46,
+        "stop_reasons": {
+          "flag": 86
+        },
+        "stopped_before_injection": {
+          "ci95": [
+            0.081,
+            0.1994
+          ],
+          "k": 16,
+          "n": 124,
+          "rate": 0.129
+        },
+        "stopped_before_injection_by_flag": {
+          "ci95": [
+            0.081,
+            0.1994
+          ],
+          "k": 16,
+          "n": 124,
+          "rate": 0.129
+        },
+        "stopped_by_failure_or_lag": {
+          "ci95": [
+            0.0,
+            0.03
+          ],
+          "k": 0,
+          "n": 124,
+          "rate": 0.0
+        },
+        "stopped_by_flag_outside_injection": {
+          "ci95": [
+            0.081,
+            0.1994
+          ],
+          "k": 16,
+          "n": 124,
+          "rate": 0.129
+        }
+      }
+    },
+    {
+      "config": {
+        "B": 0,
+        "W": "full",
+        "injection_start": 120,
+        "k": 16,
+        "mode": "stall",
+        "offset_in_window": 8,
+        "rate_tok_s": 50.0
+      },
+      "injection": {
+        "any_leak": {
+          "ci95": [
+            0.7281,
+            0.8663
+          ],
+          "k": 100,
+          "n": 124,
+          "rate": 0.8065
+        },
+        "any_leak_among_caught": {
+          "ci95": [
+            0.7295,
+            0.9215
+          ],
+          "k": 45,
+          "n": 53,
+          "rate": 0.8491
+        },
+        "caught": {
+          "ci95": [
+            0.3438,
+            0.5154
+          ],
+          "k": 53,
+          "n": 124,
+          "rate": 0.4274
+        },
+        "caught_excluding_stopped_before": {
+          "ci95": [
+            0.3984,
+            0.5837
+          ],
+          "k": 53,
+          "n": 108,
+          "rate": 0.4907
+        },
+        "caught_zero_leak": {
+          "ci95": [
+            0.0331,
+            0.1222
+          ],
+          "k": 8,
+          "n": 124,
+          "rate": 0.0645
+        },
+        "caught_zero_leak_excluding_stopped_before": {
+          "ci95": [
+            0.038,
+            0.1394
+          ],
+          "k": 8,
+          "n": 108,
+          "rate": 0.0741
+        },
+        "delay_tokens_caught": {
+          "max": 67,
+          "n": 53,
+          "p50": 33,
+          "p90": 52
+        },
+        "injection_never_shown": {
+          "ci95": [
+            0.1337,
+            0.2719
+          ],
+          "k": 24,
+          "n": 124,
+          "rate": 0.1935
+        },
+        "leaked_fraction_mean_caught": 0.2155,
+        "leaked_tokens_max_caught": 40,
+        "leaked_tokens_mean_caught": 9.36,
+        "stop_reasons": {
+          "flag": 69
+        },
+        "stopped_before_injection": {
+          "ci95": [
+            0.081,
+            0.1994
+          ],
+          "k": 16,
+          "n": 124,
+          "rate": 0.129
+        },
+        "stopped_before_injection_by_flag": {
+          "ci95": [
+            0.081,
+            0.1994
+          ],
+          "k": 16,
+          "n": 124,
+          "rate": 0.129
+        },
+        "stopped_by_failure_or_lag": {
+          "ci95": [
+            0.0,
+            0.03
+          ],
+          "k": 0,
+          "n": 124,
+          "rate": 0.0
+        },
+        "stopped_by_flag_outside_injection": {
+          "ci95": [
+            0.081,
+            0.1994
+          ],
+          "k": 16,
+          "n": 124,
+          "rate": 0.129
+        }
+      }
+    },
+    {
+      "config": {
+        "B": 8,
+        "W": "full",
+        "injection_start": 120,
+        "k": 16,
+        "mode": "stall",
+        "offset_in_window": 8,
+        "rate_tok_s": 50.0
+      },
+      "injection": {
+        "any_leak": {
+          "ci95": [
+            0.4212,
+            0.5945
+          ],
+          "k": 63,
+          "n": 124,
+          "rate": 0.5081
+        },
+        "any_leak_among_caught": {
+          "ci95": [
+            0.0785,
+            0.2705
+          ],
+          "k": 8,
+          "n": 53,
+          "rate": 0.1509
+        },
+        "caught": {
+          "ci95": [
+            0.3438,
+            0.5154
+          ],
+          "k": 53,
+          "n": 124,
+          "rate": 0.4274
+        },
+        "caught_excluding_stopped_before": {
+          "ci95": [
+            0.3984,
+            0.5837
+          ],
+          "k": 53,
+          "n": 108,
+          "rate": 0.4907
+        },
+        "caught_zero_leak": {
+          "ci95": [
+            0.2836,
+            0.4505
+          ],
+          "k": 45,
+          "n": 124,
+          "rate": 0.3629
+        },
+        "caught_zero_leak_excluding_stopped_before": {
+          "ci95": [
+            0.3281,
+            0.5109
+          ],
+          "k": 45,
+          "n": 108,
+          "rate": 0.4167
+        },
+        "delay_tokens_caught": {
+          "max": 67,
+          "n": 53,
+          "p50": 33,
+          "p90": 52
+        },
+        "injection_never_shown": {
+          "ci95": [
+            0.4055,
+            0.5788
+          ],
+          "k": 61,
+          "n": 124,
+          "rate": 0.4919
+        },
+        "leaked_fraction_mean_caught": 0.0666,
+        "leaked_tokens_max_caught": 32,
+        "leaked_tokens_mean_caught": 2.72,
+        "stop_reasons": {
+          "flag": 69
+        },
+        "stopped_before_injection": {
+          "ci95": [
+            0.081,
+            0.1994
+          ],
+          "k": 16,
+          "n": 124,
+          "rate": 0.129
+        },
+        "stopped_before_injection_by_flag": {
+          "ci95": [
+            0.081,
+            0.1994
+          ],
+          "k": 16,
+          "n": 124,
+          "rate": 0.129
+        },
+        "stopped_by_failure_or_lag": {
+          "ci95": [
+            0.0,
+            0.03
+          ],
+          "k": 0,
+          "n": 124,
+          "rate": 0.0
+        },
+        "stopped_by_flag_outside_injection": {
+          "ci95": [
+            0.081,
+            0.1994
+          ],
+          "k": 16,
+          "n": 124,
+          "rate": 0.129
+        }
+      }
+    },
+    {
+      "config": {
+        "B": 16,
+        "W": "full",
+        "injection_start": 120,
+        "k": 16,
+        "mode": "stall",
+        "offset_in_window": 8,
+        "rate_tok_s": 50.0
+      },
+      "injection": {
+        "any_leak": {
+          "ci95": [
+            0.4212,
+            0.5945
+          ],
+          "k": 63,
+          "n": 124,
+          "rate": 0.5081
+        },
+        "any_leak_among_caught": {
+          "ci95": [
+            0.0785,
+            0.2705
+          ],
+          "k": 8,
+          "n": 53,
+          "rate": 0.1509
+        },
+        "caught": {
+          "ci95": [
+            0.3438,
+            0.5154
+          ],
+          "k": 53,
+          "n": 124,
+          "rate": 0.4274
+        },
+        "caught_excluding_stopped_before": {
+          "ci95": [
+            0.3984,
+            0.5837
+          ],
+          "k": 53,
+          "n": 108,
+          "rate": 0.4907
+        },
+        "caught_zero_leak": {
+          "ci95": [
+            0.2836,
+            0.4505
+          ],
+          "k": 45,
+          "n": 124,
+          "rate": 0.3629
+        },
+        "caught_zero_leak_excluding_stopped_before": {
+          "ci95": [
+            0.3281,
+            0.5109
+          ],
+          "k": 45,
+          "n": 108,
+          "rate": 0.4167
+        },
+        "delay_tokens_caught": {
+          "max": 67,
+          "n": 53,
+          "p50": 33,
+          "p90": 52
+        },
+        "injection_never_shown": {
+          "ci95": [
+            0.4055,
+            0.5788
+          ],
+          "k": 61,
+          "n": 124,
+          "rate": 0.4919
+        },
+        "leaked_fraction_mean_caught": 0.0361,
+        "leaked_tokens_max_caught": 24,
+        "leaked_tokens_mean_caught": 1.51,
+        "stop_reasons": {
+          "flag": 69
+        },
+        "stopped_before_injection": {
+          "ci95": [
+            0.081,
+            0.1994
+          ],
+          "k": 16,
+          "n": 124,
+          "rate": 0.129
+        },
+        "stopped_before_injection_by_flag": {
+          "ci95": [
+            0.081,
+            0.1994
+          ],
+          "k": 16,
+          "n": 124,
+          "rate": 0.129
+        },
+        "stopped_by_failure_or_lag": {
+          "ci95": [
+            0.0,
+            0.03
+          ],
+          "k": 0,
+          "n": 124,
+          "rate": 0.0
+        },
+        "stopped_by_flag_outside_injection": {
+          "ci95": [
+            0.081,
+            0.1994
+          ],
+          "k": 16,
+          "n": 124,
+          "rate": 0.129
+        }
+      }
+    },
+    {
+      "config": {
+        "B": 32,
+        "W": "full",
+        "injection_start": 120,
+        "k": 16,
+        "mode": "stall",
+        "offset_in_window": 8,
+        "rate_tok_s": 50.0
+      },
+      "injection": {
+        "any_leak": {
+          "ci95": [
+            0.3668,
+            0.5393
+          ],
+          "k": 56,
+          "n": 124,
+          "rate": 0.4516
+        },
+        "any_leak_among_caught": {
+          "ci95": [
+            0.0033,
+            0.0994
+          ],
+          "k": 1,
+          "n": 53,
+          "rate": 0.0189
+        },
+        "caught": {
+          "ci95": [
+            0.3438,
+            0.5154
+          ],
+          "k": 53,
+          "n": 124,
+          "rate": 0.4274
+        },
+        "caught_excluding_stopped_before": {
+          "ci95": [
+            0.3984,
+            0.5837
+          ],
+          "k": 53,
+          "n": 108,
+          "rate": 0.4907
+        },
+        "caught_zero_leak": {
+          "ci95": [
+            0.3362,
+            0.5074
+          ],
+          "k": 52,
+          "n": 124,
+          "rate": 0.4194
+        },
+        "caught_zero_leak_excluding_stopped_before": {
+          "ci95": [
+            0.3895,
+            0.5747
+          ],
+          "k": 52,
+          "n": 108,
+          "rate": 0.4815
+        },
+        "delay_tokens_caught": {
+          "max": 67,
+          "n": 53,
+          "p50": 33,
+          "p90": 52
+        },
+        "injection_never_shown": {
+          "ci95": [
+            0.4607,
+            0.6332
+          ],
+          "k": 68,
+          "n": 124,
+          "rate": 0.5484
+        },
+        "leaked_fraction_mean_caught": 0.0028,
+        "leaked_tokens_max_caught": 8,
+        "leaked_tokens_mean_caught": 0.15,
+        "stop_reasons": {
+          "flag": 69
+        },
+        "stopped_before_injection": {
+          "ci95": [
+            0.081,
+            0.1994
+          ],
+          "k": 16,
+          "n": 124,
+          "rate": 0.129
+        },
+        "stopped_before_injection_by_flag": {
+          "ci95": [
+            0.081,
+            0.1994
+          ],
+          "k": 16,
+          "n": 124,
+          "rate": 0.129
+        },
+        "stopped_by_failure_or_lag": {
+          "ci95": [
+            0.0,
+            0.03
+          ],
+          "k": 0,
+          "n": 124,
+          "rate": 0.0
+        },
+        "stopped_by_flag_outside_injection": {
+          "ci95": [
+            0.081,
+            0.1994
+          ],
+          "k": 16,
+          "n": 124,
+          "rate": 0.129
+        }
+      }
+    },
+    {
+      "config": {
+        "B": 0,
+        "W": "full",
+        "injection_start": 120,
+        "k": 64,
+        "mode": "stall",
+        "offset_in_window": 56,
+        "rate_tok_s": 50.0
+      },
+      "injection": {
+        "any_leak": {
+          "ci95": [
+            0.737,
+            0.8731
+          ],
+          "k": 101,
+          "n": 124,
+          "rate": 0.8145
+        },
+        "any_leak_among_caught": {
+          "ci95": [
+            0.6696,
+            0.8876
+          ],
+          "k": 40,
+          "n": 50,
+          "rate": 0.8
+        },
+        "caught": {
+          "ci95": [
+            0.3211,
+            0.4912
+          ],
+          "k": 50,
+          "n": 124,
+          "rate": 0.4032
+        },
+        "caught_excluding_stopped_before": {
+          "ci95": [
+            0.3611,
+            0.5431
+          ],
+          "k": 50,
+          "n": 111,
+          "rate": 0.4505
+        },
+        "caught_zero_leak": {
+          "ci95": [
+            0.0444,
+            0.1421
+          ],
+          "k": 10,
+          "n": 124,
+          "rate": 0.0806
+        },
+        "caught_zero_leak_excluding_stopped_before": {
+          "ci95": [
+            0.0497,
+            0.1579
+          ],
+          "k": 10,
+          "n": 111,
+          "rate": 0.0901
+        },
+        "delay_tokens_caught": {
+          "max": 89,
+          "n": 50,
+          "p50": 84,
+          "p90": 85
+        },
+        "injection_never_shown": {
+          "ci95": [
+            0.1269,
+            0.263
+          ],
+          "k": 23,
+          "n": 124,
+          "rate": 0.1855
+        },
+        "leaked_fraction_mean_caught": 0.1474,
+        "leaked_tokens_max_caught": 8,
+        "leaked_tokens_mean_caught": 6.4,
+        "stop_reasons": {
+          "flag": 63
+        },
+        "stopped_before_injection": {
+          "ci95": [
+            0.0623,
+            0.1711
+          ],
+          "k": 13,
+          "n": 124,
+          "rate": 0.1048
+        },
+        "stopped_before_injection_by_flag": {
+          "ci95": [
+            0.0623,
+            0.1711
+          ],
+          "k": 13,
+          "n": 124,
+          "rate": 0.1048
+        },
+        "stopped_by_failure_or_lag": {
+          "ci95": [
+            0.0,
+            0.03
+          ],
+          "k": 0,
+          "n": 124,
+          "rate": 0.0
+        },
+        "stopped_by_flag_outside_injection": {
+          "ci95": [
+            0.0623,
+            0.1711
+          ],
+          "k": 13,
+          "n": 124,
+          "rate": 0.1048
+        }
+      }
+    },
+    {
+      "config": {
+        "B": 8,
+        "W": "full",
+        "injection_start": 120,
+        "k": 64,
+        "mode": "stall",
+        "offset_in_window": 56,
+        "rate_tok_s": 50.0
+      },
+      "injection": {
+        "any_leak": {
+          "ci95": [
+            0.4055,
+            0.5788
+          ],
+          "k": 61,
+          "n": 124,
+          "rate": 0.4919
+        },
+        "any_leak_among_caught": {
+          "ci95": [
+            0.0,
+            0.0713
+          ],
+          "k": 0,
+          "n": 50,
+          "rate": 0.0
+        },
+        "caught": {
+          "ci95": [
+            0.3211,
+            0.4912
+          ],
+          "k": 50,
+          "n": 124,
+          "rate": 0.4032
+        },
+        "caught_excluding_stopped_before": {
+          "ci95": [
+            0.3611,
+            0.5431
+          ],
+          "k": 50,
+          "n": 111,
+          "rate": 0.4505
+        },
+        "caught_zero_leak": {
+          "ci95": [
+            0.3211,
+            0.4912
+          ],
+          "k": 50,
+          "n": 124,
+          "rate": 0.4032
+        },
+        "caught_zero_leak_excluding_stopped_before": {
+          "ci95": [
+            0.3611,
+            0.5431
+          ],
+          "k": 50,
+          "n": 111,
+          "rate": 0.4505
+        },
+        "delay_tokens_caught": {
+          "max": 89,
+          "n": 50,
+          "p50": 84,
+          "p90": 85
+        },
+        "injection_never_shown": {
+          "ci95": [
+            0.4212,
+            0.5945
+          ],
+          "k": 63,
+          "n": 124,
+          "rate": 0.5081
+        },
+        "leaked_fraction_mean_caught": 0.0,
+        "leaked_tokens_max_caught": 0,
+        "leaked_tokens_mean_caught": 0.0,
+        "stop_reasons": {
+          "flag": 63
+        },
+        "stopped_before_injection": {
+          "ci95": [
+            0.0623,
+            0.1711
+          ],
+          "k": 13,
+          "n": 124,
+          "rate": 0.1048
+        },
+        "stopped_before_injection_by_flag": {
+          "ci95": [
+            0.0623,
+            0.1711
+          ],
+          "k": 13,
+          "n": 124,
+          "rate": 0.1048
+        },
+        "stopped_by_failure_or_lag": {
+          "ci95": [
+            0.0,
+            0.03
+          ],
+          "k": 0,
+          "n": 124,
+          "rate": 0.0
+        },
+        "stopped_by_flag_outside_injection": {
+          "ci95": [
+            0.0623,
+            0.1711
+          ],
+          "k": 13,
+          "n": 124,
+          "rate": 0.1048
+        }
+      }
+    },
+    {
+      "config": {
+        "B": 16,
+        "W": "full",
+        "injection_start": 120,
+        "k": 64,
+        "mode": "stall",
+        "offset_in_window": 56,
+        "rate_tok_s": 50.0
+      },
+      "injection": {
+        "any_leak": {
+          "ci95": [
+            0.4055,
+            0.5788
+          ],
+          "k": 61,
+          "n": 124,
+          "rate": 0.4919
+        },
+        "any_leak_among_caught": {
+          "ci95": [
+            0.0,
+            0.0713
+          ],
+          "k": 0,
+          "n": 50,
+          "rate": 0.0
+        },
+        "caught": {
+          "ci95": [
+            0.3211,
+            0.4912
+          ],
+          "k": 50,
+          "n": 124,
+          "rate": 0.4032
+        },
+        "caught_excluding_stopped_before": {
+          "ci95": [
+            0.3611,
+            0.5431
+          ],
+          "k": 50,
+          "n": 111,
+          "rate": 0.4505
+        },
+        "caught_zero_leak": {
+          "ci95": [
+            0.3211,
+            0.4912
+          ],
+          "k": 50,
+          "n": 124,
+          "rate": 0.4032
+        },
+        "caught_zero_leak_excluding_stopped_before": {
+          "ci95": [
+            0.3611,
+            0.5431
+          ],
+          "k": 50,
+          "n": 111,
+          "rate": 0.4505
+        },
+        "delay_tokens_caught": {
+          "max": 89,
+          "n": 50,
+          "p50": 84,
+          "p90": 85
+        },
+        "injection_never_shown": {
+          "ci95": [
+            0.4212,
+            0.5945
+          ],
+          "k": 63,
+          "n": 124,
+          "rate": 0.5081
+        },
+        "leaked_fraction_mean_caught": 0.0,
+        "leaked_tokens_max_caught": 0,
+        "leaked_tokens_mean_caught": 0.0,
+        "stop_reasons": {
+          "flag": 63
+        },
+        "stopped_before_injection": {
+          "ci95": [
+            0.0623,
+            0.1711
+          ],
+          "k": 13,
+          "n": 124,
+          "rate": 0.1048
+        },
+        "stopped_before_injection_by_flag": {
+          "ci95": [
+            0.0623,
+            0.1711
+          ],
+          "k": 13,
+          "n": 124,
+          "rate": 0.1048
+        },
+        "stopped_by_failure_or_lag": {
+          "ci95": [
+            0.0,
+            0.03
+          ],
+          "k": 0,
+          "n": 124,
+          "rate": 0.0
+        },
+        "stopped_by_flag_outside_injection": {
+          "ci95": [
+            0.0623,
+            0.1711
+          ],
+          "k": 13,
+          "n": 124,
+          "rate": 0.1048
+        }
+      }
+    },
+    {
+      "config": {
+        "B": 32,
+        "W": "full",
+        "injection_start": 120,
+        "k": 64,
+        "mode": "stall",
+        "offset_in_window": 56,
+        "rate_tok_s": 50.0
+      },
+      "injection": {
+        "any_leak": {
+          "ci95": [
+            0.4055,
+            0.5788
+          ],
+          "k": 61,
+          "n": 124,
+          "rate": 0.4919
+        },
+        "any_leak_among_caught": {
+          "ci95": [
+            0.0,
+            0.0713
+          ],
+          "k": 0,
+          "n": 50,
+          "rate": 0.0
+        },
+        "caught": {
+          "ci95": [
+            0.3211,
+            0.4912
+          ],
+          "k": 50,
+          "n": 124,
+          "rate": 0.4032
+        },
+        "caught_excluding_stopped_before": {
+          "ci95": [
+            0.3611,
+            0.5431
+          ],
+          "k": 50,
+          "n": 111,
+          "rate": 0.4505
+        },
+        "caught_zero_leak": {
+          "ci95": [
+            0.3211,
+            0.4912
+          ],
+          "k": 50,
+          "n": 124,
+          "rate": 0.4032
+        },
+        "caught_zero_leak_excluding_stopped_before": {
+          "ci95": [
+            0.3611,
+            0.5431
+          ],
+          "k": 50,
+          "n": 111,
+          "rate": 0.4505
+        },
+        "delay_tokens_caught": {
+          "max": 89,
+          "n": 50,
+          "p50": 84,
+          "p90": 85
+        },
+        "injection_never_shown": {
+          "ci95": [
+            0.4212,
+            0.5945
+          ],
+          "k": 63,
+          "n": 124,
+          "rate": 0.5081
+        },
+        "leaked_fraction_mean_caught": 0.0,
+        "leaked_tokens_max_caught": 0,
+        "leaked_tokens_mean_caught": 0.0,
+        "stop_reasons": {
+          "flag": 63
+        },
+        "stopped_before_injection": {
+          "ci95": [
+            0.0623,
+            0.1711
+          ],
+          "k": 13,
+          "n": 124,
+          "rate": 0.1048
+        },
+        "stopped_before_injection_by_flag": {
+          "ci95": [
+            0.0623,
+            0.1711
+          ],
+          "k": 13,
+          "n": 124,
+          "rate": 0.1048
+        },
+        "stopped_by_failure_or_lag": {
+          "ci95": [
+            0.0,
+            0.03
+          ],
+          "k": 0,
+          "n": 124,
+          "rate": 0.0
+        },
+        "stopped_by_flag_outside_injection": {
+          "ci95": [
+            0.0623,
+            0.1711
+          ],
+          "k": 13,
+          "n": 124,
+          "rate": 0.1048
+        }
+      }
+    },
+    {
+      "config": {
+        "B": 0,
+        "W": 64,
+        "injection_start": 120,
+        "k": 16,
+        "mode": "stall",
+        "offset_in_window": 8,
+        "rate_tok_s": 50.0
+      },
+      "injection": {
+        "any_leak": {
+          "ci95": [
+            0.616,
+            0.7751
+          ],
+          "k": 87,
+          "n": 124,
+          "rate": 0.7016
+        },
+        "any_leak_among_caught": {
+          "ci95": [
+            0.6289,
+            0.8266
+          ],
+          "k": 54,
+          "n": 73,
+          "rate": 0.7397
+        },
+        "caught": {
+          "ci95": [
+            0.5007,
+            0.6714
+          ],
+          "k": 73,
+          "n": 124,
+          "rate": 0.5887
+        },
+        "caught_excluding_stopped_before": {
+          "ci95": [
+            0.5952,
+            0.7689
+          ],
+          "k": 73,
+          "n": 106,
+          "rate": 0.6887
+        },
+        "caught_zero_leak": {
+          "ci95": [
+            0.1003,
+            0.2269
+          ],
+          "k": 19,
+          "n": 124,
+          "rate": 0.1532
+        },
+        "caught_zero_leak_excluding_stopped_before": {
+          "ci95": [
+            0.1179,
+            0.2631
+          ],
+          "k": 19,
+          "n": 106,
+          "rate": 0.1792
+        },
+        "delay_tokens_caught": {
+          "max": 92,
+          "n": 73,
+          "p50": 28,
+          "p90": 60
+        },
+        "injection_never_shown": {
+          "ci95": [
+            0.2249,
+            0.384
+          ],
+          "k": 37,
+          "n": 124,
+          "rate": 0.2984
+        },
+        "leaked_fraction_mean_caught": 0.2525,
+        "leaked_tokens_max_caught": 72,
+        "leaked_tokens_mean_caught": 11.12,
+        "stop_reasons": {
+          "flag": 91
+        },
+        "stopped_before_injection": {
+          "ci95": [
+            0.0938,
+            0.2178
+          ],
+          "k": 18,
+          "n": 124,
+          "rate": 0.1452
+        },
+        "stopped_before_injection_by_flag": {
+          "ci95": [
+            0.0938,
+            0.2178
+          ],
+          "k": 18,
+          "n": 124,
+          "rate": 0.1452
+        },
+        "stopped_by_failure_or_lag": {
+          "ci95": [
+            0.0,
+            0.03
+          ],
+          "k": 0,
+          "n": 124,
+          "rate": 0.0
+        },
+        "stopped_by_flag_outside_injection": {
+          "ci95": [
+            0.0938,
+            0.2178
+          ],
+          "k": 18,
+          "n": 124,
+          "rate": 0.1452
+        }
+      }
+    },
+    {
+      "config": {
+        "B": 8,
+        "W": 64,
+        "injection_start": 120,
+        "k": 16,
+        "mode": "stall",
+        "offset_in_window": 8,
+        "rate_tok_s": 50.0
+      },
+      "injection": {
+        "any_leak": {
+          "ci95": [
+            0.291,
+            0.4587
+          ],
+          "k": 46,
+          "n": 124,
+          "rate": 0.371
+        },
+        "any_leak_among_caught": {
+          "ci95": [
+            0.1071,
+            0.2812
+          ],
+          "k": 13,
+          "n": 73,
+          "rate": 0.1781
+        },
+        "caught": {
+          "ci95": [
+            0.5007,
+            0.6714
+          ],
+          "k": 73,
+          "n": 124,
+          "rate": 0.5887
+        },
+        "caught_excluding_stopped_before": {
+          "ci95": [
+            0.5952,
+            0.7689
+          ],
+          "k": 73,
+          "n": 106,
+          "rate": 0.6887
+        },
+        "caught_zero_leak": {
+          "ci95": [
+            0.3977,
+            0.571
+          ],
+          "k": 60,
+          "n": 124,
+          "rate": 0.4839
+        },
+        "caught_zero_leak_excluding_stopped_before": {
+          "ci95": [
+            0.471,
+            0.6564
+          ],
+          "k": 60,
+          "n": 106,
+          "rate": 0.566
+        },
+        "delay_tokens_caught": {
+          "max": 92,
+          "n": 73,
+          "p50": 28,
+          "p90": 60
+        },
+        "injection_never_shown": {
+          "ci95": [
+            0.5413,
+            0.709
+          ],
+          "k": 78,
+          "n": 124,
+          "rate": 0.629
+        },
+        "leaked_fraction_mean_caught": 0.1283,
+        "leaked_tokens_max_caught": 64,
+        "leaked_tokens_mean_caught": 5.75,
+        "stop_reasons": {
+          "flag": 91
+        },
+        "stopped_before_injection": {
+          "ci95": [
+            0.0938,
+            0.2178
+          ],
+          "k": 18,
+          "n": 124,
+          "rate": 0.1452
+        },
+        "stopped_before_injection_by_flag": {
+          "ci95": [
+            0.0938,
+            0.2178
+          ],
+          "k": 18,
+          "n": 124,
+          "rate": 0.1452
+        },
+        "stopped_by_failure_or_lag": {
+          "ci95": [
+            0.0,
+            0.03
+          ],
+          "k": 0,
+          "n": 124,
+          "rate": 0.0
+        },
+        "stopped_by_flag_outside_injection": {
+          "ci95": [
+            0.0938,
+            0.2178
+          ],
+          "k": 18,
+          "n": 124,
+          "rate": 0.1452
+        }
+      }
+    },
+    {
+      "config": {
+        "B": 16,
+        "W": 64,
+        "injection_start": 120,
+        "k": 16,
+        "mode": "stall",
+        "offset_in_window": 8,
+        "rate_tok_s": 50.0
+      },
+      "injection": {
+        "any_leak": {
+          "ci95": [
+            0.291,
+            0.4587
+          ],
+          "k": 46,
+          "n": 124,
+          "rate": 0.371
+        },
+        "any_leak_among_caught": {
+          "ci95": [
+            0.1071,
+            0.2812
+          ],
+          "k": 13,
+          "n": 73,
+          "rate": 0.1781
+        },
+        "caught": {
+          "ci95": [
+            0.5007,
+            0.6714
+          ],
+          "k": 73,
+          "n": 124,
+          "rate": 0.5887
+        },
+        "caught_excluding_stopped_before": {
+          "ci95": [
+            0.5952,
+            0.7689
+          ],
+          "k": 73,
+          "n": 106,
+          "rate": 0.6887
+        },
+        "caught_zero_leak": {
+          "ci95": [
+            0.3977,
+            0.571
+          ],
+          "k": 60,
+          "n": 124,
+          "rate": 0.4839
+        },
+        "caught_zero_leak_excluding_stopped_before": {
+          "ci95": [
+            0.471,
+            0.6564
+          ],
+          "k": 60,
+          "n": 106,
+          "rate": 0.566
+        },
+        "delay_tokens_caught": {
+          "max": 92,
+          "n": 73,
+          "p50": 28,
+          "p90": 60
+        },
+        "injection_never_shown": {
+          "ci95": [
+            0.5413,
+            0.709
+          ],
+          "k": 78,
+          "n": 124,
+          "rate": 0.629
+        },
+        "leaked_fraction_mean_caught": 0.1008,
+        "leaked_tokens_max_caught": 56,
+        "leaked_tokens_mean_caught": 4.56,
+        "stop_reasons": {
+          "flag": 91
+        },
+        "stopped_before_injection": {
+          "ci95": [
+            0.0938,
+            0.2178
+          ],
+          "k": 18,
+          "n": 124,
+          "rate": 0.1452
+        },
+        "stopped_before_injection_by_flag": {
+          "ci95": [
+            0.0938,
+            0.2178
+          ],
+          "k": 18,
+          "n": 124,
+          "rate": 0.1452
+        },
+        "stopped_by_failure_or_lag": {
+          "ci95": [
+            0.0,
+            0.03
+          ],
+          "k": 0,
+          "n": 124,
+          "rate": 0.0
+        },
+        "stopped_by_flag_outside_injection": {
+          "ci95": [
+            0.0938,
+            0.2178
+          ],
+          "k": 18,
+          "n": 124,
+          "rate": 0.1452
+        }
+      }
+    },
+    {
+      "config": {
+        "B": 32,
+        "W": 64,
+        "injection_start": 120,
+        "k": 16,
+        "mode": "stall",
+        "offset_in_window": 8,
+        "rate_tok_s": 50.0
+      },
+      "injection": {
+        "any_leak": {
+          "ci95": [
+            0.2687,
+            0.434
+          ],
+          "k": 43,
+          "n": 124,
+          "rate": 0.3468
+        },
+        "any_leak_among_caught": {
+          "ci95": [
+            0.0761,
+            0.2341
+          ],
+          "k": 10,
+          "n": 73,
+          "rate": 0.137
+        },
+        "caught": {
+          "ci95": [
+            0.5007,
+            0.6714
+          ],
+          "k": 73,
+          "n": 124,
+          "rate": 0.5887
+        },
+        "caught_excluding_stopped_before": {
+          "ci95": [
+            0.5952,
+            0.7689
+          ],
+          "k": 73,
+          "n": 106,
+          "rate": 0.6887
+        },
+        "caught_zero_leak": {
+          "ci95": [
+            0.4212,
+            0.5945
+          ],
+          "k": 63,
+          "n": 124,
+          "rate": 0.5081
+        },
+        "caught_zero_leak_excluding_stopped_before": {
+          "ci95": [
+            0.4992,
+            0.6829
+          ],
+          "k": 63,
+          "n": 106,
+          "rate": 0.5943
+        },
+        "delay_tokens_caught": {
+          "max": 92,
+          "n": 73,
+          "p50": 28,
+          "p90": 60
+        },
+        "injection_never_shown": {
+          "ci95": [
+            0.566,
+            0.7313
+          ],
+          "k": 81,
+          "n": 124,
+          "rate": 0.6532
+        },
+        "leaked_fraction_mean_caught": 0.0441,
+        "leaked_tokens_max_caught": 40,
+        "leaked_tokens_mean_caught": 2.19,
+        "stop_reasons": {
+          "flag": 91
+        },
+        "stopped_before_injection": {
+          "ci95": [
+            0.0938,
+            0.2178
+          ],
+          "k": 18,
+          "n": 124,
+          "rate": 0.1452
+        },
+        "stopped_before_injection_by_flag": {
+          "ci95": [
+            0.0938,
+            0.2178
+          ],
+          "k": 18,
+          "n": 124,
+          "rate": 0.1452
+        },
+        "stopped_by_failure_or_lag": {
+          "ci95": [
+            0.0,
+            0.03
+          ],
+          "k": 0,
+          "n": 124,
+          "rate": 0.0
+        },
+        "stopped_by_flag_outside_injection": {
+          "ci95": [
+            0.0938,
+            0.2178
+          ],
+          "k": 18,
+          "n": 124,
+          "rate": 0.1452
+        }
+      }
+    },
+    {
+      "config": {
+        "B": 0,
+        "W": 64,
+        "injection_start": 120,
+        "k": 64,
+        "mode": "stall",
+        "offset_in_window": 56,
+        "rate_tok_s": 50.0
+      },
+      "injection": {
+        "any_leak": {
+          "ci95": [
+            0.6414,
+            0.7966
+          ],
+          "k": 90,
+          "n": 124,
+          "rate": 0.7258
+        },
+        "any_leak_among_caught": {
+          "ci95": [
+            0.5561,
+            0.778
+          ],
+          "k": 44,
+          "n": 65,
+          "rate": 0.6769
+        },
+        "caught": {
+          "ci95": [
+            0.4369,
+            0.61
+          ],
+          "k": 65,
+          "n": 124,
+          "rate": 0.5242
+        },
+        "caught_excluding_stopped_before": {
+          "ci95": [
+            0.4926,
+            0.6729
+          ],
+          "k": 65,
+          "n": 111,
+          "rate": 0.5856
+        },
+        "caught_zero_leak": {
+          "ci95": [
+            0.1135,
+            0.2451
+          ],
+          "k": 21,
+          "n": 124,
+          "rate": 0.1694
+        },
+        "caught_zero_leak_excluding_stopped_before": {
+          "ci95": [
+            0.1272,
+            0.272
+          ],
+          "k": 21,
+          "n": 111,
+          "rate": 0.1892
+        },
+        "delay_tokens_caught": {
+          "max": 140,
+          "n": 65,
+          "p50": 76,
+          "p90": 77
+        },
+        "injection_never_shown": {
+          "ci95": [
+            0.2034,
+            0.3586
+          ],
+          "k": 34,
+          "n": 124,
+          "rate": 0.2742
+        },
+        "leaked_fraction_mean_caught": 0.1432,
+        "leaked_tokens_max_caught": 72,
+        "leaked_tokens_mean_caught": 7.38,
+        "stop_reasons": {
+          "flag": 78
+        },
+        "stopped_before_injection": {
+          "ci95": [
+            0.0623,
+            0.1711
+          ],
+          "k": 13,
+          "n": 124,
+          "rate": 0.1048
+        },
+        "stopped_before_injection_by_flag": {
+          "ci95": [
+            0.0623,
+            0.1711
+          ],
+          "k": 13,
+          "n": 124,
+          "rate": 0.1048
+        },
+        "stopped_by_failure_or_lag": {
+          "ci95": [
+            0.0,
+            0.03
+          ],
+          "k": 0,
+          "n": 124,
+          "rate": 0.0
+        },
+        "stopped_by_flag_outside_injection": {
+          "ci95": [
+            0.0623,
+            0.1711
+          ],
+          "k": 13,
+          "n": 124,
+          "rate": 0.1048
+        }
+      }
+    },
+    {
+      "config": {
+        "B": 8,
+        "W": 64,
+        "injection_start": 120,
+        "k": 64,
+        "mode": "stall",
+        "offset_in_window": 56,
+        "rate_tok_s": 50.0
+      },
+      "injection": {
+        "any_leak": {
+          "ci95": [
+            0.306,
+            0.475
+          ],
+          "k": 48,
+          "n": 124,
+          "rate": 0.3871
+        },
+        "any_leak_among_caught": {
+          "ci95": [
+            0.0085,
+            0.1054
+          ],
+          "k": 2,
+          "n": 65,
+          "rate": 0.0308
+        },
+        "caught": {
+          "ci95": [
+            0.4369,
+            0.61
+          ],
+          "k": 65,
+          "n": 124,
+          "rate": 0.5242
+        },
+        "caught_excluding_stopped_before": {
+          "ci95": [
+            0.4926,
+            0.6729
+          ],
+          "k": 65,
+          "n": 111,
+          "rate": 0.5856
+        },
+        "caught_zero_leak": {
+          "ci95": [
+            0.4212,
+            0.5945
+          ],
+          "k": 63,
+          "n": 124,
+          "rate": 0.5081
+        },
+        "caught_zero_leak_excluding_stopped_before": {
+          "ci95": [
+            0.4747,
+            0.6559
+          ],
+          "k": 63,
+          "n": 111,
+          "rate": 0.5676
+        },
+        "delay_tokens_caught": {
+          "max": 140,
+          "n": 65,
+          "p50": 76,
+          "p90": 77
+        },
+        "injection_never_shown": {
+          "ci95": [
+            0.525,
+            0.694
+          ],
+          "k": 76,
+          "n": 124,
+          "rate": 0.6129
+        },
+        "leaked_fraction_mean_caught": 0.0264,
+        "leaked_tokens_max_caught": 64,
+        "leaked_tokens_mean_caught": 1.97,
+        "stop_reasons": {
+          "flag": 78
+        },
+        "stopped_before_injection": {
+          "ci95": [
+            0.0623,
+            0.1711
+          ],
+          "k": 13,
+          "n": 124,
+          "rate": 0.1048
+        },
+        "stopped_before_injection_by_flag": {
+          "ci95": [
+            0.0623,
+            0.1711
+          ],
+          "k": 13,
+          "n": 124,
+          "rate": 0.1048
+        },
+        "stopped_by_failure_or_lag": {
+          "ci95": [
+            0.0,
+            0.03
+          ],
+          "k": 0,
+          "n": 124,
+          "rate": 0.0
+        },
+        "stopped_by_flag_outside_injection": {
+          "ci95": [
+            0.0623,
+            0.1711
+          ],
+          "k": 13,
+          "n": 124,
+          "rate": 0.1048
+        }
+      }
+    },
+    {
+      "config": {
+        "B": 16,
+        "W": 64,
+        "injection_start": 120,
+        "k": 64,
+        "mode": "stall",
+        "offset_in_window": 56,
+        "rate_tok_s": 50.0
+      },
+      "injection": {
+        "any_leak": {
+          "ci95": [
+            0.306,
+            0.475
+          ],
+          "k": 48,
+          "n": 124,
+          "rate": 0.3871
+        },
+        "any_leak_among_caught": {
+          "ci95": [
+            0.0085,
+            0.1054
+          ],
+          "k": 2,
+          "n": 65,
+          "rate": 0.0308
+        },
+        "caught": {
+          "ci95": [
+            0.4369,
+            0.61
+          ],
+          "k": 65,
+          "n": 124,
+          "rate": 0.5242
+        },
+        "caught_excluding_stopped_before": {
+          "ci95": [
+            0.4926,
+            0.6729
+          ],
+          "k": 65,
+          "n": 111,
+          "rate": 0.5856
+        },
+        "caught_zero_leak": {
+          "ci95": [
+            0.4212,
+            0.5945
+          ],
+          "k": 63,
+          "n": 124,
+          "rate": 0.5081
+        },
+        "caught_zero_leak_excluding_stopped_before": {
+          "ci95": [
+            0.4747,
+            0.6559
+          ],
+          "k": 63,
+          "n": 111,
+          "rate": 0.5676
+        },
+        "delay_tokens_caught": {
+          "max": 140,
+          "n": 65,
+          "p50": 76,
+          "p90": 77
+        },
+        "injection_never_shown": {
+          "ci95": [
+            0.525,
+            0.694
+          ],
+          "k": 76,
+          "n": 124,
+          "rate": 0.6129
+        },
+        "leaked_fraction_mean_caught": 0.0231,
+        "leaked_tokens_max_caught": 56,
+        "leaked_tokens_mean_caught": 1.72,
+        "stop_reasons": {
+          "flag": 78
+        },
+        "stopped_before_injection": {
+          "ci95": [
+            0.0623,
+            0.1711
+          ],
+          "k": 13,
+          "n": 124,
+          "rate": 0.1048
+        },
+        "stopped_before_injection_by_flag": {
+          "ci95": [
+            0.0623,
+            0.1711
+          ],
+          "k": 13,
+          "n": 124,
+          "rate": 0.1048
+        },
+        "stopped_by_failure_or_lag": {
+          "ci95": [
+            0.0,
+            0.03
+          ],
+          "k": 0,
+          "n": 124,
+          "rate": 0.0
+        },
+        "stopped_by_flag_outside_injection": {
+          "ci95": [
+            0.0623,
+            0.1711
+          ],
+          "k": 13,
+          "n": 124,
+          "rate": 0.1048
+        }
+      }
+    },
+    {
+      "config": {
+        "B": 32,
+        "W": 64,
+        "injection_start": 120,
+        "k": 64,
+        "mode": "stall",
+        "offset_in_window": 56,
+        "rate_tok_s": 50.0
+      },
+      "injection": {
+        "any_leak": {
+          "ci95": [
+            0.306,
+            0.475
+          ],
+          "k": 48,
+          "n": 124,
+          "rate": 0.3871
+        },
+        "any_leak_among_caught": {
+          "ci95": [
+            0.0085,
+            0.1054
+          ],
+          "k": 2,
+          "n": 65,
+          "rate": 0.0308
+        },
+        "caught": {
+          "ci95": [
+            0.4369,
+            0.61
+          ],
+          "k": 65,
+          "n": 124,
+          "rate": 0.5242
+        },
+        "caught_excluding_stopped_before": {
+          "ci95": [
+            0.4926,
+            0.6729
+          ],
+          "k": 65,
+          "n": 111,
+          "rate": 0.5856
+        },
+        "caught_zero_leak": {
+          "ci95": [
+            0.4212,
+            0.5945
+          ],
+          "k": 63,
+          "n": 124,
+          "rate": 0.5081
+        },
+        "caught_zero_leak_excluding_stopped_before": {
+          "ci95": [
+            0.4747,
+            0.6559
+          ],
+          "k": 63,
+          "n": 111,
+          "rate": 0.5676
+        },
+        "delay_tokens_caught": {
+          "max": 140,
+          "n": 65,
+          "p50": 76,
+          "p90": 77
+        },
+        "injection_never_shown": {
+          "ci95": [
+            0.525,
+            0.694
+          ],
+          "k": 76,
+          "n": 124,
+          "rate": 0.6129
+        },
+        "leaked_fraction_mean_caught": 0.0165,
+        "leaked_tokens_max_caught": 40,
+        "leaked_tokens_mean_caught": 1.23,
+        "stop_reasons": {
+          "flag": 78
+        },
+        "stopped_before_injection": {
+          "ci95": [
+            0.0623,
+            0.1711
+          ],
+          "k": 13,
+          "n": 124,
+          "rate": 0.1048
+        },
+        "stopped_before_injection_by_flag": {
+          "ci95": [
+            0.0623,
+            0.1711
+          ],
+          "k": 13,
+          "n": 124,
+          "rate": 0.1048
+        },
+        "stopped_by_failure_or_lag": {
+          "ci95": [
+            0.0,
+            0.03
+          ],
+          "k": 0,
+          "n": 124,
+          "rate": 0.0
+        },
+        "stopped_by_flag_outside_injection": {
+          "ci95": [
+            0.0623,
+            0.1711
+          ],
+          "k": 13,
+          "n": 124,
+          "rate": 0.1048
+        }
+      }
+    },
+    {
+      "config": {
+        "B": 0,
+        "W": "full",
+        "injection_start": 136,
+        "k": 16,
+        "mode": "stall",
+        "offset_in_window": 8,
+        "rate_tok_s": 50.0
+      },
+      "injection": {
+        "any_leak": {
+          "ci95": [
+            0.7105,
+            0.8527
+          ],
+          "k": 98,
+          "n": 124,
+          "rate": 0.7903
+        },
+        "any_leak_among_caught": {
+          "ci95": [
+            0.7096,
+            0.9149
+          ],
+          "k": 41,
+          "n": 49,
+          "rate": 0.8367
+        },
+        "caught": {
+          "ci95": [
+            0.3135,
+            0.4831
+          ],
+          "k": 49,
+          "n": 124,
+          "rate": 0.3952
+        },
+        "caught_excluding_stopped_before": {
+          "ci95": [
+            0.3703,
+            0.5568
+          ],
+          "k": 49,
+          "n": 106,
+          "rate": 0.4623
+        },
+        "caught_zero_leak": {
+          "ci95": [
+            0.0331,
+            0.1222
+          ],
+          "k": 8,
+          "n": 124,
+          "rate": 0.0645
+        },
+        "caught_zero_leak_excluding_stopped_before": {
+          "ci95": [
+            0.0387,
+            0.1419
+          ],
+          "k": 8,
+          "n": 106,
+          "rate": 0.0755
+        },
+        "delay_tokens_caught": {
+          "max": 85,
+          "n": 49,
+          "p50": 34,
+          "p90": 52
+        },
+        "injection_never_shown": {
+          "ci95": [
+            0.1473,
+            0.2895
+          ],
+          "k": 26,
+          "n": 124,
+          "rate": 0.2097
+        },
+        "leaked_fraction_mean_caught": 0.2377,
+        "leaked_tokens_max_caught": 40,
+        "leaked_tokens_mean_caught": 10.51,
+        "stop_reasons": {
+          "flag": 67
+        },
+        "stopped_before_injection": {
+          "ci95": [
+            0.0938,
+            0.2178
+          ],
+          "k": 18,
+          "n": 124,
+          "rate": 0.1452
+        },
+        "stopped_before_injection_by_flag": {
+          "ci95": [
+            0.0938,
+            0.2178
+          ],
+          "k": 18,
+          "n": 124,
+          "rate": 0.1452
+        },
+        "stopped_by_failure_or_lag": {
+          "ci95": [
+            0.0,
+            0.03
+          ],
+          "k": 0,
+          "n": 124,
+          "rate": 0.0
+        },
+        "stopped_by_flag_outside_injection": {
+          "ci95": [
+            0.0938,
+            0.2178
+          ],
+          "k": 18,
+          "n": 124,
+          "rate": 0.1452
+        }
+      }
+    },
+    {
+      "config": {
+        "B": 8,
+        "W": "full",
+        "injection_start": 136,
+        "k": 16,
+        "mode": "stall",
+        "offset_in_window": 8,
+        "rate_tok_s": 50.0
+      },
+      "injection": {
+        "any_leak": {
+          "ci95": [
+            0.4527,
+            0.6255
+          ],
+          "k": 67,
+          "n": 124,
+          "rate": 0.5403
+        },
+        "any_leak_among_caught": {
+          "ci95": [
+            0.1148,
+            0.3364
+          ],
+          "k": 10,
+          "n": 49,
+          "rate": 0.2041
+        },
+        "caught": {
+          "ci95": [
+            0.3135,
+            0.4831
+          ],
+          "k": 49,
+          "n": 124,
+          "rate": 0.3952
+        },
+        "caught_excluding_stopped_before": {
+          "ci95": [
+            0.3703,
+            0.5568
+          ],
+          "k": 49,
+          "n": 106,
+          "rate": 0.4623
+        },
+        "caught_zero_leak": {
+          "ci95": [
+            0.2394,
+            0.4008
+          ],
+          "k": 39,
+          "n": 124,
+          "rate": 0.3145
+        },
+        "caught_zero_leak_excluding_stopped_before": {
+          "ci95": [
+            0.2822,
+            0.4628
+          ],
+          "k": 39,
+          "n": 106,
+          "rate": 0.3679
+        },
+        "delay_tokens_caught": {
+          "max": 85,
+          "n": 49,
+          "p50": 34,
+          "p90": 52
+        },
+        "injection_never_shown": {
+          "ci95": [
+            0.3745,
+            0.5473
+          ],
+          "k": 57,
+          "n": 124,
+          "rate": 0.4597
+        },
+        "leaked_fraction_mean_caught": 0.0881,
+        "leaked_tokens_max_caught": 35,
+        "leaked_tokens_mean_caught": 3.98,
+        "stop_reasons": {
+          "flag": 67
+        },
+        "stopped_before_injection": {
+          "ci95": [
+            0.0938,
+            0.2178
+          ],
+          "k": 18,
+          "n": 124,
+          "rate": 0.1452
+        },
+        "stopped_before_injection_by_flag": {
+          "ci95": [
+            0.0938,
+            0.2178
+          ],
+          "k": 18,
+          "n": 124,
+          "rate": 0.1452
+        },
+        "stopped_by_failure_or_lag": {
+          "ci95": [
+            0.0,
+            0.03
+          ],
+          "k": 0,
+          "n": 124,
+          "rate": 0.0
+        },
+        "stopped_by_flag_outside_injection": {
+          "ci95": [
+            0.0938,
+            0.2178
+          ],
+          "k": 18,
+          "n": 124,
+          "rate": 0.1452
+        }
+      }
+    },
+    {
+      "config": {
+        "B": 16,
+        "W": "full",
+        "injection_start": 136,
+        "k": 16,
+        "mode": "stall",
+        "offset_in_window": 8,
+        "rate_tok_s": 50.0
+      },
+      "injection": {
+        "any_leak": {
+          "ci95": [
+            0.4527,
+            0.6255
+          ],
+          "k": 67,
+          "n": 124,
+          "rate": 0.5403
+        },
+        "any_leak_among_caught": {
+          "ci95": [
+            0.1148,
+            0.3364
+          ],
+          "k": 10,
+          "n": 49,
+          "rate": 0.2041
+        },
+        "caught": {
+          "ci95": [
+            0.3135,
+            0.4831
+          ],
+          "k": 49,
+          "n": 124,
+          "rate": 0.3952
+        },
+        "caught_excluding_stopped_before": {
+          "ci95": [
+            0.3703,
+            0.5568
+          ],
+          "k": 49,
+          "n": 106,
+          "rate": 0.4623
+        },
+        "caught_zero_leak": {
+          "ci95": [
+            0.2394,
+            0.4008
+          ],
+          "k": 39,
+          "n": 124,
+          "rate": 0.3145
+        },
+        "caught_zero_leak_excluding_stopped_before": {
+          "ci95": [
+            0.2822,
+            0.4628
+          ],
+          "k": 39,
+          "n": 106,
+          "rate": 0.3679
+        },
+        "delay_tokens_caught": {
+          "max": 85,
+          "n": 49,
+          "p50": 34,
+          "p90": 52
+        },
+        "injection_never_shown": {
+          "ci95": [
+            0.3745,
+            0.5473
+          ],
+          "k": 57,
+          "n": 124,
+          "rate": 0.4597
+        },
+        "leaked_fraction_mean_caught": 0.0573,
+        "leaked_tokens_max_caught": 35,
+        "leaked_tokens_mean_caught": 2.51,
+        "stop_reasons": {
+          "flag": 67
+        },
+        "stopped_before_injection": {
+          "ci95": [
+            0.0938,
+            0.2178
+          ],
+          "k": 18,
+          "n": 124,
+          "rate": 0.1452
+        },
+        "stopped_before_injection_by_flag": {
+          "ci95": [
+            0.0938,
+            0.2178
+          ],
+          "k": 18,
+          "n": 124,
+          "rate": 0.1452
+        },
+        "stopped_by_failure_or_lag": {
+          "ci95": [
+            0.0,
+            0.03
+          ],
+          "k": 0,
+          "n": 124,
+          "rate": 0.0
+        },
+        "stopped_by_flag_outside_injection": {
+          "ci95": [
+            0.0938,
+            0.2178
+          ],
+          "k": 18,
+          "n": 124,
+          "rate": 0.1452
+        }
+      }
+    },
+    {
+      "config": {
+        "B": 32,
+        "W": "full",
+        "injection_start": 136,
+        "k": 16,
+        "mode": "stall",
+        "offset_in_window": 8,
+        "rate_tok_s": 50.0
+      },
+      "injection": {
+        "any_leak": {
+          "ci95": [
+            0.39,
+            0.5631
+          ],
+          "k": 59,
+          "n": 124,
+          "rate": 0.4758
+        },
+        "any_leak_among_caught": {
+          "ci95": [
+            0.0113,
+            0.1371
+          ],
+          "k": 2,
+          "n": 49,
+          "rate": 0.0408
+        },
+        "caught": {
+          "ci95": [
+            0.3135,
+            0.4831
+          ],
+          "k": 49,
+          "n": 124,
+          "rate": 0.3952
+        },
+        "caught_excluding_stopped_before": {
+          "ci95": [
+            0.3703,
+            0.5568
+          ],
+          "k": 49,
+          "n": 106,
+          "rate": 0.4623
+        },
+        "caught_zero_leak": {
+          "ci95": [
+            0.2985,
+            0.4668
+          ],
+          "k": 47,
+          "n": 124,
+          "rate": 0.379
+        },
+        "caught_zero_leak_excluding_stopped_before": {
+          "ci95": [
+            0.3525,
+            0.5383
+          ],
+          "k": 47,
+          "n": 106,
+          "rate": 0.4434
+        },
+        "delay_tokens_caught": {
+          "max": 85,
+          "n": 49,
+          "p50": 34,
+          "p90": 52
+        },
+        "injection_never_shown": {
+          "ci95": [
+            0.4369,
+            0.61
+          ],
+          "k": 65,
+          "n": 124,
+          "rate": 0.5242
+        },
+        "leaked_fraction_mean_caught": 0.017,
+        "leaked_tokens_max_caught": 24,
+        "leaked_tokens_mean_caught": 0.65,
+        "stop_reasons": {
+          "flag": 67
+        },
+        "stopped_before_injection": {
+          "ci95": [
+            0.0938,
+            0.2178
+          ],
+          "k": 18,
+          "n": 124,
+          "rate": 0.1452
+        },
+        "stopped_before_injection_by_flag": {
+          "ci95": [
+            0.0938,
+            0.2178
+          ],
+          "k": 18,
+          "n": 124,
+          "rate": 0.1452
+        },
+        "stopped_by_failure_or_lag": {
+          "ci95": [
+            0.0,
+            0.03
+          ],
+          "k": 0,
+          "n": 124,
+          "rate": 0.0
+        },
+        "stopped_by_flag_outside_injection": {
+          "ci95": [
+            0.0938,
+            0.2178
+          ],
+          "k": 18,
+          "n": 124,
+          "rate": 0.1452
+        }
+      }
+    },
+    {
+      "config": {
+        "B": 0,
+        "W": "full",
+        "injection_start": 136,
+        "k": 64,
+        "mode": "stall",
+        "offset_in_window": 8,
+        "rate_tok_s": 50.0
+      },
+      "injection": {
+        "any_leak": {
+          "ci95": [
+            0.4055,
+            0.5788
+          ],
+          "k": 61,
+          "n": 124,
+          "rate": 0.4919
+        },
+        "any_leak_among_caught": {
+          "ci95": [
+            0.0037,
+            0.109
+          ],
+          "k": 1,
+          "n": 48,
+          "rate": 0.0208
+        },
+        "caught": {
+          "ci95": [
+            0.306,
+            0.475
+          ],
+          "k": 48,
+          "n": 124,
+          "rate": 0.3871
+        },
+        "caught_excluding_stopped_before": {
+          "ci95": [
+            0.3542,
+            0.5385
+          ],
+          "k": 48,
+          "n": 108,
+          "rate": 0.4444
+        },
+        "caught_zero_leak": {
+          "ci95": [
+            0.2985,
+            0.4668
+          ],
+          "k": 47,
+          "n": 124,
+          "rate": 0.379
+        },
+        "caught_zero_leak_excluding_stopped_before": {
+          "ci95": [
+            0.3455,
+            0.5293
+          ],
+          "k": 47,
+          "n": 108,
+          "rate": 0.4352
+        },
+        "delay_tokens_caught": {
+          "max": 136,
+          "n": 48,
+          "p50": 68,
+          "p90": 69
+        },
+        "injection_never_shown": {
+          "ci95": [
+            0.4212,
+            0.5945
+          ],
+          "k": 63,
+          "n": 124,
+          "rate": 0.5081
+        },
+        "leaked_fraction_mean_caught": 0.0154,
+        "leaked_tokens_max_caught": 56,
+        "leaked_tokens_mean_caught": 1.17,
+        "stop_reasons": {
+          "flag": 64
+        },
+        "stopped_before_injection": {
+          "ci95": [
+            0.081,
+            0.1994
+          ],
+          "k": 16,
+          "n": 124,
+          "rate": 0.129
+        },
+        "stopped_before_injection_by_flag": {
+          "ci95": [
+            0.081,
+            0.1994
+          ],
+          "k": 16,
+          "n": 124,
+          "rate": 0.129
+        },
+        "stopped_by_failure_or_lag": {
+          "ci95": [
+            0.0,
+            0.03
+          ],
+          "k": 0,
+          "n": 124,
+          "rate": 0.0
+        },
+        "stopped_by_flag_outside_injection": {
+          "ci95": [
+            0.081,
+            0.1994
+          ],
+          "k": 16,
+          "n": 124,
+          "rate": 0.129
+        }
+      }
+    },
+    {
+      "config": {
+        "B": 8,
+        "W": "full",
+        "injection_start": 136,
+        "k": 64,
+        "mode": "stall",
+        "offset_in_window": 8,
+        "rate_tok_s": 50.0
+      },
+      "injection": {
+        "any_leak": {
+          "ci95": [
+            0.4055,
+            0.5788
+          ],
+          "k": 61,
+          "n": 124,
+          "rate": 0.4919
+        },
+        "any_leak_among_caught": {
+          "ci95": [
+            0.0037,
+            0.109
+          ],
+          "k": 1,
+          "n": 48,
+          "rate": 0.0208
+        },
+        "caught": {
+          "ci95": [
+            0.306,
+            0.475
+          ],
+          "k": 48,
+          "n": 124,
+          "rate": 0.3871
+        },
+        "caught_excluding_stopped_before": {
+          "ci95": [
+            0.3542,
+            0.5385
+          ],
+          "k": 48,
+          "n": 108,
+          "rate": 0.4444
+        },
+        "caught_zero_leak": {
+          "ci95": [
+            0.2985,
+            0.4668
+          ],
+          "k": 47,
+          "n": 124,
+          "rate": 0.379
+        },
+        "caught_zero_leak_excluding_stopped_before": {
+          "ci95": [
+            0.3455,
+            0.5293
+          ],
+          "k": 47,
+          "n": 108,
+          "rate": 0.4352
+        },
+        "delay_tokens_caught": {
+          "max": 136,
+          "n": 48,
+          "p50": 68,
+          "p90": 69
+        },
+        "injection_never_shown": {
+          "ci95": [
+            0.4212,
+            0.5945
+          ],
+          "k": 63,
+          "n": 124,
+          "rate": 0.5081
+        },
+        "leaked_fraction_mean_caught": 0.0132,
+        "leaked_tokens_max_caught": 48,
+        "leaked_tokens_mean_caught": 1.0,
+        "stop_reasons": {
+          "flag": 64
+        },
+        "stopped_before_injection": {
+          "ci95": [
+            0.081,
+            0.1994
+          ],
+          "k": 16,
+          "n": 124,
+          "rate": 0.129
+        },
+        "stopped_before_injection_by_flag": {
+          "ci95": [
+            0.081,
+            0.1994
+          ],
+          "k": 16,
+          "n": 124,
+          "rate": 0.129
+        },
+        "stopped_by_failure_or_lag": {
+          "ci95": [
+            0.0,
+            0.03
+          ],
+          "k": 0,
+          "n": 124,
+          "rate": 0.0
+        },
+        "stopped_by_flag_outside_injection": {
+          "ci95": [
+            0.081,
+            0.1994
+          ],
+          "k": 16,
+          "n": 124,
+          "rate": 0.129
+        }
+      }
+    },
+    {
+      "config": {
+        "B": 16,
+        "W": "full",
+        "injection_start": 136,
+        "k": 64,
+        "mode": "stall",
+        "offset_in_window": 8,
+        "rate_tok_s": 50.0
+      },
+      "injection": {
+        "any_leak": {
+          "ci95": [
+            0.4055,
+            0.5788
+          ],
+          "k": 61,
+          "n": 124,
+          "rate": 0.4919
+        },
+        "any_leak_among_caught": {
+          "ci95": [
+            0.0037,
+            0.109
+          ],
+          "k": 1,
+          "n": 48,
+          "rate": 0.0208
+        },
+        "caught": {
+          "ci95": [
+            0.306,
+            0.475
+          ],
+          "k": 48,
+          "n": 124,
+          "rate": 0.3871
+        },
+        "caught_excluding_stopped_before": {
+          "ci95": [
+            0.3542,
+            0.5385
+          ],
+          "k": 48,
+          "n": 108,
+          "rate": 0.4444
+        },
+        "caught_zero_leak": {
+          "ci95": [
+            0.2985,
+            0.4668
+          ],
+          "k": 47,
+          "n": 124,
+          "rate": 0.379
+        },
+        "caught_zero_leak_excluding_stopped_before": {
+          "ci95": [
+            0.3455,
+            0.5293
+          ],
+          "k": 47,
+          "n": 108,
+          "rate": 0.4352
+        },
+        "delay_tokens_caught": {
+          "max": 136,
+          "n": 48,
+          "p50": 68,
+          "p90": 69
+        },
+        "injection_never_shown": {
+          "ci95": [
+            0.4212,
+            0.5945
+          ],
+          "k": 63,
+          "n": 124,
+          "rate": 0.5081
+        },
+        "leaked_fraction_mean_caught": 0.011,
+        "leaked_tokens_max_caught": 40,
+        "leaked_tokens_mean_caught": 0.83,
+        "stop_reasons": {
+          "flag": 64
+        },
+        "stopped_before_injection": {
+          "ci95": [
+            0.081,
+            0.1994
+          ],
+          "k": 16,
+          "n": 124,
+          "rate": 0.129
+        },
+        "stopped_before_injection_by_flag": {
+          "ci95": [
+            0.081,
+            0.1994
+          ],
+          "k": 16,
+          "n": 124,
+          "rate": 0.129
+        },
+        "stopped_by_failure_or_lag": {
+          "ci95": [
+            0.0,
+            0.03
+          ],
+          "k": 0,
+          "n": 124,
+          "rate": 0.0
+        },
+        "stopped_by_flag_outside_injection": {
+          "ci95": [
+            0.081,
+            0.1994
+          ],
+          "k": 16,
+          "n": 124,
+          "rate": 0.129
+        }
+      }
+    },
+    {
+      "config": {
+        "B": 32,
+        "W": "full",
+        "injection_start": 136,
+        "k": 64,
+        "mode": "stall",
+        "offset_in_window": 8,
+        "rate_tok_s": 50.0
+      },
+      "injection": {
+        "any_leak": {
+          "ci95": [
+            0.4055,
+            0.5788
+          ],
+          "k": 61,
+          "n": 124,
+          "rate": 0.4919
+        },
+        "any_leak_among_caught": {
+          "ci95": [
+            0.0037,
+            0.109
+          ],
+          "k": 1,
+          "n": 48,
+          "rate": 0.0208
+        },
+        "caught": {
+          "ci95": [
+            0.306,
+            0.475
+          ],
+          "k": 48,
+          "n": 124,
+          "rate": 0.3871
+        },
+        "caught_excluding_stopped_before": {
+          "ci95": [
+            0.3542,
+            0.5385
+          ],
+          "k": 48,
+          "n": 108,
+          "rate": 0.4444
+        },
+        "caught_zero_leak": {
+          "ci95": [
+            0.2985,
+            0.4668
+          ],
+          "k": 47,
+          "n": 124,
+          "rate": 0.379
+        },
+        "caught_zero_leak_excluding_stopped_before": {
+          "ci95": [
+            0.3455,
+            0.5293
+          ],
+          "k": 47,
+          "n": 108,
+          "rate": 0.4352
+        },
+        "delay_tokens_caught": {
+          "max": 136,
+          "n": 48,
+          "p50": 68,
+          "p90": 69
+        },
+        "injection_never_shown": {
+          "ci95": [
+            0.4212,
+            0.5945
+          ],
+          "k": 63,
+          "n": 124,
+          "rate": 0.5081
+        },
+        "leaked_fraction_mean_caught": 0.0066,
+        "leaked_tokens_max_caught": 24,
+        "leaked_tokens_mean_caught": 0.5,
+        "stop_reasons": {
+          "flag": 64
+        },
+        "stopped_before_injection": {
+          "ci95": [
+            0.081,
+            0.1994
+          ],
+          "k": 16,
+          "n": 124,
+          "rate": 0.129
+        },
+        "stopped_before_injection_by_flag": {
+          "ci95": [
+            0.081,
+            0.1994
+          ],
+          "k": 16,
+          "n": 124,
+          "rate": 0.129
+        },
+        "stopped_by_failure_or_lag": {
+          "ci95": [
+            0.0,
+            0.03
+          ],
+          "k": 0,
+          "n": 124,
+          "rate": 0.0
+        },
+        "stopped_by_flag_outside_injection": {
+          "ci95": [
+            0.081,
+            0.1994
+          ],
+          "k": 16,
+          "n": 124,
+          "rate": 0.129
+        }
+      }
+    },
+    {
+      "config": {
+        "B": 0,
+        "W": 64,
+        "injection_start": 136,
+        "k": 16,
+        "mode": "stall",
+        "offset_in_window": 8,
+        "rate_tok_s": 50.0
+      },
+      "injection": {
+        "any_leak": {
+          "ci95": [
+            0.5577,
+            0.7239
+          ],
+          "k": 80,
+          "n": 124,
+          "rate": 0.6452
+        },
+        "any_leak_among_caught": {
+          "ci95": [
+            0.5518,
+            0.7647
+          ],
+          "k": 48,
+          "n": 72,
+          "rate": 0.6667
+        },
+        "caught": {
+          "ci95": [
+            0.4926,
+            0.6638
+          ],
+          "k": 72,
+          "n": 124,
+          "rate": 0.5806
+        },
+        "caught_excluding_stopped_before": {
+          "ci95": [
+            0.5981,
+            0.7728
+          ],
+          "k": 72,
+          "n": 104,
+          "rate": 0.6923
+        },
+        "caught_zero_leak": {
+          "ci95": [
+            0.1337,
+            0.2719
+          ],
+          "k": 24,
+          "n": 124,
+          "rate": 0.1935
+        },
+        "caught_zero_leak_excluding_stopped_before": {
+          "ci95": [
+            0.1603,
+            0.3205
+          ],
+          "k": 24,
+          "n": 104,
+          "rate": 0.2308
+        },
+        "delay_tokens_caught": {
+          "max": 109,
+          "n": 72,
+          "p50": 28,
+          "p90": 60
+        },
+        "injection_never_shown": {
+          "ci95": [
+            0.2761,
+            0.4423
+          ],
+          "k": 44,
+          "n": 124,
+          "rate": 0.3548
+        },
+        "leaked_fraction_mean_caught": 0.2662,
+        "leaked_tokens_max_caught": 72,
+        "leaked_tokens_mean_caught": 11.94,
+        "stop_reasons": {
+          "flag": 92
+        },
+        "stopped_before_injection": {
+          "ci95": [
+            0.1069,
+            0.236
+          ],
+          "k": 20,
+          "n": 124,
+          "rate": 0.1613
+        },
+        "stopped_before_injection_by_flag": {
+          "ci95": [
+            0.1069,
+            0.236
+          ],
+          "k": 20,
+          "n": 124,
+          "rate": 0.1613
+        },
+        "stopped_by_failure_or_lag": {
+          "ci95": [
+            0.0,
+            0.03
+          ],
+          "k": 0,
+          "n": 124,
+          "rate": 0.0
+        },
+        "stopped_by_flag_outside_injection": {
+          "ci95": [
+            0.1069,
+            0.236
+          ],
+          "k": 20,
+          "n": 124,
+          "rate": 0.1613
+        }
+      }
+    },
+    {
+      "config": {
+        "B": 8,
+        "W": 64,
+        "injection_start": 136,
+        "k": 16,
+        "mode": "stall",
+        "offset_in_window": 8,
+        "rate_tok_s": 50.0
+      },
+      "injection": {
+        "any_leak": {
+          "ci95": [
+            0.3135,
+            0.4831
+          ],
+          "k": 49,
+          "n": 124,
+          "rate": 0.3952
+        },
+        "any_leak_among_caught": {
+          "ci95": [
+            0.153,
+            0.346
+          ],
+          "k": 17,
+          "n": 72,
+          "rate": 0.2361
+        },
+        "caught": {
+          "ci95": [
+            0.4926,
+            0.6638
+          ],
+          "k": 72,
+          "n": 124,
+          "rate": 0.5806
+        },
+        "caught_excluding_stopped_before": {
+          "ci95": [
+            0.5981,
+            0.7728
+          ],
+          "k": 72,
+          "n": 104,
+          "rate": 0.6923
+        },
+        "caught_zero_leak": {
+          "ci95": [
+            0.3591,
+            0.5314
+          ],
+          "k": 55,
+          "n": 124,
+          "rate": 0.4435
+        },
+        "caught_zero_leak_excluding_stopped_before": {
+          "ci95": [
+            0.4336,
+            0.622
+          ],
+          "k": 55,
+          "n": 104,
+          "rate": 0.5288
+        },
+        "delay_tokens_caught": {
+          "max": 109,
+          "n": 72,
+          "p50": 28,
+          "p90": 60
+        },
+        "injection_never_shown": {
+          "ci95": [
+            0.5169,
+            0.6865
+          ],
+          "k": 75,
+          "n": 124,
+          "rate": 0.6048
+        },
+        "leaked_fraction_mean_caught": 0.1495,
+        "leaked_tokens_max_caught": 64,
+        "leaked_tokens_mean_caught": 7.17,
+        "stop_reasons": {
+          "flag": 92
+        },
+        "stopped_before_injection": {
+          "ci95": [
+            0.1069,
+            0.236
+          ],
+          "k": 20,
+          "n": 124,
+          "rate": 0.1613
+        },
+        "stopped_before_injection_by_flag": {
+          "ci95": [
+            0.1069,
+            0.236
+          ],
+          "k": 20,
+          "n": 124,
+          "rate": 0.1613
+        },
+        "stopped_by_failure_or_lag": {
+          "ci95": [
+            0.0,
+            0.03
+          ],
+          "k": 0,
+          "n": 124,
+          "rate": 0.0
+        },
+        "stopped_by_flag_outside_injection": {
+          "ci95": [
+            0.1069,
+            0.236
+          ],
+          "k": 20,
+          "n": 124,
+          "rate": 0.1613
+        }
+      }
+    },
+    {
+      "config": {
+        "B": 16,
+        "W": 64,
+        "injection_start": 136,
+        "k": 16,
+        "mode": "stall",
+        "offset_in_window": 8,
+        "rate_tok_s": 50.0
+      },
+      "injection": {
+        "any_leak": {
+          "ci95": [
+            0.3135,
+            0.4831
+          ],
+          "k": 49,
+          "n": 124,
+          "rate": 0.3952
+        },
+        "any_leak_among_caught": {
+          "ci95": [
+            0.153,
+            0.346
+          ],
+          "k": 17,
+          "n": 72,
+          "rate": 0.2361
+        },
+        "caught": {
+          "ci95": [
+            0.4926,
+            0.6638
+          ],
+          "k": 72,
+          "n": 124,
+          "rate": 0.5806
+        },
+        "caught_excluding_stopped_before": {
+          "ci95": [
+            0.5981,
+            0.7728
+          ],
+          "k": 72,
+          "n": 104,
+          "rate": 0.6923
+        },
+        "caught_zero_leak": {
+          "ci95": [
+            0.3591,
+            0.5314
+          ],
+          "k": 55,
+          "n": 124,
+          "rate": 0.4435
+        },
+        "caught_zero_leak_excluding_stopped_before": {
+          "ci95": [
+            0.4336,
+            0.622
+          ],
+          "k": 55,
+          "n": 104,
+          "rate": 0.5288
+        },
+        "delay_tokens_caught": {
+          "max": 109,
+          "n": 72,
+          "p50": 28,
+          "p90": 60
+        },
+        "injection_never_shown": {
+          "ci95": [
+            0.5169,
+            0.6865
+          ],
+          "k": 75,
+          "n": 124,
+          "rate": 0.6048
+        },
+        "leaked_fraction_mean_caught": 0.1228,
+        "leaked_tokens_max_caught": 56,
+        "leaked_tokens_mean_caught": 5.72,
+        "stop_reasons": {
+          "flag": 92
+        },
+        "stopped_before_injection": {
+          "ci95": [
+            0.1069,
+            0.236
+          ],
+          "k": 20,
+          "n": 124,
+          "rate": 0.1613
+        },
+        "stopped_before_injection_by_flag": {
+          "ci95": [
+            0.1069,
+            0.236
+          ],
+          "k": 20,
+          "n": 124,
+          "rate": 0.1613
+        },
+        "stopped_by_failure_or_lag": {
+          "ci95": [
+            0.0,
+            0.03
+          ],
+          "k": 0,
+          "n": 124,
+          "rate": 0.0
+        },
+        "stopped_by_flag_outside_injection": {
+          "ci95": [
+            0.1069,
+            0.236
+          ],
+          "k": 20,
+          "n": 124,
+          "rate": 0.1613
+        }
+      }
+    },
+    {
+      "config": {
+        "B": 32,
+        "W": 64,
+        "injection_start": 136,
+        "k": 16,
+        "mode": "stall",
+        "offset_in_window": 8,
+        "rate_tok_s": 50.0
+      },
+      "injection": {
+        "any_leak": {
+          "ci95": [
+            0.2687,
+            0.434
+          ],
+          "k": 43,
+          "n": 124,
+          "rate": 0.3468
+        },
+        "any_leak_among_caught": {
+          "ci95": [
+            0.0875,
+            0.2532
+          ],
+          "k": 11,
+          "n": 72,
+          "rate": 0.1528
+        },
+        "caught": {
+          "ci95": [
+            0.4926,
+            0.6638
+          ],
+          "k": 72,
+          "n": 124,
+          "rate": 0.5806
+        },
+        "caught_excluding_stopped_before": {
+          "ci95": [
+            0.5981,
+            0.7728
+          ],
+          "k": 72,
+          "n": 104,
+          "rate": 0.6923
+        },
+        "caught_zero_leak": {
+          "ci95": [
+            0.4055,
+            0.5788
+          ],
+          "k": 61,
+          "n": 124,
+          "rate": 0.4919
+        },
+        "caught_zero_leak_excluding_stopped_before": {
+          "ci95": [
+            0.4905,
+            0.6765
+          ],
+          "k": 61,
+          "n": 104,
+          "rate": 0.5865
+        },
+        "delay_tokens_caught": {
+          "max": 109,
+          "n": 72,
+          "p50": 28,
+          "p90": 60
+        },
+        "injection_never_shown": {
+          "ci95": [
+            0.566,
+            0.7313
+          ],
+          "k": 81,
+          "n": 124,
+          "rate": 0.6532
+        },
+        "leaked_fraction_mean_caught": 0.0679,
+        "leaked_tokens_max_caught": 49,
+        "leaked_tokens_mean_caught": 3.12,
+        "stop_reasons": {
+          "flag": 92
+        },
+        "stopped_before_injection": {
+          "ci95": [
+            0.1069,
+            0.236
+          ],
+          "k": 20,
+          "n": 124,
+          "rate": 0.1613
+        },
+        "stopped_before_injection_by_flag": {
+          "ci95": [
+            0.1069,
+            0.236
+          ],
+          "k": 20,
+          "n": 124,
+          "rate": 0.1613
+        },
+        "stopped_by_failure_or_lag": {
+          "ci95": [
+            0.0,
+            0.03
+          ],
+          "k": 0,
+          "n": 124,
+          "rate": 0.0
+        },
+        "stopped_by_flag_outside_injection": {
+          "ci95": [
+            0.1069,
+            0.236
+          ],
+          "k": 20,
+          "n": 124,
+          "rate": 0.1613
+        }
+      }
+    },
+    {
+      "config": {
+        "B": 0,
+        "W": 64,
+        "injection_start": 136,
+        "k": 64,
+        "mode": "stall",
+        "offset_in_window": 8,
+        "rate_tok_s": 50.0
+      },
+      "injection": {
+        "any_leak": {
+          "ci95": [
+            0.2614,
+            0.4257
+          ],
+          "k": 42,
+          "n": 124,
+          "rate": 0.3387
+        },
+        "any_leak_among_caught": {
+          "ci95": [
+            0.0081,
+            0.101
+          ],
+          "k": 2,
+          "n": 68,
+          "rate": 0.0294
+        },
+        "caught": {
+          "ci95": [
+            0.4607,
+            0.6332
+          ],
+          "k": 68,
+          "n": 124,
+          "rate": 0.5484
+        },
+        "caught_excluding_stopped_before": {
+          "ci95": [
+            0.5356,
+            0.7148
+          ],
+          "k": 68,
+          "n": 108,
+          "rate": 0.6296
+        },
+        "caught_zero_leak": {
+          "ci95": [
+            0.4448,
+            0.6178
+          ],
+          "k": 66,
+          "n": 124,
+          "rate": 0.5323
+        },
+        "caught_zero_leak_excluding_stopped_before": {
+          "ci95": [
+            0.5169,
+            0.6977
+          ],
+          "k": 66,
+          "n": 108,
+          "rate": 0.6111
+        },
+        "delay_tokens_caught": {
+          "max": 124,
+          "n": 68,
+          "p50": 60,
+          "p90": 62
+        },
+        "injection_never_shown": {
+          "ci95": [
+            0.5743,
+            0.7386
+          ],
+          "k": 82,
+          "n": 124,
+          "rate": 0.6613
+        },
+        "leaked_fraction_mean_caught": 0.0217,
+        "leaked_tokens_max_caught": 56,
+        "leaked_tokens_mean_caught": 1.65,
+        "stop_reasons": {
+          "flag": 84
+        },
+        "stopped_before_injection": {
+          "ci95": [
+            0.081,
+            0.1994
+          ],
+          "k": 16,
+          "n": 124,
+          "rate": 0.129
+        },
+        "stopped_before_injection_by_flag": {
+          "ci95": [
+            0.081,
+            0.1994
+          ],
+          "k": 16,
+          "n": 124,
+          "rate": 0.129
+        },
+        "stopped_by_failure_or_lag": {
+          "ci95": [
+            0.0,
+            0.03
+          ],
+          "k": 0,
+          "n": 124,
+          "rate": 0.0
+        },
+        "stopped_by_flag_outside_injection": {
+          "ci95": [
+            0.081,
+            0.1994
+          ],
+          "k": 16,
+          "n": 124,
+          "rate": 0.129
+        }
+      }
+    },
+    {
+      "config": {
+        "B": 8,
+        "W": 64,
+        "injection_start": 136,
+        "k": 64,
+        "mode": "stall",
+        "offset_in_window": 8,
+        "rate_tok_s": 50.0
+      },
+      "injection": {
+        "any_leak": {
+          "ci95": [
+            0.2614,
+            0.4257
+          ],
+          "k": 42,
+          "n": 124,
+          "rate": 0.3387
+        },
+        "any_leak_among_caught": {
+          "ci95": [
+            0.0081,
+            0.101
+          ],
+          "k": 2,
+          "n": 68,
+          "rate": 0.0294
+        },
+        "caught": {
+          "ci95": [
+            0.4607,
+            0.6332
+          ],
+          "k": 68,
+          "n": 124,
+          "rate": 0.5484
+        },
+        "caught_excluding_stopped_before": {
+          "ci95": [
+            0.5356,
+            0.7148
+          ],
+          "k": 68,
+          "n": 108,
+          "rate": 0.6296
+        },
+        "caught_zero_leak": {
+          "ci95": [
+            0.4448,
+            0.6178
+          ],
+          "k": 66,
+          "n": 124,
+          "rate": 0.5323
+        },
+        "caught_zero_leak_excluding_stopped_before": {
+          "ci95": [
+            0.5169,
+            0.6977
+          ],
+          "k": 66,
+          "n": 108,
+          "rate": 0.6111
+        },
+        "delay_tokens_caught": {
+          "max": 124,
+          "n": 68,
+          "p50": 60,
+          "p90": 62
+        },
+        "injection_never_shown": {
+          "ci95": [
+            0.5743,
+            0.7386
+          ],
+          "k": 82,
+          "n": 124,
+          "rate": 0.6613
+        },
+        "leaked_fraction_mean_caught": 0.0186,
+        "leaked_tokens_max_caught": 48,
+        "leaked_tokens_mean_caught": 1.41,
+        "stop_reasons": {
+          "flag": 84
+        },
+        "stopped_before_injection": {
+          "ci95": [
+            0.081,
+            0.1994
+          ],
+          "k": 16,
+          "n": 124,
+          "rate": 0.129
+        },
+        "stopped_before_injection_by_flag": {
+          "ci95": [
+            0.081,
+            0.1994
+          ],
+          "k": 16,
+          "n": 124,
+          "rate": 0.129
+        },
+        "stopped_by_failure_or_lag": {
+          "ci95": [
+            0.0,
+            0.03
+          ],
+          "k": 0,
+          "n": 124,
+          "rate": 0.0
+        },
+        "stopped_by_flag_outside_injection": {
+          "ci95": [
+            0.081,
+            0.1994
+          ],
+          "k": 16,
+          "n": 124,
+          "rate": 0.129
+        }
+      }
+    },
+    {
+      "config": {
+        "B": 16,
+        "W": 64,
+        "injection_start": 136,
+        "k": 64,
+        "mode": "stall",
+        "offset_in_window": 8,
+        "rate_tok_s": 50.0
+      },
+      "injection": {
+        "any_leak": {
+          "ci95": [
+            0.2614,
+            0.4257
+          ],
+          "k": 42,
+          "n": 124,
+          "rate": 0.3387
+        },
+        "any_leak_among_caught": {
+          "ci95": [
+            0.0081,
+            0.101
+          ],
+          "k": 2,
+          "n": 68,
+          "rate": 0.0294
+        },
+        "caught": {
+          "ci95": [
+            0.4607,
+            0.6332
+          ],
+          "k": 68,
+          "n": 124,
+          "rate": 0.5484
+        },
+        "caught_excluding_stopped_before": {
+          "ci95": [
+            0.5356,
+            0.7148
+          ],
+          "k": 68,
+          "n": 108,
+          "rate": 0.6296
+        },
+        "caught_zero_leak": {
+          "ci95": [
+            0.4448,
+            0.6178
+          ],
+          "k": 66,
+          "n": 124,
+          "rate": 0.5323
+        },
+        "caught_zero_leak_excluding_stopped_before": {
+          "ci95": [
+            0.5169,
+            0.6977
+          ],
+          "k": 66,
+          "n": 108,
+          "rate": 0.6111
+        },
+        "delay_tokens_caught": {
+          "max": 124,
+          "n": 68,
+          "p50": 60,
+          "p90": 62
+        },
+        "injection_never_shown": {
+          "ci95": [
+            0.5743,
+            0.7386
+          ],
+          "k": 82,
+          "n": 124,
+          "rate": 0.6613
+        },
+        "leaked_fraction_mean_caught": 0.0155,
+        "leaked_tokens_max_caught": 40,
+        "leaked_tokens_mean_caught": 1.18,
+        "stop_reasons": {
+          "flag": 84
+        },
+        "stopped_before_injection": {
+          "ci95": [
+            0.081,
+            0.1994
+          ],
+          "k": 16,
+          "n": 124,
+          "rate": 0.129
+        },
+        "stopped_before_injection_by_flag": {
+          "ci95": [
+            0.081,
+            0.1994
+          ],
+          "k": 16,
+          "n": 124,
+          "rate": 0.129
+        },
+        "stopped_by_failure_or_lag": {
+          "ci95": [
+            0.0,
+            0.03
+          ],
+          "k": 0,
+          "n": 124,
+          "rate": 0.0
+        },
+        "stopped_by_flag_outside_injection": {
+          "ci95": [
+            0.081,
+            0.1994
+          ],
+          "k": 16,
+          "n": 124,
+          "rate": 0.129
+        }
+      }
+    },
+    {
+      "config": {
+        "B": 32,
+        "W": 64,
+        "injection_start": 136,
+        "k": 64,
+        "mode": "stall",
+        "offset_in_window": 8,
+        "rate_tok_s": 50.0
+      },
+      "injection": {
+        "any_leak": {
+          "ci95": [
+            0.2614,
+            0.4257
+          ],
+          "k": 42,
+          "n": 124,
+          "rate": 0.3387
+        },
+        "any_leak_among_caught": {
+          "ci95": [
+            0.0081,
+            0.101
+          ],
+          "k": 2,
+          "n": 68,
+          "rate": 0.0294
+        },
+        "caught": {
+          "ci95": [
+            0.4607,
+            0.6332
+          ],
+          "k": 68,
+          "n": 124,
+          "rate": 0.5484
+        },
+        "caught_excluding_stopped_before": {
+          "ci95": [
+            0.5356,
+            0.7148
+          ],
+          "k": 68,
+          "n": 108,
+          "rate": 0.6296
+        },
+        "caught_zero_leak": {
+          "ci95": [
+            0.4448,
+            0.6178
+          ],
+          "k": 66,
+          "n": 124,
+          "rate": 0.5323
+        },
+        "caught_zero_leak_excluding_stopped_before": {
+          "ci95": [
+            0.5169,
+            0.6977
+          ],
+          "k": 66,
+          "n": 108,
+          "rate": 0.6111
+        },
+        "delay_tokens_caught": {
+          "max": 124,
+          "n": 68,
+          "p50": 60,
+          "p90": 62
+        },
+        "injection_never_shown": {
+          "ci95": [
+            0.5743,
+            0.7386
+          ],
+          "k": 82,
+          "n": 124,
+          "rate": 0.6613
+        },
+        "leaked_fraction_mean_caught": 0.0093,
+        "leaked_tokens_max_caught": 24,
+        "leaked_tokens_mean_caught": 0.71,
+        "stop_reasons": {
+          "flag": 84
+        },
+        "stopped_before_injection": {
+          "ci95": [
+            0.081,
+            0.1994
+          ],
+          "k": 16,
+          "n": 124,
+          "rate": 0.129
+        },
+        "stopped_before_injection_by_flag": {
+          "ci95": [
+            0.081,
+            0.1994
+          ],
+          "k": 16,
+          "n": 124,
+          "rate": 0.129
+        },
+        "stopped_by_failure_or_lag": {
+          "ci95": [
+            0.0,
+            0.03
+          ],
+          "k": 0,
+          "n": 124,
+          "rate": 0.0
+        },
+        "stopped_by_flag_outside_injection": {
+          "ci95": [
+            0.081,
+            0.1994
+          ],
+          "k": 16,
+          "n": 124,
+          "rate": 0.129
+        }
+      }
+    }
+  ],
+  "generated_at": "2026-11-02T00:13:11Z",
+  "host": {
+    "cpu": "Intel(R) Xeon(R) Processor @ 2.10GHz",
+    "logical_cores": 2,
+    "onnxruntime": "1.29.0",
+    "platform": "Linux-6.18.44-fc-v185-x86_64-with-glibc2.39",
+    "python": "3.13.18",
+    "tokenizers": "0.23.3"
+  },
+  "injection_starts": [
+    128,
+    120,
+    136
+  ],
+  "n_injection_streams": 124,
+  "paired": [
+    {
+      "B": 0,
+      "W": "full",
+      "caught": {
+        "aligned_only": 1,
+        "both": 50,
+        "shifted_only": 3
+      },
+      "caught_zero_leak": {
+        "aligned_only": 22,
+        "both": 7,
+        "shifted_only": 1
+      },
+      "k": 16,
+      "shifted_start": 120
+    },
+    {
+      "B": 0,
+      "W": "full",
+      "caught": {
+        "aligned_only": 2,
+        "both": 49,
+        "shifted_only": 0
+      },
+      "caught_zero_leak": {
+        "aligned_only": 22,
+        "both": 7,
+        "shifted_only": 1
+      },
+      "k": 16,
+      "shifted_start": 136
+    },
+    {
+      "B": 8,
+      "W": "full",
+      "caught": {
+        "aligned_only": 1,
+        "both": 50,
+        "shifted_only": 3
+      },
+      "caught_zero_leak": {
+        "aligned_only": 1,
+        "both": 28,
+        "shifted_only": 17
+      },
+      "k": 16,
+      "shifted_start": 120
+    },
+    {
+      "B": 8,
+      "W": "full",
+      "caught": {
+        "aligned_only": 2,
+        "both": 49,
+        "shifted_only": 0
+      },
+      "caught_zero_leak": {
+        "aligned_only": 2,
+        "both": 27,
+        "shifted_only": 12
+      },
+      "k": 16,
+      "shifted_start": 136
+    },
+    {
+      "B": 16,
+      "W": "full",
+      "caught": {
+        "aligned_only": 1,
+        "both": 50,
+        "shifted_only": 3
+      },
+      "caught_zero_leak": {
+        "aligned_only": 3,
+        "both": 43,
+        "shifted_only": 2
+      },
+      "k": 16,
+      "shifted_start": 120
+    },
+    {
+      "B": 16,
+      "W": "full",
+      "caught": {
+        "aligned_only": 2,
+        "both": 49,
+        "shifted_only": 0
+      },
+      "caught_zero_leak": {
+        "aligned_only": 7,
+        "both": 39,
+        "shifted_only": 0
+      },
+      "k": 16,
+      "shifted_start": 136
+    },
+    {
+      "B": 32,
+      "W": "full",
+      "caught": {
+        "aligned_only": 1,
+        "both": 50,
+        "shifted_only": 3
+      },
+      "caught_zero_leak": {
+        "aligned_only": 1,
+        "both": 49,
+        "shifted_only": 3
+      },
+      "k": 16,
+      "shifted_start": 120
+    },
+    {
+      "B": 32,
+      "W": "full",
+      "caught": {
+        "aligned_only": 2,
+        "both": 49,
+        "shifted_only": 0
+      },
+      "caught_zero_leak": {
+        "aligned_only": 3,
+        "both": 47,
+        "shifted_only": 0
+      },
+      "k": 16,
+      "shifted_start": 136
+    },
+    {
+      "B": 0,
+      "W": "full",
+      "caught": {
+        "aligned_only": 2,
+        "both": 46,
+        "shifted_only": 4
+      },
+      "caught_zero_leak": {
+        "aligned_only": 40,
+        "both": 8,
+        "shifted_only": 2
+      },
+      "k": 64,
+      "shifted_start": 120
+    },
+    {
+      "B": 0,
+      "W": "full",
+      "caught": {
+        "aligned_only": 2,
+        "both": 46,
+        "shifted_only": 2
+      },
+      "caught_zero_leak": {
+        "aligned_only": 2,
+        "both": 46,
+        "shifted_only": 1
+      },
+      "k": 64,
+      "shifted_start": 136
+    },
+    {
+      "B": 8,
+      "W": "full",
+      "caught": {
+        "aligned_only": 2,
+        "both": 46,
+        "shifted_only": 4
+      },
+      "caught_zero_leak": {
+        "aligned_only": 2,
+        "both": 46,
+        "shifted_only": 4
+      },
+      "k": 64,
+      "shifted_start": 120
+    },
+    {
+      "B": 8,
+      "W": "full",
+      "caught": {
+        "aligned_only": 2,
+        "both": 46,
+        "shifted_only": 2
+      },
+      "caught_zero_leak": {
+        "aligned_only": 2,
+        "both": 46,
+        "shifted_only": 1
+      },
+      "k": 64,
+      "shifted_start": 136
+    },
+    {
+      "B": 16,
+      "W": "full",
+      "caught": {
+        "aligned_only": 2,
+        "both": 46,
+        "shifted_only": 4
+      },
+      "caught_zero_leak": {
+        "aligned_only": 2,
+        "both": 46,
+        "shifted_only": 4
+      },
+      "k": 64,
+      "shifted_start": 120
+    },
+    {
+      "B": 16,
+      "W": "full",
+      "caught": {
+        "aligned_only": 2,
+        "both": 46,
+        "shifted_only": 2
+      },
+      "caught_zero_leak": {
+        "aligned_only": 2,
+        "both": 46,
+        "shifted_only": 1
+      },
+      "k": 64,
+      "shifted_start": 136
+    },
+    {
+      "B": 32,
+      "W": "full",
+      "caught": {
+        "aligned_only": 2,
+        "both": 46,
+        "shifted_only": 4
+      },
+      "caught_zero_leak": {
+        "aligned_only": 2,
+        "both": 46,
+        "shifted_only": 4
+      },
+      "k": 64,
+      "shifted_start": 120
+    },
+    {
+      "B": 32,
+      "W": "full",
+      "caught": {
+        "aligned_only": 2,
+        "both": 46,
+        "shifted_only": 2
+      },
+      "caught_zero_leak": {
+        "aligned_only": 2,
+        "both": 46,
+        "shifted_only": 1
+      },
+      "k": 64,
+      "shifted_start": 136
+    },
+    {
+      "B": 0,
+      "W": 64,
+      "caught": {
+        "aligned_only": 2,
+        "both": 66,
+        "shifted_only": 7
+      },
+      "caught_zero_leak": {
+        "aligned_only": 27,
+        "both": 15,
+        "shifted_only": 4
+      },
+      "k": 16,
+      "shifted_start": 120
+    },
+    {
+      "B": 0,
+      "W": 64,
+      "caught": {
+        "aligned_only": 1,
+        "both": 67,
+        "shifted_only": 5
+      },
+      "caught_zero_leak": {
+        "aligned_only": 20,
+        "both": 22,
+        "shifted_only": 2
+      },
+      "k": 16,
+      "shifted_start": 136
+    },
+    {
+      "B": 8,
+      "W": 64,
+      "caught": {
+        "aligned_only": 2,
+        "both": 66,
+        "shifted_only": 7
+      },
+      "caught_zero_leak": {
+        "aligned_only": 1,
+        "both": 41,
+        "shifted_only": 19
+      },
+      "k": 16,
+      "shifted_start": 120
+    },
+    {
+      "B": 8,
+      "W": 64,
+      "caught": {
+        "aligned_only": 1,
+        "both": 67,
+        "shifted_only": 5
+      },
+      "caught_zero_leak": {
+        "aligned_only": 1,
+        "both": 41,
+        "shifted_only": 14
+      },
+      "k": 16,
+      "shifted_start": 136
+    },
+    {
+      "B": 16,
+      "W": 64,
+      "caught": {
+        "aligned_only": 2,
+        "both": 66,
+        "shifted_only": 7
+      },
+      "caught_zero_leak": {
+        "aligned_only": 4,
+        "both": 56,
+        "shifted_only": 4
+      },
+      "k": 16,
+      "shifted_start": 120
+    },
+    {
+      "B": 16,
+      "W": 64,
+      "caught": {
+        "aligned_only": 1,
+        "both": 67,
+        "shifted_only": 5
+      },
+      "caught_zero_leak": {
+        "aligned_only": 7,
+        "both": 53,
+        "shifted_only": 2
+      },
+      "k": 16,
+      "shifted_start": 136
+    },
+    {
+      "B": 32,
+      "W": 64,
+      "caught": {
+        "aligned_only": 2,
+        "both": 66,
+        "shifted_only": 7
+      },
+      "caught_zero_leak": {
+        "aligned_only": 4,
+        "both": 60,
+        "shifted_only": 3
+      },
+      "k": 16,
+      "shifted_start": 120
+    },
+    {
+      "B": 32,
+      "W": 64,
+      "caught": {
+        "aligned_only": 1,
+        "both": 67,
+        "shifted_only": 5
+      },
+      "caught_zero_leak": {
+        "aligned_only": 5,
+        "both": 59,
+        "shifted_only": 2
+      },
+      "k": 16,
+      "shifted_start": 136
+    },
+    {
+      "B": 0,
+      "W": 64,
+      "caught": {
+        "aligned_only": 12,
+        "both": 58,
+        "shifted_only": 7
+      },
+      "caught_zero_leak": {
+        "aligned_only": 51,
+        "both": 18,
+        "shifted_only": 3
+      },
+      "k": 64,
+      "shifted_start": 120
+    },
+    {
+      "B": 0,
+      "W": 64,
+      "caught": {
+        "aligned_only": 4,
+        "both": 66,
+        "shifted_only": 2
+      },
+      "caught_zero_leak": {
+        "aligned_only": 4,
+        "both": 65,
+        "shifted_only": 1
+      },
+      "k": 64,
+      "shifted_start": 136
+    },
+    {
+      "B": 8,
+      "W": 64,
+      "caught": {
+        "aligned_only": 12,
+        "both": 58,
+        "shifted_only": 7
+      },
+      "caught_zero_leak": {
+        "aligned_only": 12,
+        "both": 57,
+        "shifted_only": 6
+      },
+      "k": 64,
+      "shifted_start": 120
+    },
+    {
+      "B": 8,
+      "W": 64,
+      "caught": {
+        "aligned_only": 4,
+        "both": 66,
+        "shifted_only": 2
+      },
+      "caught_zero_leak": {
+        "aligned_only": 4,
+        "both": 65,
+        "shifted_only": 1
+      },
+      "k": 64,
+      "shifted_start": 136
+    },
+    {
+      "B": 16,
+      "W": 64,
+      "caught": {
+        "aligned_only": 12,
+        "both": 58,
+        "shifted_only": 7
+      },
+      "caught_zero_leak": {
+        "aligned_only": 12,
+        "both": 57,
+        "shifted_only": 6
+      },
+      "k": 64,
+      "shifted_start": 120
+    },
+    {
+      "B": 16,
+      "W": 64,
+      "caught": {
+        "aligned_only": 4,
+        "both": 66,
+        "shifted_only": 2
+      },
+      "caught_zero_leak": {
+        "aligned_only": 4,
+        "both": 65,
+        "shifted_only": 1
+      },
+      "k": 64,
+      "shifted_start": 136
+    },
+    {
+      "B": 32,
+      "W": 64,
+      "caught": {
+        "aligned_only": 12,
+        "both": 58,
+        "shifted_only": 7
+      },
+      "caught_zero_leak": {
+        "aligned_only": 12,
+        "both": 57,
+        "shifted_only": 6
+      },
+      "k": 64,
+      "shifted_start": 120
+    },
+    {
+      "B": 32,
+      "W": 64,
+      "caught": {
+        "aligned_only": 4,
+        "both": 66,
+        "shifted_only": 2
+      },
+      "caught_zero_leak": {
+        "aligned_only": 4,
+        "both": 65,
+        "shifted_only": 1
+      },
+      "k": 64,
+      "shifted_start": 136
+    }
+  ],
+  "uptime_after": "16:13:11 up  1:26,  0 user,  load average: 2.14, 1.94, 1.38",
+  "uptime_before": "16:06:27 up  1:20,  0 user,  load average: 0.98, 0.76, 0.82",
+  "wall_s": 403.7
+}

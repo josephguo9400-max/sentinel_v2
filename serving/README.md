@@ -616,6 +616,29 @@ for the same cores, even with one intra-op thread. The overhead is not in the mi
 its own. So a DeBERTa-class shadow should run on separate cores or a separate host (serving-hardening), or be
 sampled.
 
+## Streaming guard (`serving/streaming.py`, milestone streaming; not served)
+
+Output-side classification: `guard_stream(tokens, check, StreamGuardConfig(...))` wraps a model's async token
+stream, checks it every k tokens through the classifier service (`service_check(service)`), releases only checked
+text minus a hold-back of B tokens, and on a flag closes the source and withholds everything unreleased. A check
+that did not score (its own timeout, an exception, or an allow the bundle's failure policy produced) and the lag
+budget follow its failure mode: `FAIL_CLOSED` stops the stream, so no `FAIL_CLOSED` setting ever releases text no
+check scored; `FAIL_OPEN` releases the waiting text marked unchecked and a later check re-covers it (with a window,
+in bounded retries; a span whose retries all fail is given up and reported in `StreamStats.abandoned` and
+`Done.unscored_tokens`). With no
+deadline and no budget the visible stream stalls for slowness, but under `FAIL_OPEN` an exception still releases
+unchecked text. Windowed `FAIL_OPEN` with a deadline gives no timeliness guarantee: once the classifier runs near or
+over capacity (reviewer's measured onset: a ×4 latency slowdown at 100 tok/s with a 0.5 s deadline, ×8 at 50 tok/s
+with 1.0 s), a transient outage can leave most later text released unchecked until retries catch up, with
+detection delay growing with the stream. Nothing is given up and every span is eventually scored, but not before
+it is released. `FAIL_OPEN` is for availability-first deployments; `FAIL_CLOSED` is the recommended mode, and the
+config logs a warning for the windowed `FAIL_OPEN` + deadline combination. A flag from the bundle, including one its own `FAIL_CLOSED` produced, always stops the stream.
+It is a client of the policy engine, not part of it: no decision-path file changed, so the engine version (1.1.0)
+and the D23 bundle hash (`2ebc7d9ae676…`) are unchanged; for the same reason no endpoint serves it (its settings
+are not in any policy). Design, the threat-model difference from the input side, and the measured B x k x W sweep
+and backpressure results: `docs/design/streaming.md`; harness `serving/bench/streaming.py`, outputs
+`serving/bench_results/streaming/`.
+
 ## Configuration
 
 Each option is an environment variable `SENTINEL_<NAME>`; see `serving/config.py`. The options marked "injected"

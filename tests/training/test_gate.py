@@ -6,6 +6,7 @@ the owner decides when the final split is read (and the gate then refuses withou
 asserted below).
 """
 import json
+from datetime import datetime
 from pathlib import Path
 
 import pytest
@@ -163,17 +164,48 @@ def test_gate_refuses_the_frozen_test_without_an_explicit_approval(tmp_path):
     assert not (tmp_path / "r.json").exists()
 
 
-def test_no_committed_gate_report_used_the_frozen_test():
-    """This milestone evaluates the gate on fixtures and val only; the owner decides when the final split is read."""
+# Owner-approved frozen-test gate runs (owner decision 2026-10-31). Any other committed report on the frozen test,
+# or one without a matching audit trail, fails this test.
+APPROVED_FROZEN_RUNS = {
+    "reports/policy-runtime/gate_frozen_test_d23_engine110_2ebc7d9a.json": (
+        "2ebc7d9ae676e800c12c90075db5ba509fa7aa5263572dec0298519415500240", "josephguo9400-max"),
+}
+
+
+def test_frozen_test_gate_reports_are_owner_approved():
+    """Fixtures and val are free to use; a frozen-test gate report must be on the approved list, name the approver,
+    be bound to the approved bundle, and have a started + completed pair in the audit log."""
+    frozen_reports = set()
     for path in sorted((ROOT / "reports").rglob("gate_*.json")):
         rep = json.loads(path.read_text())
-        assert rep["run"]["split"] != "frozen_test", f"{path} is a gate run on the frozen test"
-        assert rep["run"]["frozen_test_approved_by"] is None
+        rel = str(path.relative_to(ROOT))
+        if rep["run"]["split"] != "frozen_test":
+            assert rep["run"]["frozen_test_approved_by"] is None, rel
+            continue
+        assert rel in APPROVED_FROZEN_RUNS, f"{rel} is an unapproved gate run on the frozen test"
+        bundle, approver = APPROVED_FROZEN_RUNS[rel]
+        assert rep["run"]["frozen_test_approved_by"] == approver, rel
+        assert rep["bundle"]["bundle_sha256"] == bundle, rel
+        assert rep["run"]["complete"] is True, rel
+        assert rep["promotes"] is False, rel
+        frozen_reports.add(rel)
+    assert frozen_reports == set(APPROVED_FROZEN_RUNS), "an approved frozen-test report is missing"
     log = ROOT / "artifacts" / "audit_log.jsonl"
-    if log.is_file():
-        for line in log.read_text().splitlines():
-            if line.strip():
-                assert json.loads(line)["action"] != "gate_on_frozen_test"
+    entries = [json.loads(line) for line in log.read_text().splitlines() if line.strip()] if log.is_file() else []
+    frozen = [e for e in entries if e["action"] == "gate_on_frozen_test"]
+    assert [e["status"] for e in frozen] == ["started", "completed"] * len(APPROVED_FROZEN_RUNS), frozen
+    # each approved report has exactly one started and one completed entry that name it, by its approver, and the
+    # completed entry is bound to the approved bundle (review streaming-r1 m6)
+    for rel, (bundle, approver) in APPROVED_FROZEN_RUNS.items():
+        mine = [e for e in frozen if e.get("gate_report_path") == rel]
+        assert [e["status"] for e in mine] == ["started", "completed"], (rel, frozen)
+        assert all(e.get("actor") == approver for e in mine), (rel, mine)
+        assert mine[1].get("bundle_sha256") == bundle, (rel, mine[1])
+        assert mine[1].get("run_complete") is True, (rel, mine[1])
+        # the full run, started before it completed (review streaming-r2 n3-r2); ISO-8601 UTC, compared as times
+        assert mine[0].get("limit", "missing") is None, (rel, mine[0])
+        started, completed = (datetime.fromisoformat(e["at"].replace("Z", "+00:00")) for e in mine)
+        assert started < completed, (rel, mine)
 
 
 # Every non-test Python file that mentions the frozen test. All but training/gate.py predate the gate and are
