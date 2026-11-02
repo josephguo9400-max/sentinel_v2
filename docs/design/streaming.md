@@ -395,8 +395,15 @@ Use `FAIL_CLOSED` (the only mode that never releases unscored text, §2): stall,
 a safety valve. B = 0 is not an option: with the injection inside a check window it leaves 8 to 24 of 124 zero-leak
 catches (§5.2). In the measured offsets, B = 8 absorbs an 8-token misalignment. With W = 64 / k = 16, B = 16 gives
 55 to 60 zero-leak catches and B = 32 gives 61 to 64, over the three injection starts. Real injections start
-anywhere in a window. By the mechanism, an offset of o tokens needs B >= o, and at k = 16 the offset can be up to
-15, so B = 16 is the smallest B that covers any alignment. It was measured only at offset 8. The numbers say the window and the
+anywhere in a window. Let o be the injection's offset into a check window (§5.2): the first check that sees any of
+the injection ends k - o tokens into it. If that check passes and the next one flags, those k - o tokens are what
+B must still hold back, so a zero leak needs B >= k - o. That matches the committed rows: at k = 16, o = 8, B = 8
+(= k - o) already gives at least the aligned B = 8 values (full prefix 45 and 39 vs 29; W = 64 60 and 55 vs 42),
+and at k = 64, o = 56 (start 120), B = 8 (= k - o) gives 50/50 leak-free catches at full prefix. The worst case is
+o = 1, so B = k - 1 = 15 at k = 16, and B = 16 covers any alignment there. This bound covers the alignment only,
+not the detector's own delay: when the detector needs more than one check after the first one that sees the
+injection, more injection text passes, and even aligned injections leak at B = 16 (W = 64, k = 16: 60 zero-leak of
+68 catches). B >= k - o was measured only at o = 8 and o = 56. The numbers say the window and the
 threshold matter more than k or B. B buys zero leak at about 0.33 s per 16 tokens at 50 tok/s, while the
 false-stop rate is what users would notice: 17 to 34 of 124 benign streams, plus 16 to 23 of 124 injection streams
 stopped on their benign prefix.
