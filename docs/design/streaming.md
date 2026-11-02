@@ -65,10 +65,12 @@ Every detection number below therefore measures the **streaming mechanics** with
 - **A check that did not score is handled by the guard's failure mode; a flag from the bundle is never
   overridden.** "Did not score" means the check raised, passed the guard's deadline (`check_timeout_s`), or came
   back allow with `failed=True` (the classifier's own failure policy allowed text it did not score; with D23 this
-  cannot happen, its decide member is `FAIL_CLOSED`, and `service_check` also sets `failed` when a coverage rule
-  decided). The lag budget (`max_unchecked_tokens`: generated tokens waiting for a check) is the other trigger. A
-  check result of `flag` stops the stream even when the classifier's failure policy produced it. Treating a failed
-  allow as "not scored" is stricter than the bundle, never more permissive.
+  cannot happen, its decide member is `FAIL_CLOSED`; `service_check` also sets `failed` when a coverage rule decided
+  content no step scored, i.e. `coverage_policy_applied` is `flag`, `allow` or `quarantine`; a `deep_scan` result
+  is a scored decision and is not a failure, so its flag stops the stream with reason `flag`). The lag budget
+  (`max_unchecked_tokens`: generated tokens waiting for a check) is the other trigger. A check result of `flag`
+  stops the stream even when the classifier's failure policy produced it. Treating a failed allow as "not scored"
+  is stricter than the bundle, never more permissive.
 
 | Guard setting | When a check is slow | When a check raises or comes back failed-allow |
 | --- | --- | --- |

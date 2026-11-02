@@ -48,7 +48,7 @@ from pathlib import Path
 
 from serving.bench.common import ROOT, host_info, now, percentile, require_lock, uptime, write_result
 from serving.bench.vclock import run_virtual
-from serving.streaming import CheckResult, Stop, StreamGuardConfig, StreamStats, collect
+from serving.streaming import CheckResult, Stop, StreamGuardConfig, StreamStats, collect, outcome_failed
 
 OUT_DIR = ROOT / "serving" / "bench_results" / "streaming"
 CACHE = OUT_DIR / "check_cache.jsonl"
@@ -154,7 +154,7 @@ class CachedScorer:
         out, ms = asyncio.run_coroutine_threadsafe(one(), self._loop).result()
         active = [r for r in out.results if r.role == "active" and r.stage != "stage1"]
         score = max((r.score for r in active if r.score is not None), default=None)
-        row = {"sha": k, "n_chars": len(text), "decision": out.decision, "failed": out.policy_applied is not None,
+        row = {"sha": k, "n_chars": len(text), "decision": out.decision, "failed": outcome_failed(out),
                "coverage": out.coverage_policy_applied, "score": None if score is None else round(score, 6),
                "latency_ms": round(ms, 2), "bundle": out.bundle_sha256[:12]}
         self.rows[k] = row

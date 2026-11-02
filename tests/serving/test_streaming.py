@@ -475,3 +475,40 @@ def test_service_check_adapter_reads_decision_score_and_failure():
     cov.coverage_policy_applied = "allow"
     res = asyncio.run(service_check(Svc(cov))("x"))
     assert res.failed and res.decision == "allow"
+    cov_flag = outcome("flag", score=0.2)
+    cov_flag.coverage_policy_applied = "flag"
+    res = asyncio.run(service_check(Svc(cov_flag))("x"))
+    assert res.failed and res.decision == "flag"
+    # review streaming-r2 m1-r2: a deep scan that scored every remaining chunk (allow), or found a positive (flag),
+    # is a scored decision, not a failure
+    ds_allow = outcome("allow", score=0.05)
+    ds_allow.coverage_policy_applied = "deep_scan"
+    ds_flag = outcome("flag", score=0.99)
+    ds_flag.coverage_policy_applied = "deep_scan"
+    for o in (ds_allow, ds_flag):
+        o.decided_by = "deberta-pi-v2+coverage_policy:deep_scan"
+    a = asyncio.run(service_check(Svc(ds_allow))("x"))
+    f = asyncio.run(service_check(Svc(ds_flag))("x"))
+    assert a == CheckResult("allow", failed=False, reason="deberta-pi-v2+coverage_policy:deep_scan", score=0.05)
+    assert f == CheckResult("flag", failed=False, reason="deberta-pi-v2+coverage_policy:deep_scan", score=0.99)
+
+
+@pytest.mark.parametrize("coverage,decision,want_failed,want_stop", [
+    ("deep_scan", "allow", False, None), ("deep_scan", "flag", False, "flag"),
+    ("flag", "flag", True, "classifier_failure"), ("allow", "allow", True, "classifier_failure")])
+def test_service_check_stop_reason_through_the_guard(coverage, decision, want_failed, want_stop):
+    """End to end through guard_stream (FAIL_CLOSED): a deep-scan allow releases the text, a deep-scan flag stops
+    with reason flag (a catch), and a coverage rule that decided unscored content stops classifier_failure."""
+    out = SimpleNamespace(decision=decision, policy_applied=None, coverage_policy_applied=coverage,
+                          decided_by="d", results=[SimpleNamespace(role="active", stage="stage2", score=0.5)])
+
+    class Svc:
+        async def classify(self, text):
+            await asyncio.sleep(0.001)
+            return out
+
+    events, st, _, _ = run(make_tokens(40), StreamGuardConfig(4, 8), service_check(Svc()))
+    if want_stop is None:
+        assert isinstance(events[-1], Done) and st.released == 40 and st.released_unchecked == 0
+    else:
+        assert isinstance(events[-1], Stop) and events[-1].reason == want_stop and st.released == 0

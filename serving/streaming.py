@@ -329,17 +329,28 @@ async def collect(tokens: AsyncIterable[str], check: Check, config: StreamGuardC
     return events, st
 
 
+def outcome_failed(out: Any) -> bool:
+    """True iff a classifier outcome was decided by a rule rather than by a score.
+
+    That is the decide member's failure policy (`policy_applied`), or a coverage rule that decided content no step
+    scored (`coverage_policy_applied` flag, allow or quarantine). `deep_scan` is not a failure: the service sets it
+    only when the deep scan scored every remaining chunk (allow) or a score crossed the threshold (flag); a deep scan
+    that fell back carries the fallback value instead (serving/service.py). Review streaming-r2 m1-r2.
+    """
+    return out.policy_applied is not None or out.coverage_policy_applied not in (None, "deep_scan")
+
+
 def service_check(service: Any) -> Check:
     """A Check backed by a started ClassifierService (the served bundle): one /classify-equivalent call per check.
 
-    `failed` is set when the decide member did not score and its failure policy decided (`policy_applied`), or
-    when a coverage rule decided content no step scored, so the guard can tell a model flag from a failure flag.
+    `failed` is set exactly when the decision was made without scoring: see `outcome_failed`. So the guard can tell
+    a model flag from a failure flag.
     """
     async def _check(text: str) -> CheckResult:
         out = await service.classify(text)
         active = [r for r in out.results if r.role == "active" and r.stage != "stage1"]
         score = max((r.score for r in active if r.score is not None), default=None)
-        failed = out.policy_applied is not None or out.coverage_policy_applied is not None
+        failed = outcome_failed(out)
         reason = out.decided_by if failed or out.coverage_policy_applied else None
         return CheckResult(decision=out.decision, failed=failed, reason=reason, score=score)
     return _check
