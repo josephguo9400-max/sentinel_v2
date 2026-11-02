@@ -6,6 +6,7 @@ the owner decides when the final split is read (and the gate then refuses withou
 asserted below).
 """
 import json
+from datetime import datetime
 from pathlib import Path
 
 import pytest
@@ -201,6 +202,10 @@ def test_frozen_test_gate_reports_are_owner_approved():
         assert all(e.get("actor") == approver for e in mine), (rel, mine)
         assert mine[1].get("bundle_sha256") == bundle, (rel, mine[1])
         assert mine[1].get("run_complete") is True, (rel, mine[1])
+        # the full run, started before it completed (review streaming-r2 n3-r2); ISO-8601 UTC, compared as times
+        assert mine[0].get("limit", "missing") is None, (rel, mine[0])
+        started, completed = (datetime.fromisoformat(e["at"].replace("Z", "+00:00")) for e in mine)
+        assert started < completed, (rel, mine)
 
 
 # Every non-test Python file that mentions the frozen test. All but training/gate.py predate the gate and are

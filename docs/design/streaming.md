@@ -178,8 +178,11 @@ re-tokenizes it.
 **Classifier and clock.** Every check is one `ClassifierService.classify` on the served D23 bundle (DeBERTa fp32
 decides, Stage 1 observe-only). The guard and a fixed-rate token source run on a virtual-time event loop
 (`serving/bench/vclock.py`); each check is charged the wall latency the service measured for that exact text on
-the idle 2-core host, one stream at a time (p50 170 ms, p95 314 ms over the sweep's 9,732 checks; 81 ms p50 below
-300 characters, 332 ms p50 at 1,200 characters or more). Each latency is a **single measurement per distinct
+the idle 2-core host, one stream at a time (p50 170 ms, p95 314 ms; 81 ms p50 below 300 characters, 332 ms p50 at
+1,200 characters or more). These latency statistics (`check_latency_ms_all_cached`, `check_latency_ms_by_chars`)
+are computed over the whole check cache, not over the sweep's own checks: n = 9,732 rows when `streaming_sweep.json`
+was committed. The later `offset` run added 1,975 rows, so a `run --cache-only` today reports n = 11,707, p50
+171.8 ms, p95 318.5 ms; every result block re-derives unchanged. Each latency is a **single measurement per distinct
 text**, taken when the text was first scored; the second sweep scoring run (74 rows) ran at a load average of 1.4
 to 1.8 (`scoring_runs.jsonl`). `slowdown` multiplies it to stand in for a busy gateway.
 
@@ -207,7 +210,8 @@ streams reaching inj.* leaves them out of the denominator. With W = full, every 
 start contains the injection, so any later flag counts as caught, including one the benign context caused (see
 §5.3 on `val_benign`). *False stop*: a benign stream
 stopped. *First visible, extra*: p50 time to the first released token minus 1/rate (the unguarded stream's first
-token). *Busy*: p50 per stream of the fraction of time a check was in flight. Intervals: Wilson 95%.
+token). *Busy*: p50 per stream of the fraction of time a check was in flight. Intervals: Wilson 95%, given in
+percent next to the count (51/124 [33, 50] means 41% with an interval of 33% to 50%).
 
 ### 5.1 B x k x W at 50 tok/s, stall mode (`streaming_sweep.json` `sweep`)
 
@@ -263,23 +267,23 @@ All 60 cells are in the JSON. What the sweep shows:
 starts are 8 tokens into a k = 16 check window; for k = 64 they are 56 (start 120) and 8 (start 136) tokens in. Start
 120 has 8 benign tokens fewer before the injection and 136 has 8 more, so the pair brackets the effect of the
 prefix length; it is not a pure alignment effect. The 128 rows reproduce the sweep (`aligned_rows_match_sweep`:
-16/16 equal). Only these offsets were measured, not a random or uniform offset. Zero-leak catches of 124
-(Wilson 95%), mean / max leaked injection tokens per catch, and catches:
+16/16 equal). Only these offsets were measured, not a random or uniform offset. Zero-leak catches (count of 124, with
+the Wilson 95% interval in percent of 124), mean / max leaked injection tokens per catch, and catches:
 
 | W | k | B | zero-leak, 128 (aligned) | zero-leak, 120 | zero-leak, 136 | leaked mean / max, 128 → 120 → 136 | caught 128 / 120 / 136 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| full | 16 | 0 | 29 [17, 32] | **8** [3, 12] | **8** [3, 12] | 8.71 / 44 → 9.36 / 40 → 10.51 / 40 | 51 / 53 / 49 |
-| full | 16 | 8 | 29 [17, 32] | 45 [28, 45] | 39 [24, 40] | 5.33 / 40 → 2.72 / 32 → 3.98 / 35 | 51 / 53 / 49 |
-| full | 16 | 16 | 46 [29, 46] | 45 [28, 45] | 39 [24, 40] | 1.88 / 32 → 1.51 / 24 → 2.51 / 35 | 51 / 53 / 49 |
-| full | 16 | 32 | 50 [32, 49] | 52 [34, 51] | 47 [30, 47] | 0.31 / 16 → 0.15 / 8 → 0.65 / 24 | 51 / 53 / 49 |
-| full | 64 | 0 | 48 [31, 48] | **10** [4, 14] | 47 [30, 47] | 0.0 / 0 → 6.4 / 8 → 1.17 / 56 | 48 / 50 / 48 |
-| full | 64 | 8 | 48 [31, 48] | 50 [32, 49] | 47 [30, 47] | 0.0 / 0 → 0.0 / 0 → 1.0 / 48 | 48 / 50 / 48 |
-| 64 | 16 | 0 | 42 [26, 43] | **19** [10, 23] | **24** [13, 27] | 8.85 / 48 → 11.12 / 72 → 11.94 / 72 | 68 / 73 / 72 |
-| 64 | 16 | 8 | 42 [26, 43] | 60 [40, 57] | 55 [36, 53] | 5.88 / 40 → 5.75 / 64 → 7.17 / 64 | 68 / 73 / 72 |
-| 64 | 16 | 16 | 60 [40, 57] | 60 [40, 57] | 55 [36, 53] | 2.82 / 32 → 4.56 / 56 → 5.72 / 56 | 68 / 73 / 72 |
-| 64 | 16 | 32 | 64 [43, 60] | 63 [42, 59] | 61 [41, 58] | 0.94 / 16 → 2.19 / 40 → 3.12 / 49 | 68 / 73 / 72 |
-| 64 | 64 | 0 | 69 [47, 64] | **21** [11, 25] | 66 [44, 62] | 0.91 / 64 → 7.38 / 72 → 1.65 / 56 | 70 / 65 / 68 |
-| 64 | 64 | 8 | 69 [47, 64] | 63 [42, 59] | 66 [44, 62] | 0.8 / 56 → 1.97 / 64 → 1.41 / 48 | 70 / 65 / 68 |
+| full | 16 | 0 | 29 [17%, 32%] | **8** [3%, 12%] | **8** [3%, 12%] | 8.71 / 44 → 9.36 / 40 → 10.51 / 40 | 51 / 53 / 49 |
+| full | 16 | 8 | 29 [17%, 32%] | 45 [28%, 45%] | 39 [24%, 40%] | 5.33 / 40 → 2.72 / 32 → 3.98 / 35 | 51 / 53 / 49 |
+| full | 16 | 16 | 46 [29%, 46%] | 45 [28%, 45%] | 39 [24%, 40%] | 1.88 / 32 → 1.51 / 24 → 2.51 / 35 | 51 / 53 / 49 |
+| full | 16 | 32 | 50 [32%, 49%] | 52 [34%, 51%] | 47 [30%, 47%] | 0.31 / 16 → 0.15 / 8 → 0.65 / 24 | 51 / 53 / 49 |
+| full | 64 | 0 | 48 [31%, 48%] | **10** [4%, 14%] | 47 [30%, 47%] | 0.0 / 0 → 6.4 / 8 → 1.17 / 56 | 48 / 50 / 48 |
+| full | 64 | 8 | 48 [31%, 48%] | 50 [32%, 49%] | 47 [30%, 47%] | 0.0 / 0 → 0.0 / 0 → 1.0 / 48 | 48 / 50 / 48 |
+| 64 | 16 | 0 | 42 [26%, 43%] | **19** [10%, 23%] | **24** [13%, 27%] | 8.85 / 48 → 11.12 / 72 → 11.94 / 72 | 68 / 73 / 72 |
+| 64 | 16 | 8 | 42 [26%, 43%] | 60 [40%, 57%] | 55 [36%, 53%] | 5.88 / 40 → 5.75 / 64 → 7.17 / 64 | 68 / 73 / 72 |
+| 64 | 16 | 16 | 60 [40%, 57%] | 60 [40%, 57%] | 55 [36%, 53%] | 2.82 / 32 → 4.56 / 56 → 5.72 / 56 | 68 / 73 / 72 |
+| 64 | 16 | 32 | 64 [43%, 60%] | 63 [42%, 59%] | 61 [41%, 58%] | 0.94 / 16 → 2.19 / 40 → 3.12 / 49 | 68 / 73 / 72 |
+| 64 | 64 | 0 | 69 [47%, 64%] | **21** [11%, 25%] | 66 [44%, 62%] | 0.91 / 64 → 7.38 / 72 → 1.65 / 56 | 70 / 65 / 68 |
+| 64 | 64 | 8 | 69 [47%, 64%] | 63 [42%, 59%] | 66 [44%, 62%] | 0.8 / 56 → 1.97 / 64 → 1.41 / 48 | 70 / 65 / 68 |
 
 All 48 cells (B = 16 and 32 at k = 64 too) and the per-stream paired counts are in the JSON. What it shows:
 
@@ -373,7 +377,10 @@ coalesce (54.2 checks per 1,000 tokens instead of 62).
   (paired). Only the ones in `streaming_paired.json` have a paired test; the others are point differences.
 - B, k and W are in detector tokens (DeBERTa pieces), not generator tokens (§2).
 - The 124 injection streams are 62 injections in two contexts, so they are not 124 independent draws; intervals
-  treat them as independent and are narrower than they should be.
+  treat them as independent and are narrower than they should be. The exact McNemar tests on all 124 streams
+  (`streaming_paired.json`: §5.1 k = 8 vs 64, and the full prefix vs W = 64 at 3 vs 20 discordant streams) make the
+  same independence assumption about the discordant pairs, so their p-values are optimistic too. The newsletter-only comparisons (§5.3, n = 62, one context per injection) are
+  not affected.
 
 ## 6. What is implemented
 
