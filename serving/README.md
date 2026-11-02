@@ -627,7 +627,12 @@ check scored; `FAIL_OPEN` releases the waiting text marked unchecked and a later
 in bounded retries; a span whose retries all fail is given up and reported in `StreamStats.abandoned` and
 `Done.unscored_tokens`). With no
 deadline and no budget the visible stream stalls for slowness, but under `FAIL_OPEN` an exception still releases
-unchecked text. A flag from the bundle, including one its own `FAIL_CLOSED` produced, always stops the stream.
+unchecked text. Windowed `FAIL_OPEN` with a deadline gives no timeliness guarantee: once the classifier runs near or
+over capacity (reviewer's measured onset: a ×4 latency slowdown at 100 tok/s with a 0.5 s deadline, ×8 at 50 tok/s
+with 1.0 s), a transient outage can leave most later text released unchecked until retries catch up, with
+detection delay growing with the stream. Nothing is given up and every span is eventually scored, but not before
+it is released. `FAIL_OPEN` is for availability-first deployments; `FAIL_CLOSED` is the recommended mode, and the
+config logs a warning for the windowed `FAIL_OPEN` + deadline combination. A flag from the bundle, including one its own `FAIL_CLOSED` produced, always stops the stream.
 It is a client of the policy engine, not part of it: no decision-path file changed, so the engine version (1.1.0)
 and the D23 bundle hash (`2ebc7d9ae676…`) are unchanged; for the same reason no endpoint serves it (its settings
 are not in any policy). Design, the threat-model difference from the input side, and the measured B x k x W sweep

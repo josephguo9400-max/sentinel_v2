@@ -52,10 +52,14 @@ Every detection number below therefore measures the **streaming mechanics** with
   (`test_windows_cover_every_token`). Text a check did not score (below; this happens only under `FAIL_OPEN`) is
   re-covered by the regular windows while it is still inside the last W tokens. Once it falls out of them it
   becomes *retry debt*: before the next regular check the guard retries it, oldest first, as one unscored run of
-  at most L = max(W, k) tokens, so no check is ever longer than a regular one. A failed retry lets one regular check
-  run before the next retry of the same span. **A span is given up when its retry has failed `retry_attempts`
-  times (default 2)**, after the regular windows covering it failed too; at the end of the stream retries run back
-  to back. A given-up span is recorded in `StreamStats.abandoned`, its tokens stay `checked=False` (they have been
+  at most L = max(W, k) tokens, so no retry is ever longer than L. Successful retries run back to back, with no
+  regular check between them; only a failed retry lets one regular check run before the next retry of the same span.
+  (The regular window that follows still extends back over every token that arrived meanwhile; see the limitation
+  below.) **A span is given up when the retry from its head has failed `retry_attempts` times (default 2)**, after
+  the regular windows covering it failed too; at the end of the stream retries run back to back. The count is per
+  head: the window start moves between attempts, so a later retry from the same head is longer, and a given-up span
+  can include tokens that were retried fewer times (they were also in failed regular windows; review streaming-r3
+  n1-r3). A given-up span is recorded in `StreamStats.abandoned`, its tokens stay `checked=False` (they have been
   or will be released marked unchecked, or are withheld by a later stop), `Done.unscored_tokens` counts every token
   no check scored, and checking goes on with the next span. Nothing else is ever given up, and nothing scored is
   given up. The number of checks stays bounded: at most ceil(n/k) + 1 regular checks and `retry_attempts` x
@@ -106,7 +110,27 @@ it and all `retry_attempts` retries of it failed (for example an input that alwa
 than about `retry_attempts` checks); that span is reported (`StreamStats.abandoned`, `Done.unscored_tokens`) and
 the guard keeps checking the text after it
 (`test_fail_open_window_gives_up_a_span_whose_retry_fails_and_keeps_guarding`,
-`test_permanent_outage_under_fail_open_terminates_and_reports_everything_unscored`). Under `FAIL_OPEN` a lag
+`test_permanent_outage_under_fail_open_terminates_and_reports_everything_unscored`).
+
+**Documented limitation: windowed `FAIL_OPEN` with a deadline gives no timeliness guarantee** (review
+streaming-r3 M1-r3). "Lost for good" above is about spans; it does not mean the visible stream is checked again
+after an outage. Once the classifier runs near or over its capacity, an outage can leave most of the later text
+released unchecked until retries catch up. The mechanism: after the outage the retries succeed and run back to
+back, new text arrives meanwhile, the next regular window extends back over all of it, takes longer than the
+deadline and times out, and its text becomes the next retry debt. The cycle can last for the rest of the stream,
+and the detection delay grows with the stream. The reviewer measured the onset (W = 64, k = B = 16, cache-like
+latency 50 ms + 1 ms/token times a slowdown, 1 to 3 s stall) at a ×4 slowdown at 100 tok/s with a 0.5 s deadline,
+and ×8 at 50 tok/s with a 1.0 s deadline; at the latencies §5 measures (idle host and ×2, 50 to 150 tok/s) the
+guard recovers. In the reviewer's trace (W = 64, k = B = 16, 0.5 s deadline, 100 tok/s, latency 0.2 s + 4 ms per
+token, 1 s stall at t = 1 s, injection at token 1,050) 944 of 1,088 released tokens went out unchecked and the
+injection was released before a retry flagged it; without the stall nothing goes out unchecked
+(`test_documented_limitation_fail_open_deadline_near_capacity_releases_later_text_unchecked`). What still holds:
+nothing is given up, every span is eventually scored (but not before it is released), `released_unchecked` counts
+all of it, and a flag still ends the stream with `Stop`. The scheduler is deliberately not redesigned again: three
+review rounds showed that full re-coverage and fresh text compete for a saturated classifier, and no variant tried
+recovers in every regime. So `FAIL_OPEN` is for availability-first deployments that accept after-the-fact
+detection; `FAIL_CLOSED` is the recommendation (§7). Constructing a `StreamGuardConfig` with `FAIL_OPEN`, a window
+and a deadline logs a warning (not an error). Under `FAIL_OPEN` a lag
 release also releases the held-back buffer, so a lag budget below B is rejected (it would make B meaningless;
 review n1).
 
@@ -293,12 +317,13 @@ All 48 cells (B = 16 and 32 at k = 64 too) and the per-stream paired counts are 
 - **"k = 64 with B = 0 leaks nothing" was an alignment artefact; it is withdrawn.** With the injection 56 tokens
   into a 64-token window (start 120), the check at 128 sees its first 8 tokens and usually passes them. Zero-leak
   catches fall from 48 to 10 at full prefix, and from 69 to 21 at W = 64. Leaks at start 120 are at most 8 tokens
-  because only 8 injection tokens precede the boundary. A larger offset would leak more, up to k - 1 tokens.
+  because only 8 injection tokens precede the boundary. In general the first check passes up to k - o injection
+  tokens for an injection o tokens into the window, so k at o = 0 (aligned) is the most.
 - **At these offsets, B = 8 absorbs the misalignment.** At offset 8, B = 8 brings zero-leak catches back to at least
   the aligned B = 8 value in every k = 16 row (full: 45 and 39 vs 29; W = 64: 60 and 55 vs 42). At k = 64, start
   120 (offset 56, 8 injection tokens before the boundary), B = 8 gives 50/50 leak-free catches at full prefix. That
   is a statement about these offsets only: B covers misalignment only up to B tokens, and an offset uniform in
-  [0, k) would need B close to k - 1 for the same effect. That was not measured.
+  [0, k) would need B = k (§7) for the same effect. That was not measured.
 - **Above that, B buys less than the aligned sweep says.** At start 136 (8 more benign tokens), B = 16 gives 39
   zero-leak catches at full prefix vs 46 aligned (paired: 7 vs 0) and 55 vs 60 at W = 64. B = 32 gives 47 vs 50 and
   61 vs 64. Start 120 is at or near the aligned values. So the remaining loss at 136 is detector delay with more
@@ -388,7 +413,7 @@ coalesce (54.2 checks per 1,000 tokens instead of 62).
 | --- | --- |
 | Streaming guard, `StreamGuardConfig`, `CheckResult`, events, `service_check` adapter | `serving/streaming.py` |
 | Virtual-time loop for tests and the harness | `serving/bench/vclock.py` |
-| Tests: invariant grid, flag/retract, B = 0 leak, failure flag never overridden, timeout, lag, FAIL_OPEN release, exceptions, k = 1, B longer than the stream, tail check, empty stream, window coverage, window split, bounded retries and given-up spans, transient and permanent outages, a 4,000-case seeded fuzz of the invariants, validation, real loop, early consumer close, adapter (including deep-scan results) | `tests/serving/test_streaming.py` |
+| Tests: invariant grid, flag/retract, B = 0 leak, failure flag never overridden, timeout, lag, FAIL_OPEN release, exceptions, k = 1, B longer than the stream, tail check, empty stream, window coverage, window split, bounded retries and given-up spans, transient and permanent outages, the documented near-capacity `FAIL_OPEN` limitation, a 4,000-case seeded fuzz of the invariants, validation, real loop, early consumer close, adapter (including deep-scan results) | `tests/serving/test_streaming.py` |
 | Harness bookkeeping tests | `tests/serving/test_streaming_bench.py` |
 | Harness and committed outputs | `serving/bench/streaming.py`, `serving/bench_results/streaming/` |
 
@@ -399,18 +424,21 @@ batching checks across streams, a per-check threshold.
 
 If a stream guard were served with this detector: W = 64, k = 16, B = 16 to 32, on a recalibrated threshold.
 Use `FAIL_CLOSED` (the only mode that never releases unscored text, §2): stall, or a generous lag budget kept only as
-a safety valve. B = 0 is not an option: with the injection inside a check window it leaves 8 to 24 of 124 zero-leak
+a safety valve. Do not use windowed `FAIL_OPEN` with a deadline where prevention matters: near classifier capacity an
+outage can leave the rest of the stream released unchecked and detected only afterwards (§2, documented limitation);
+it suits availability-first deployments only. B = 0 is not an option: with the injection inside a check window it leaves 8 to 24 of 124 zero-leak
 catches (§5.2). In the measured offsets, B = 8 absorbs an 8-token misalignment. With W = 64 / k = 16, B = 16 gives
 55 to 60 zero-leak catches and B = 32 gives 61 to 64, over the three injection starts. Real injections start
 anywhere in a window. Let o be the injection's offset into a check window (§5.2): the first check that sees any of
 the injection ends k - o tokens into it. If that check passes and the next one flags, those k - o tokens are what
 B must still hold back, so a zero leak needs B >= k - o. That matches the committed rows: at k = 16, o = 8, B = 8
 (= k - o) already gives at least the aligned B = 8 values (full prefix 45 and 39 vs 29; W = 64 60 and 55 vs 42),
-and at k = 64, o = 56 (start 120), B = 8 (= k - o) gives 50/50 leak-free catches at full prefix. The worst case is
-o = 1, so B = k - 1 = 15 at k = 16, and B = 16 covers any alignment there. This bound covers the alignment only,
+and at k = 64, o = 56 (start 120), B = 8 (= k - o) gives 50/50 leak-free catches at full prefix. With o in
+0..k - 1, the worst case is o = 0 (aligned: the first check that sees the injection ends k tokens into it), so the
+bound is B >= k = 16 at k = 16, and B = 16 covers any alignment there. This bound covers the alignment only,
 not the detector's own delay: when the detector needs more than one check after the first one that sees the
 injection, more injection text passes, and even aligned injections leak at B = 16 (W = 64, k = 16: 60 zero-leak of
-68 catches). B >= k - o was measured only at o = 8 and o = 56. The numbers say the window and the
+68 catches). B >= k - o was measured only at o = 0 (the aligned start 128), o = 8 and o = 56. The numbers say the window and the
 threshold matter more than k or B. B buys zero leak at about 0.33 s per 16 tokens at 50 tok/s, while the
 false-stop rate is what users would notice: 17 to 34 of 124 benign streams, plus 16 to 23 of 124 injection streams
 stopped on their benign prefix.

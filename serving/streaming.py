@@ -14,12 +14,24 @@ user may see:
   extended back over every token that arrived since the previous check (coalescing never skips text). A window never
   extends back over text a *failed* check left unscored (timeout, exception, failed-allow under FAIL_OPEN) beyond
   that: such text is re-covered while it is still inside the last W tokens, and once it falls out it is scored
-  *in order* by separate retry checks of at most L = max(W, k) tokens, scheduled before the next regular check (after
-  a failed retry, one regular check runs first). So no check is ever longer than a regular one (W, or the coalesced
-  new tokens), and a transient outage cannot grow the window until every check times out (review streaming-r2
-  M1-r2). A span whose retry fails `retry_attempts` times is given up: it is recorded in `StreamStats.abandoned`,
-  counted in `Done.unscored_tokens`, its tokens stay `checked=False`, and checking goes on with the next span.
+  *in order* by separate retry checks of at most L = max(W, k) tokens, scheduled before the next regular check.
+  Successful retries run back to back; only after a failed retry does one regular check run first. So no retry is
+  longer than L and failed text never makes a window re-cover it without bound (review streaming-r2 M1-r2). The
+  regular window itself still extends back over every token that arrived while retries ran.
+  A span whose retry fails `retry_attempts` times is given up: it is recorded in `StreamStats.abandoned`, counted in
+  `Done.unscored_tokens`, its tokens stay `checked=False`, and checking goes on with the next span. (The count is
+  per span head: a given-up span can include tokens retried fewer times, because the window start moves between
+  attempts and a later retry from the same head is longer; those tokens were also in failed regular windows.)
   Under FAIL_CLOSED no check fails without stopping, so retries never run and nothing is given up.
+- **Documented limitation: windowed FAIL_OPEN with a deadline gives no timeliness guarantee** (review
+  streaming-r3 M1-r3). Once the classifier runs near or over capacity (the reviewer measured the onset at a
+  ×4 latency slowdown at 100 tok/s with a 0.5 s deadline, and ×8 at 50 tok/s with 1.0 s), a transient outage can
+  leave most of the later text released unchecked: the back-to-back retries let new text pile up, the next regular
+  window is then too long to finish before the deadline, its timeout creates new retry debt, and the cycle can last
+  for the rest of the stream, with detection delay growing with the stream. Nothing is given up and every span is
+  eventually scored (a flag still stops the stream), but not before it is released. FAIL_OPEN is for
+  availability-first deployments; FAIL_CLOSED is the recommended mode
+  (`test_documented_limitation_fail_open_deadline_near_capacity_releases_later_text_unchecked`).
 - **Flag.** Any check that returns `flag` stops the stream: the source is closed, every unreleased token is
   retracted (never shown) and a `Stop` event is the last event. Text already released stays released; this guard
   cannot unsay it, which is what B is for.
@@ -49,8 +61,12 @@ questions); no endpoint serves it.
 from __future__ import annotations
 
 import asyncio
+import logging
 from dataclasses import dataclass, field
 from typing import Any, AsyncIterable, AsyncIterator, Awaitable, Callable, Literal
+
+log = logging.getLogger(__name__)
+_warned_fail_open_deadline: set[tuple[int, float]] = set()
 
 FailureMode = Literal["FAIL_OPEN", "FAIL_CLOSED"]
 StopReason = Literal["flag", "classifier_failure", "lag"]
@@ -87,6 +103,13 @@ class StreamGuardConfig:
             # a FAIL_OPEN lag release also releases the held-back buffer, so below B the budget, not B, would bound
             # what is held back (review streaming-r1 n1); FAIL_CLOSED stops instead, so any budget >= k is fine there
             raise ValueError("under FAIL_OPEN max_unchecked_tokens must be >= holdback_tokens")
+        if self.failure_mode == "FAIL_OPEN" and self.window_tokens is not None and self.check_timeout_s is not None:
+            key = (self.window_tokens, self.check_timeout_s)
+            if key not in _warned_fail_open_deadline:  # once per setting: the harness builds a config per stream
+                _warned_fail_open_deadline.add(key)
+                log.warning("streaming guard: FAIL_OPEN with window_tokens=%s and check_timeout_s=%s gives no "
+                            "timeliness guarantee; near classifier capacity an outage can leave most later text "
+                            "released unchecked (docs/design/streaming.md §2). FAIL_CLOSED is recommended.", *key)
 
     @property
     def stalls(self) -> bool:
@@ -143,7 +166,9 @@ class CheckRecord:
     span: tuple[int, int]
     t_start: float
     t_end: float | None = None
-    outcome: str | None = None  # allow | flag | failed_open | failed_closed | timeout | exception | abandoned
+    # allow | flag | failed_open | failed_closed | timeout | exception | cancelled (still in flight when the stream
+    # stopped; not to be confused with StreamStats.abandoned, the spans given up after failed retries)
+    outcome: str | None = None
     score: float | None = None
     retry: bool = False  # a retry of text a failed check left unscored (window_tokens set, FAIL_OPEN only)
 
@@ -157,7 +182,8 @@ class StreamStats:
     checked: list[bool] = field(default_factory=list)  # token is inside a check that returned allow (failed=False)
     released_unchecked: int = 0
     checks: list[CheckRecord] = field(default_factory=list)
-    abandoned: list[tuple[int, int]] = field(default_factory=list)  # spans given up after a failed retry
+    # spans given up after `retry_attempts` failed retries (not CheckRecord.outcome "cancelled")
+    abandoned: list[tuple[int, int]] = field(default_factory=list)
     stop: Stop | None = None
     end_t: float | None = None
 
@@ -241,9 +267,9 @@ async def guard_stream(tokens: AsyncIterable[str], check: Check, config: StreamG
     async def stop(reason: StopReason, span, detail) -> Stop:
         nonlocal inflight
         if inflight is not None and not inflight.done():
-            inflight.cancel()  # abandon: a real ONNX call cannot be cancelled, it finishes in the service
+            inflight.cancel()  # a real ONNX call cannot be cancelled, it finishes in the service
             if inflight_rec is not None and inflight_rec.outcome is None:
-                inflight_rec.outcome, inflight_rec.t_end = "abandoned", loop.time()
+                inflight_rec.outcome, inflight_rec.t_end = "cancelled", loop.time()
         await close_source()
         ev = Stop(reason, len(toks), released, len(toks) - released, span, detail, loop.time())
         st.stop, st.end_t = ev, ev.t

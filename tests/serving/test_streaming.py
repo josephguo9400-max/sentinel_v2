@@ -386,7 +386,10 @@ def test_transient_outage_does_not_disable_a_windowed_fail_open_guard(W, duratio
     k = B = 16, FAIL_OPEN, a 0.25 s deadline, and a classifier stall from t = 1 s. At 86d9004 the re-covering window
     grew by k per failed check until every check timed out: with W = 64 and a 2 s stall the stream ended Done with
     352 of 400 tokens unchecked and the injection released. The guard must recover after the stall, catch the
-    injection, keep every check within a regular window's length, and report what it gave up."""
+    injection, keep every check within a regular window's length, and report what it gave up. This holds at this
+    latency (a 64-token window takes 0.165 s of the 0.25 s deadline); near classifier capacity it does not, see
+    test_documented_limitation_fail_open_deadline_near_capacity_releases_later_text_unchecked (review streaming-r3
+    M1-r3)."""
     cfg = StreamGuardConfig(16, 16, W, "FAIL_OPEN", check_timeout_s=0.25)
     events, st, _, _ = run(make_tokens(400, inject_at=300), cfg, outage_classifier(1.0, duration))
     assert_well_formed(events, st)
@@ -415,6 +418,71 @@ def test_transient_outage_w64_two_seconds_catches_the_injection_after_recovery()
         ((48, 64), "timeout"), ((48, 80), "allow")]
     assert max(c.span[1] - c.span[0] for c in st.checks) == 64
     assert st.released_unchecked == 64 and all(st.checked[i] for i in range(st.released))
+
+
+def near_capacity_classifier(stall=None):
+    """The review streaming-r3 M1-r3 trace: latency 0.2 s + 4 ms per token (the cache's ~50 ms + 1 ms/token at
+    slowdown 4), so a 64-token window takes 0.456 s against a 0.5 s deadline; optionally a stall for every call
+    started in [stall[0], stall[0] + stall[1])."""
+    async def check(text):
+        now = asyncio.get_running_loop().time()
+        if stall is not None and stall[0] <= now < stall[0] + stall[1]:
+            await asyncio.sleep(10.0)
+        await asyncio.sleep(0.2 + 0.004 * text.count(" "))
+        return CheckResult("flag" if MARK in text else "allow")
+    return check
+
+
+@pytest.mark.parametrize("stall", [None, (1.0, 1.0)], ids=["no_stall", "stall_1s"])
+def test_documented_limitation_fail_open_deadline_near_capacity_releases_later_text_unchecked(stall, record_property):
+    """DOCUMENTED LIMITATION, not a guarantee (review streaming-r3 M1-r3; docs/design/streaming.md §2). Windowed
+    FAIL_OPEN with a deadline near classifier capacity: W = 64, k = B = 16, 0.5 s deadline, 100 tok/s, latency
+    0.2 + 0.004 * len, injection at tokens 1050-1054 of 1200. Without a stall every regular check passes and nothing
+    goes out unchecked. After a 1 s stall at t = 1 s the back-to-back retries let new text pile up, each following
+    regular window is too long for the deadline and times out, and the cycle lasts for the rest of the stream: most
+    later text is released unchecked (the reviewer measured 944 of 1088) and the injection is caught only by a retry,
+    after release.
+
+    Pinned here is what the docs promise: the stream ends Stop/flag, nothing is given up, the injection is eventually
+    scored and flagged, and every unchecked release is scored by then. The unchecked fraction and whether the
+    injection was released are recorded as observed properties, not asserted, so a scheduler that recovers better
+    does not fail this test."""
+    cfg = StreamGuardConfig(16, 16, 64, "FAIL_OPEN", check_timeout_s=0.5)
+    events, st, _, _ = run(make_tokens(1200, inject_at=1050), cfg, near_capacity_classifier(stall), rate=100.0)
+    assert_well_formed(events, st)
+    stop = events[-1]
+    assert isinstance(stop, Stop) and stop.reason == "flag"
+    assert not st.abandoned
+    assert any(c.outcome == "flag" and c.span[0] <= 1050 < c.span[1] for c in st.checks)  # eventually flagged
+    unchecked = {i for e in events if isinstance(e, Release) and not e.checked for i in range(e.start, e.end)}
+    # every unchecked release up to the flagging check was scored afterwards (text released after it was still
+    # waiting for its retry when the flag stopped the stream)
+    assert {i for i in unchecked if i < stop.check_span[1]} <= scored_tokens(st)
+    assert all(c.span[1] - c.span[0] <= 64 for c in st.checks if c.retry)
+    frac = st.released_unchecked / max(1, st.released)
+    record_property("released", st.released)
+    record_property("released_unchecked", st.released_unchecked)
+    record_property("unchecked_fraction", round(frac, 3))
+    record_property("injection_released", MARK in released_text(events))
+    record_property("regular_timeouts", sum(c.outcome == "timeout" and not c.retry for c in st.checks))
+    if stall is None:
+        assert st.released_unchecked == 0 and MARK not in released_text(events)
+    else:
+        assert st.released_unchecked > 0  # the stall itself releases text unchecked under FAIL_OPEN
+
+
+def test_fail_open_with_a_windowed_deadline_logs_a_config_warning(caplog):
+    """M1-r3: a log warning (not an error) when FAIL_OPEN is combined with a window and a deadline."""
+    import serving.streaming as streaming_mod
+    streaming_mod._warned_fail_open_deadline.clear()
+    with caplog.at_level("WARNING", logger="serving.streaming"):
+        StreamGuardConfig(16, 16, None, "FAIL_OPEN", check_timeout_s=0.5)
+        StreamGuardConfig(16, 16, 64, "FAIL_CLOSED", check_timeout_s=0.5)
+        StreamGuardConfig(16, 16, 64, "FAIL_OPEN")
+        assert not caplog.records
+        StreamGuardConfig(16, 16, 64, "FAIL_OPEN", check_timeout_s=0.5)
+        StreamGuardConfig(16, 16, 64, "FAIL_OPEN", check_timeout_s=0.5)  # logged once per setting
+    assert len(caplog.records) == 1 and "no timeliness guarantee" in caplog.records[0].getMessage()
 
 
 def test_permanent_outage_under_fail_open_terminates_and_reports_everything_unscored():
