@@ -11,21 +11,29 @@ user may see:
   up to the newest k-token boundary that has arrived, so a slow classifier coalesces boundaries (the effective k
   grows) instead of queueing checks.
 - **Window (`window_tokens`).** `None` re-scores the full prefix on every check. W > 0 scores the last W tokens,
-  extended back to the end of the previous check if the coalesced span is longer than W, so every token is in at
-  least one scored window.
+  extended back to the first token no check has scored yet (`scored_to`): after coalescing, and after a check that
+  did not score (timeout, exception, failed-allow under FAIL_OPEN), the next window re-covers that span. Scored
+  tokens are therefore always a prefix [0, scored_to), and a stream ends `Done` with every token inside a check that
+  returned allow, unless FAIL_OPEN released text whose every covering check failed (then it is `checked=False`).
 - **Flag.** Any check that returns `flag` stops the stream: the source is closed, every unreleased token is
   retracted (never shown) and a `Stop` event is the last event. Text already released stays released; this guard
   cannot unsay it, which is what B is for.
-- **Failures the guard sees** (the check raised, `check_timeout_s` passed, or more than `max_unchecked_tokens`
-  generated tokens are waiting for a check) follow `failure_mode`: `FAIL_CLOSED` stops the stream; `FAIL_OPEN`
-  releases the affected text marked `checked=False` and continues. With `check_timeout_s=None` and
-  `max_unchecked_tokens=None` nothing fails for slowness: the visible stream stalls until the check returns
-  (FAIL_CLOSED with an unbounded lag budget), which is the only setting that cannot release unchecked text even
-  under FAIL_OPEN.
-- **The bundle's decision is never overridden.** A check result of `flag` stops the stream even when the
-  classifier's own failure policy produced it (`CheckResult.failed`): the guard's failure mode covers only what the
-  classifier service could not see (the guard's own deadline and lag), so it is never more permissive than the
-  served bundle.
+- **A check that did not score** (it raised, `check_timeout_s` passed, or the classifier answered allow with
+  `failed=True`, i.e. its own failure policy allowed text it did not score), and the lag rule (more than
+  `max_unchecked_tokens` generated tokens waiting for a check), follow `failure_mode`: `FAIL_CLOSED` stops the
+  stream (`classifier_failure` or `lag`); `FAIL_OPEN` releases the affected text marked `checked=False`, counts it,
+  continues, and the next check re-covers it (see Window), so a later flag can still stop the stream.
+- **Which settings guarantee no unchecked release.** Every `FAIL_CLOSED` configuration, with or without a deadline
+  or lag budget: a token is released only after a check that covered it returned allow with `failed=False`
+  (tests/serving/test_streaming.py, the invariant grid and `test_failed_check_under_each_setting`). No `FAIL_OPEN`
+  configuration does: "stall" (`check_timeout_s=None`, `max_unchecked_tokens=None`, `StreamGuardConfig.stalls`)
+  only removes slowness as a cause of failure; an exception or a failed-allow still releases unchecked text.
+- **The bundle's flag is never overridden.** A check result of `flag` stops the stream even when the classifier's
+  own failure policy produced it (`CheckResult.failed`). A failed *allow* is treated as a check that did not score,
+  which is never more permissive than the bundle: FAIL_CLOSED stops, FAIL_OPEN releases it as unchecked (as the
+  bundle would have).
+- **Units.** B, k, W and the lag budget count tokens of the stream given to the guard (in the harness, DeBERTa
+  pieces). With a real generator they are its tokens; the classifier re-tokenizes the joined text.
 
 This module is outside the engine's decision path (serving/engine_version.json): it calls the classifier service
 the same way any client does and changes neither the policy engine nor any bundle_sha256. Its own settings are not
@@ -65,10 +73,17 @@ class StreamGuardConfig:
         if self.max_unchecked_tokens is not None and self.max_unchecked_tokens < self.check_every:
             # below k the lag rule would fire before the first check could be scheduled
             raise ValueError("max_unchecked_tokens must be None or >= check_every")
+        if (self.failure_mode == "FAIL_OPEN" and self.max_unchecked_tokens is not None
+                and self.max_unchecked_tokens < self.holdback_tokens):
+            # a FAIL_OPEN lag release also releases the held-back buffer, so below B the budget, not B, would bound
+            # what is held back (review streaming-r1 n1); FAIL_CLOSED stops instead, so any budget >= k is fine there
+            raise ValueError("under FAIL_OPEN max_unchecked_tokens must be >= holdback_tokens")
 
     @property
     def stalls(self) -> bool:
-        """True iff slowness never fails a check: the visible stream waits instead."""
+        """True iff slowness never fails a check: the visible stream waits instead.
+
+        Not a no-unchecked-release guarantee under FAIL_OPEN: an exception or a failed-allow still releases."""
         return self.check_timeout_s is None and self.max_unchecked_tokens is None
 
 
@@ -128,7 +143,7 @@ class StreamStats:
     t0: float = 0.0
     arrival_t: list[float] = field(default_factory=list)
     release_t: list[float | None] = field(default_factory=list)
-    checked: list[bool] = field(default_factory=list)  # token passed a check (or the final check)
+    checked: list[bool] = field(default_factory=list)  # token is inside a check that returned allow (failed=False)
     released_unchecked: int = 0
     checks: list[CheckRecord] = field(default_factory=list)
     stop: Stop | None = None
@@ -153,7 +168,8 @@ async def guard_stream(tokens: AsyncIterable[str], check: Check, config: StreamG
     it = tokens.__aiter__()
     toks: list[str] = []
     released = 0  # r: tokens [0, r) are visible
-    checked_to = 0  # c: the last resolved check ended here
+    checked_to = 0  # c: the last resolved check ended here (FAIL_OPEN: resolved includes failed)
+    scored_to = 0  # tokens [0, scored_to) are inside a check that returned allow with failed=False
     sched_to = 0  # end of the last scheduled check
     source_done = False
     next_tok: asyncio.Task | None = asyncio.ensure_future(it.__anext__())
@@ -220,7 +236,8 @@ async def guard_stream(tokens: AsyncIterable[str], check: Check, config: StreamG
                     p = sched_to + cfg.check_every * ((n - sched_to) // cfg.check_every)
                     p = p if p > sched_to else None
                 if p is not None:
-                    s = 0 if cfg.window_tokens is None else max(0, min(p - cfg.window_tokens, sched_to))
+                    # start no later than the first unscored token: re-covers coalesced gaps and failed checks
+                    s = 0 if cfg.window_tokens is None else max(0, min(p - cfg.window_tokens, scored_to))
                     inflight_span = (s, p)
                     inflight_rec = CheckRecord(span=inflight_span, t_start=loop.time())
                     st.checks.append(inflight_rec)
@@ -255,17 +272,22 @@ async def guard_stream(tokens: AsyncIterable[str], check: Check, config: StreamG
                     yield await stop("flag" if not res.failed else "classifier_failure", span,
                                      res.reason)
                     return
-                if res is None and cfg.failure_mode == "FAIL_CLOSED":
+                if res is not None and res.failed:  # allow from the classifier's failure policy: not scored
+                    rec.outcome, err = "failed_open", f"failed-allow: {res.reason}"
+                elif res is not None:
+                    rec.outcome = "allow"
+                else:
                     rec.outcome = err.split(":")[0]
+                if rec.outcome != "allow" and cfg.failure_mode == "FAIL_CLOSED":
                     yield await stop("classifier_failure", span, err)
                     return
-                if res is None:  # FAIL_OPEN: the span counts as resolved, its tokens stay unchecked
-                    rec.outcome = err.split(":")[0]
-                else:
-                    rec.outcome = "allow" if not res.failed else "failed_open"
-                    if not res.failed:
-                        for i in range(span[0], span[1]):
-                            st.checked[i] = True
+                if rec.outcome == "allow":
+                    assert span[0] <= scored_to  # windows never start past the first unscored token
+                    for i in range(span[0], span[1]):
+                        st.checked[i] = True
+                    scored_to = max(scored_to, span[1])
+                # FAIL_OPEN failure: the span counts as resolved for release (its tokens go out checked=False);
+                # scored_to stays, so the next check re-covers it
                 checked_to = max(checked_to, span[1])  # a FAIL_OPEN lag release may already be past it
                 final = source_done and checked_to == len(toks)
                 for ev in release_to(len(toks) if final else checked_to - cfg.holdback_tokens):
@@ -317,7 +339,7 @@ def service_check(service: Any) -> Check:
         out = await service.classify(text)
         active = [r for r in out.results if r.role == "active" and r.stage != "stage1"]
         score = max((r.score for r in active if r.score is not None), default=None)
-        failed = out.policy_applied is not None
+        failed = out.policy_applied is not None or out.coverage_policy_applied is not None
         reason = out.decided_by if failed or out.coverage_policy_applied else None
         return CheckResult(decision=out.decision, failed=failed, reason=reason, score=score)
     return _check

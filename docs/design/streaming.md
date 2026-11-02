@@ -47,8 +47,13 @@ Every detection number below therefore measures the **streaming mechanics** with
   slower than the stream, the next check jumps to the newest boundary that has arrived (boundaries coalesce, the
   effective k grows); checks never queue. Smaller k means earlier detection and more classifier calls.
 - **Window.** `window_tokens=None` re-scores the full prefix on every check; W > 0 scores the last W tokens,
-  extended back to the end of the previous check when coalescing made the gap longer than W, so every token is in
-  at least one scored window (`test_windows_cover_every_token`). The full prefix sees the whole context, which is
+  extended back to the first token no check has scored yet: after coalescing made the gap longer than W, and after
+  a check that did not score (below), the next window re-covers the gap. A token counts as scored only when a check
+  covering it returned allow with `failed=False`, or flag (`test_windows_cover_every_token`,
+  `test_fail_open_rescores_a_failed_window`). Round 1 of the review found that a timed-out, raised or failed-allow
+  window was counted as covered and the next window started after it, so with W set its text could be released and
+  never scored (`test_fail_open_window_rescores_a_timed_out_injection_window` is the reviewer's probe; it fails on
+  the old scheduler). The full prefix sees the whole context, which is
   exactly what dilutes a short injection; a small window dilutes less but sees less context, so it flags more
   benign text, and an injection longer than the overlap can be split across windows
   (`test_window_misses_an_injection_split_across_checks_only_if_window_is_too_small`). Through the gateway a full
@@ -57,22 +62,40 @@ Every detection number below therefore measures the **streaming mechanics** with
 - **Flag.** A check returning `flag` stops the stream: the source is closed (`aclose`), every generated but
   unreleased token is withheld, and `Stop(reason="flag", retracted_tokens=...)` is the last event. Released text
   cannot be unsaid by this guard; a UI that wants to retract it needs the stop event, which carries the counts.
-- **What the guard cannot see is handled by its failure mode; what the bundle decided is never overridden.** A
-  check result of `flag` stops the stream even when the classifier's own failure policy produced it (D23's decide
-  member is `FAIL_CLOSED`). The guard's `failure_mode` covers only its own deadline (`check_timeout_s`), an
-  exception, and its lag budget (`max_unchecked_tokens`: generated tokens waiting for a check).
+- **A check that did not score is handled by the guard's failure mode; a flag from the bundle is never
+  overridden.** "Did not score" means the check raised, passed the guard's deadline (`check_timeout_s`), or came
+  back allow with `failed=True` (the classifier's own failure policy allowed text it did not score; with D23 this
+  cannot happen, its decide member is `FAIL_CLOSED`, and `service_check` also sets `failed` when a coverage rule
+  decided). The lag budget (`max_unchecked_tokens`: generated tokens waiting for a check) is the other trigger. A
+  check result of `flag` stops the stream even when the classifier's failure policy produced it. Treating a failed
+  allow as "not scored" is stricter than the bundle, never more permissive.
 
-| Guard setting | Maps to | When the classifier cannot keep up |
+| Guard setting | When a check is slow | When a check raises or comes back failed-allow |
 | --- | --- | --- |
-| `FAIL_CLOSED`, no timeout, no lag budget (**stall**) | `FAIL_CLOSED` with an unbounded budget | the visible stream waits; nothing unchecked is ever released; latency grows without bound |
-| `FAIL_CLOSED` + timeout and/or lag budget | `FAIL_CLOSED` | the stream is stopped (`reason="classifier_failure"` or `"lag"`); a benign response is cut off |
-| `FAIL_OPEN` + timeout and/or lag budget | `FAIL_OPEN` | the oldest waiting text is released marked `checked=False` and counted; a later check still runs over it and can still stop the stream |
+| `FAIL_CLOSED`, no timeout, no lag budget (**stall**) | the visible stream waits; latency grows without bound | the stream stops (`classifier_failure`); nothing it did not score is released |
+| `FAIL_CLOSED` + timeout and/or lag budget | the stream stops (`classifier_failure` or `lag`); a benign response is cut off | the stream stops (`classifier_failure`) |
+| `FAIL_OPEN`, no timeout, no lag budget | the visible stream waits | the failed check's text is released `checked=False` and counted; the next check re-covers it and can still stop the stream |
+| `FAIL_OPEN` + timeout and/or lag budget | the oldest waiting text is released `checked=False` and counted; later checks re-cover it and can still stop the stream | as the row above |
+
+**Which configurations guarantee that no unchecked text is released:** every `FAIL_CLOSED` configuration, with or
+without a deadline or lag budget. A token is released only after a check that covered it returned allow with
+`failed=False`. **No `FAIL_OPEN` configuration guarantees it,** stall included: no deadline and no budget only
+remove slowness as a cause; an exception or a failed-allow still releases text. Under `FAIL_OPEN` the re-covering
+check gives after-the-fact coverage only. If every check over some text keeps failing (an input that always times
+out), the rest of the stream goes out unchecked and the stream ends `Done`; the tokens are marked and counted
+(`test_fail_open_window_keeps_rescoring_while_checks_keep_failing`). Under `FAIL_OPEN` a lag release also releases
+the held-back buffer, so a lag budget below B is rejected (it would make B meaningless; review n1).
 
 `FALLBACK` (a cheaper check when the main one is late) and `ASYNC_ONLY` (release everything, classify afterwards,
 which is monitoring rather than prevention) are not implemented. Invariant, tested over a 324-cell grid of B, k,
-W, latency and injection position: in `FAIL_CLOSED` every released token was inside a check that returned allow,
-released after that check returned, and while the stream runs at least B checked tokens stay held back
+W, latency and injection position, plus a timeout / exception / failed-allow at each of the four settings above
+(`test_failed_check_under_each_setting`): in `FAIL_CLOSED` every released token was inside a check that returned
+allow, released after that check returned, and while the stream runs at least B checked tokens stay held back
 (`tests/serving/test_streaming.py::test_fail_closed_never_releases_unchecked_text`).
+
+**Units.** B, k, W and the lag budget count tokens of the stream given to the guard. In the harness these are
+DeBERTa pieces (detector tokens). A real generator's tokens differ, and the classifier re-tokenizes the joined text.
+With W = k the window edges can split words.
 
 ## 3. Where it sits: no engine or bundle change
 
@@ -223,7 +246,7 @@ coalesce (54.2 checks per 1,000 tokens instead of 62).
 | 64 | 4 | FAIL_CLOSED | 0 / 0 (every stream stopped: lag 114 + flag 10) | 124/124 [97, 100] | 0 | 0.56 / 0.71 / 0.80 s |
 | 64 | 4 | FAIL_OPEN | 69 / 28 [16, 31] | 28/124 [16, 31] | 11,166 in 228 streams (244 per 1k) | 0.64 / 0.84 / 1.19 s |
 
-- **Stall** never releases unchecked text, and pays in latency: with a 4x slower classifier the full-prefix stream
+- **Stall** (`FAIL_CLOSED`, no deadline, no budget) never releases unchecked text here, and pays in latency: with a 4x slower classifier the full-prefix stream
   shows text 1.40 s behind generation at p50 and up to 3.44 s, and detection delay grows to 113 tokens p50
   (zero leak holds because the visible stream is so far behind).
 - **FAIL_CLOSED with a lag budget** turns slowness into stopped responses: already at slowdown 1 with the full
@@ -273,8 +296,9 @@ is what would make users notice.
 2. **Calibration.** A stream makes many decisions per response. Who owns a per-check threshold (detector author:
    new capability version; or policy owner: a stream-level band), and on what data, given that no output-side labels
    exist in the repo?
-3. **Default failure mode.** Stall is the only setting that never releases unchecked text but has unbounded latency;
-   FAIL_CLOSED with a lag budget cuts off benign answers under load (52/124 at slowdown 1, full prefix). Which one is
+3. **Default failure mode.** Every `FAIL_CLOSED` setting never releases unchecked text (§2). Stall is the only one
+   that also never cuts off a response for slowness, at the cost of unbounded latency. FAIL_CLOSED with a lag
+   budget cuts off benign answers under load (52/124 at slowdown 1, full prefix). Which one is
    the default, and what lag budget?
 4. **External references.** Which published description of streaming output classifiers should the write-up cite?
    I could not retrieve the Constitutional Classifiers paper text from this environment, so §4 attributes nothing

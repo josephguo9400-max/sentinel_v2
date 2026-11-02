@@ -234,15 +234,169 @@ def test_empty_stream():
     assert len(events) == 1 and isinstance(events[0], Done) and events[0].released_tokens == 0 and not clf.calls
 
 
+def scored_tokens(st):
+    """Tokens inside a check that actually scored them: outcome allow (not a failed-allow) or flag."""
+    cov = set()
+    for c in st.checks:
+        if c.outcome in ("allow", "flag"):
+            cov.update(range(*c.span))
+    return cov
+
+
 @pytest.mark.parametrize("W,k,lat", [(4, 16, 0.001), (8, 8, 0.4), (64, 8, 0.4), (1, 1, 0.05)])
 def test_windows_cover_every_token(W, k, lat):
     toks = make_tokens(150)
     _, st, _, _ = run(toks, StreamGuardConfig(0, k, W), FakeClassifier(lat), rate=100)
-    covered = set()
     for c in st.checks:
         assert c.span[1] - c.span[0] >= min(W, c.span[1])
-        covered.update(range(*c.span))
-    assert covered == set(range(150))
+    assert scored_tokens(st) == set(range(150))  # a timed-out, raised or failed-allow span does not count
+
+
+class Flaky(FakeClassifier):
+    """Fails on the given call numbers (1-based) in one of three ways; otherwise the marker classifier."""
+
+    def __init__(self, how, on, latency=0.005):
+        super().__init__(latency)
+        self.how, self.on = how, set(on)
+
+    async def __call__(self, text):
+        n = len(self.calls) + 1
+        if n in self.on:
+            self.calls.append(text)
+            if self.how == "timeout":
+                await asyncio.sleep(10.0)
+            await asyncio.sleep(self.latency)
+            if self.how == "exception":
+                raise RuntimeError("classifier crashed")
+            return CheckResult("allow", failed=True)  # the classifier's own failure policy allowed unscored text
+        return await super().__call__(text)
+
+
+@pytest.mark.parametrize("W", [None, 1, 8, 16, 64])
+@pytest.mark.parametrize("how", ["timeout", "exception", "failed_allow"])
+def test_fail_open_rescores_a_failed_window(W, how):
+    """Review streaming-r1 M1: under FAIL_OPEN a check that did not score releases its text unchecked, and the next
+    check starts at the first unscored token, so every token still ends up in a scored window."""
+    cfg = StreamGuardConfig(0, 8, W, "FAIL_OPEN", check_timeout_s=0.2 if how == "timeout" else None)
+    events, st, _, clf = run(make_tokens(150), cfg, Flaky(how, on={3, 4}))
+    assert isinstance(events[-1], Done) and st.released == 150
+    assert st.released_unchecked > 0 and any(not e.checked for e in events if isinstance(e, Release))
+    assert [c.outcome for c in st.checks][2:4] == [{"failed_allow": "failed_open"}.get(how, how)] * 2
+    assert scored_tokens(st) == set(range(150))
+    last_scored = st.checks[1].span[1]  # the failed checks' unscored part starts here
+    assert st.checks[4].span[0] <= last_scored and st.checks[4].outcome == "allow"  # re-covers the failed span
+
+
+def test_fail_open_window_rescores_a_timed_out_injection_window():
+    """Review streaming-r1 probe P3: k = W = 16, FAIL_OPEN with a deadline, and a classifier that is slow on the
+    first window holding the injection (64, 80). That check times out and its tokens are released unchecked; the
+    next window must start at 64 again, see the injection and stop the stream. The old scheduler started it at 80,
+    and the stream ended Done with the injection never scored."""
+    seen = {"slow": False}
+
+    class SlowOnce(FakeClassifier):
+        async def __call__(self, text):
+            if MARK in text and not seen["slow"]:
+                seen["slow"] = True
+                self.calls.append(text)
+                await asyncio.sleep(1.0)
+                return CheckResult("flag")
+            return await super().__call__(text)
+
+    cfg = StreamGuardConfig(0, 16, window_tokens=16, failure_mode="FAIL_OPEN", check_timeout_s=0.2)
+    events, st, _, _ = run(make_tokens(200, inject_at=70), cfg, SlowOnce())
+    assert [(c.span, c.outcome) for c in st.checks if c.outcome != "allow"][0] == ((64, 80), "timeout")
+    stop = events[-1]
+    assert isinstance(stop, Stop) and stop.reason == "flag" and stop.check_span[0] == 64
+    assert set(range(70, 75)) <= scored_tokens(st)
+    # the price of FAIL_OPEN: the timed-out span was shown, marked unchecked
+    assert all(not e.checked for e in events if isinstance(e, Release) and e.start < 75 and e.end > 70)
+
+
+def test_fail_open_window_keeps_rescoring_while_checks_keep_failing():
+    """Probe P3 as the reviewer wrote it: every check containing the injection takes 1 s against a 0.2 s deadline.
+    FAIL_OPEN then releases the rest of the stream unchecked (counted, marked checked=False), but every later check
+    still runs over the failed span; none skips it."""
+    cfg = StreamGuardConfig(0, 16, window_tokens=16, failure_mode="FAIL_OPEN", check_timeout_s=0.2)
+    clf = FakeClassifier(lambda text: 1.0 if MARK in text else 0.005)
+    events, st, _, _ = run(make_tokens(200, inject_at=70), cfg, clf)
+    assert isinstance(events[-1], Done)
+    failed = [c for c in st.checks if c.outcome == "timeout"]
+    assert failed[0].span == (64, 80) and all(c.span[0] <= 64 for c in failed)
+    assert all(c.outcome == "timeout" for c in st.checks if c.span[1] > 64)
+    assert not set(range(70, 75)) & scored_tokens(st)
+    assert all(not st.checked[i] for i in range(64, 200)) and st.released_unchecked == 200 - 64
+
+
+def test_fail_closed_window_stops_on_a_failed_allow():
+    """Review probe P3b: stall FAIL_CLOSED, W = 16, and the classifier's own failure policy answers allow
+    (failed=True) on the short window holding the injection. The guard must not release that unscored text."""
+    class FailedOnMark(FakeClassifier):
+        async def __call__(self, text):
+            if MARK in text and text.count(" ") < 40:
+                self.calls.append(text)
+                await asyncio.sleep(self.latency)
+                return CheckResult("allow", failed=True)
+            return await super().__call__(text)
+
+    events, st, _, _ = run(make_tokens(200, inject_at=66), StreamGuardConfig(0, 16, window_tokens=16), FailedOnMark())
+    stop = events[-1]
+    assert isinstance(stop, Stop) and stop.reason == "classifier_failure" and stop.check_span == (64, 80)
+    assert MARK not in released_text(events) and st.released == 64 and st.released_unchecked == 0
+    assert st.checks[-1].outcome == "failed_open"
+
+
+# Review streaming-r1 m1: a check that raises, times out or comes back as a failed-allow, under each guard setting.
+FAIL_SETTINGS = {
+    "stall_closed": dict(failure_mode="FAIL_CLOSED"),
+    "budget_closed": dict(failure_mode="FAIL_CLOSED", check_timeout_s=0.3, max_unchecked_tokens=40),
+    "stall_open": dict(failure_mode="FAIL_OPEN"),
+    "budget_open": dict(failure_mode="FAIL_OPEN", check_timeout_s=0.3, max_unchecked_tokens=40),
+}
+
+
+@pytest.mark.parametrize("setting", sorted(FAIL_SETTINGS))
+@pytest.mark.parametrize("how", ["timeout", "exception", "failed_allow"])
+@pytest.mark.parametrize("W", [None, 16])
+@pytest.mark.parametrize("inj", [None, 60])
+def test_failed_check_under_each_setting(setting, how, W, inj):
+    kw = FAIL_SETTINGS[setting]
+    if how == "timeout" and kw.get("check_timeout_s") is None:
+        pytest.skip("no deadline: a slow check stalls instead of failing")
+    cfg = StreamGuardConfig(4, 8, W, **kw)
+    events, st, _, _ = run(make_tokens(120, inj), cfg, Flaky(how, on={3}))
+    assert_well_formed(events, st)
+    if cfg.failure_mode == "FAIL_CLOSED":
+        # the guaranteed setting: nothing a check did not score is ever released, stall or not
+        stop = events[-1]
+        assert isinstance(stop, Stop) and stop.reason == "classifier_failure"
+        assert st.released_unchecked == 0 and all(st.checked[i] for i in range(st.released))
+        allowed = [c for c in st.checks if c.outcome == "allow"]
+        for i in range(st.released):
+            assert any(c.span[0] <= i < c.span[1] and c.t_end <= st.release_t[i] for c in allowed), i
+    else:
+        # FAIL_OPEN, stall included: the failed check's text goes out unchecked, and later checks re-cover it
+        assert st.released_unchecked > 0
+        assert any(not e.checked for e in events if isinstance(e, Release))
+        if inj is None:
+            assert isinstance(events[-1], Done) and scored_tokens(st) == set(range(120))
+        else:
+            assert isinstance(events[-1], Stop) and events[-1].reason == "flag"
+            assert MARK not in released_text(events)
+
+
+def test_failed_allow_on_every_check_stops_fail_closed_immediately():
+    """Review probe P1: stall FAIL_CLOSED and a bundle whose decide member fails open on every call. The old guard
+    released all 64 tokens unchecked and ended Done; it must stop at the first check and release nothing."""
+    class AlwaysFailedAllow(FakeClassifier):
+        async def __call__(self, text):
+            self.calls.append(text)
+            await asyncio.sleep(self.latency)
+            return CheckResult("allow", failed=True)
+
+    events, st, _, clf = run(make_tokens(64, 20), StreamGuardConfig(4, 8), AlwaysFailedAllow())
+    assert isinstance(events[-1], Stop) and events[-1].reason == "classifier_failure"
+    assert st.released == 0 and len(clf.calls) == 1
 
 
 def test_window_misses_an_injection_split_across_checks_only_if_window_is_too_small():
@@ -262,10 +416,19 @@ def test_window_misses_an_injection_split_across_checks_only_if_window_is_too_sm
 
 @pytest.mark.parametrize("kw", [dict(holdback_tokens=-1), dict(check_every=0), dict(window_tokens=0),
                                 dict(failure_mode="FALLBACK"), dict(check_timeout_s=0),
-                                dict(check_every=16, max_unchecked_tokens=8)])
+                                dict(check_every=16, max_unchecked_tokens=8),
+                                dict(holdback_tokens=64, check_every=8, failure_mode="FAIL_OPEN",
+                                     max_unchecked_tokens=40)])
 def test_config_validation(kw):
     with pytest.raises(ValueError):
         StreamGuardConfig(**kw)
+
+
+def test_lag_budget_below_holdback_is_allowed_only_fail_closed():
+    """Review n1: under FAIL_OPEN the lag rule releases the held-back buffer too, so a lag budget below B would make B
+    meaningless and is rejected; under FAIL_CLOSED the lag rule stops the stream instead, so it is fine."""
+    StreamGuardConfig(holdback_tokens=64, check_every=8, failure_mode="FAIL_CLOSED", max_unchecked_tokens=40)
+    StreamGuardConfig(holdback_tokens=40, check_every=8, failure_mode="FAIL_OPEN", max_unchecked_tokens=40)
 
 
 # ------------------------------------------------------------------ real event loop and the service adapter
@@ -307,3 +470,8 @@ def test_service_check_adapter_reads_decision_score_and_failure():
     assert ok == CheckResult("flag", failed=False, reason=None, score=0.7)
     failed = asyncio.run(service_check(Svc(outcome("flag", "fail_closed", None)))("x"))
     assert failed.failed and failed.decision == "flag" and failed.score is None
+    # a coverage rule deciding content no step scored is a failure too, whichever way it decided
+    cov = outcome("allow")
+    cov.coverage_policy_applied = "allow"
+    res = asyncio.run(service_check(Svc(cov))("x"))
+    assert res.failed and res.decision == "allow"

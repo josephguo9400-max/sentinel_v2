@@ -620,10 +620,12 @@ sampled.
 
 Output-side classification: `guard_stream(tokens, check, StreamGuardConfig(...))` wraps a model's async token
 stream, checks it every k tokens through the classifier service (`service_check(service)`), releases only checked
-text minus a hold-back of B tokens, and on a flag closes the source and withholds everything unreleased. Its
-failure mode covers only what the service cannot see (its own timeout, exceptions, a lag budget): `FAIL_CLOSED`
-stops the stream, `FAIL_OPEN` releases the waiting text marked unchecked, and no budget at all means the visible
-stream stalls. A flag from the bundle, including one its own `FAIL_CLOSED` produced, always stops the stream.
+text minus a hold-back of B tokens, and on a flag closes the source and withholds everything unreleased. A check
+that did not score (its own timeout, an exception, or an allow the bundle's failure policy produced) and the lag
+budget follow its failure mode: `FAIL_CLOSED` stops the stream, so no `FAIL_CLOSED` setting ever releases text no
+check scored; `FAIL_OPEN` releases the waiting text marked unchecked and the next check re-covers it. With no
+deadline and no budget the visible stream stalls for slowness, but under `FAIL_OPEN` an exception still releases
+unchecked text. A flag from the bundle, including one its own `FAIL_CLOSED` produced, always stops the stream.
 It is a client of the policy engine, not part of it: no decision-path file changed, so the engine version (1.1.0)
 and the D23 bundle hash (`2ebc7d9ae676…`) are unchanged; for the same reason no endpoint serves it (its settings
 are not in any policy). Design, the threat-model difference from the input side, and the measured B x k x W sweep
