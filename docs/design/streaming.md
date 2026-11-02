@@ -46,14 +46,32 @@ Every detection number below therefore measures the **streaming mechanics** with
 - **Check every k tokens, one at a time.** A check is scheduled at the next k-token boundary. If the classifier is
   slower than the stream, the next check jumps to the newest boundary that has arrived (boundaries coalesce, the
   effective k grows); checks never queue. Smaller k means earlier detection and more classifier calls.
-- **Window.** `window_tokens=None` re-scores the full prefix on every check; W > 0 scores the last W tokens,
-  extended back to the first token no check has scored yet: after coalescing made the gap longer than W, and after
-  a check that did not score (below), the next window re-covers the gap. A token counts as scored only when a check
-  covering it returned allow with `failed=False`, or flag (`test_windows_cover_every_token`,
-  `test_fail_open_rescores_a_failed_window`). Round 1 of the review found that a timed-out, raised or failed-allow
-  window was counted as covered and the next window started after it, so with W set its text could be released and
-  never scored (`test_fail_open_window_rescores_a_timed_out_injection_window` is the reviewer's probe; it fails on
-  the old scheduler). The full prefix sees the whole context, which is
+- **Window.** `window_tokens=None` re-scores the full prefix on every check. W > 0 scores the last W tokens,
+  extended back over every token that arrived since the previous check, so coalescing never skips text. A token
+  counts as scored only when a check covering it returned allow with `failed=False`, or flag
+  (`test_windows_cover_every_token`). Text a check did not score (below; this happens only under `FAIL_OPEN`) is
+  re-covered by the regular windows while it is still inside the last W tokens. Once it falls out of them it
+  becomes *retry debt*: before the next regular check the guard retries it, oldest first, as one unscored run of
+  at most L = max(W, k) tokens, so no check is ever longer than a regular one. A failed retry lets one regular check
+  run before the next retry of the same span. **A span is given up when its retry has failed `retry_attempts`
+  times (default 2)**, after the regular windows covering it failed too; at the end of the stream retries run back
+  to back. A given-up span is recorded in `StreamStats.abandoned`, its tokens stay `checked=False` (they have been
+  or will be released marked unchecked, or are withheld by a later stop), `Done.unscored_tokens` counts every token
+  no check scored, and checking goes on with the next span. Nothing else is ever given up, and nothing scored is
+  given up. The number of checks stays bounded: at most ceil(n/k) + 1 regular checks and `retry_attempts` x
+  (ceil(n/L) + 2 x regular + 1) retries for n tokens (`test_randomized_invariants`).
+  Review history: round 1 found that a failed window was counted as covered and the next window started after it,
+  so its text could be released and never scored (`test_fail_open_window_rescores_a_timed_out_injection_window`).
+  The round-1 fix extended the next window back to the first unscored token without a bound. Round 2 showed that
+  this is a ratchet: classifier latency grows with window length, so after a transient 2 s stall (W = 64, k = 16,
+  0.25 s deadline) every re-covering window was too long to finish in time, the window grew to 352 tokens, and the
+  rest of the stream went out unchecked with the injection at token 300 released. With bounded retries the same
+  run catches that injection right after the stall and gives nothing up
+  (`test_transient_outage_w64_two_seconds_catches_the_injection_after_recovery`; this test and
+  `test_transient_outage_does_not_disable_a_windowed_fail_open_guard` fail on `86d9004`). The full prefix has no
+  retries: every check re-covers all failed text, but every check also grows with the prefix, so with a deadline
+  the full prefix fails every check once the prefix takes longer than the deadline to score, outage or not.
+  The full prefix sees the whole context, which is
   exactly what dilutes a short injection; a small window dilutes less but sees less context, so it flags more
   benign text, and an injection longer than the overlap can be split across windows
   (`test_window_misses_an_injection_split_across_checks_only_if_window_is_too_small`). Through the gateway a full
@@ -76,17 +94,21 @@ Every detection number below therefore measures the **streaming mechanics** with
 | --- | --- | --- |
 | `FAIL_CLOSED`, no timeout, no lag budget (**stall**) | the visible stream waits; latency grows without bound | the stream stops (`classifier_failure`); nothing it did not score is released |
 | `FAIL_CLOSED` + timeout and/or lag budget | the stream stops (`classifier_failure` or `lag`); a benign response is cut off | the stream stops (`classifier_failure`) |
-| `FAIL_OPEN`, no timeout, no lag budget | the visible stream waits | the failed check's text is released `checked=False` and counted; the next check re-covers it and can still stop the stream |
-| `FAIL_OPEN` + timeout and/or lag budget | the oldest waiting text is released `checked=False` and counted; later checks re-cover it and can still stop the stream | as the row above |
+| `FAIL_OPEN`, no timeout, no lag budget | the visible stream waits | the failed check's text is released `checked=False` and counted; a later window or a retry (W set: at most L tokens, up to `retry_attempts` times, then the span is given up and reported) re-covers it and can still stop the stream |
+| `FAIL_OPEN` + timeout and/or lag budget | the oldest waiting text is released `checked=False` and counted; later checks re-cover it as in the row above and can still stop the stream | as the row above |
 
 **Which configurations guarantee that no unchecked text is released:** every `FAIL_CLOSED` configuration, with or
 without a deadline or lag budget. A token is released only after a check that covered it returned allow with
 `failed=False`. **No `FAIL_OPEN` configuration guarantees it,** stall included: no deadline and no budget only
 remove slowness as a cause; an exception or a failed-allow still releases text. Under `FAIL_OPEN` the re-covering
-check gives after-the-fact coverage only. If every check over some text keeps failing (an input that always times
-out), the rest of the stream goes out unchecked and the stream ends `Done`; the tokens are marked and counted
-(`test_fail_open_window_keeps_rescoring_while_checks_keep_failing`). Under `FAIL_OPEN` a lag release also releases
-the held-back buffer, so a lag budget below B is rejected (it would make B meaningless; review n1).
+check gives after-the-fact coverage only. With W set, a span is lost for good exactly when the regular windows over
+it and all `retry_attempts` retries of it failed (for example an input that always times out, or an outage longer
+than about `retry_attempts` checks); that span is reported (`StreamStats.abandoned`, `Done.unscored_tokens`) and
+the guard keeps checking the text after it
+(`test_fail_open_window_gives_up_a_span_whose_retry_fails_and_keeps_guarding`,
+`test_permanent_outage_under_fail_open_terminates_and_reports_everything_unscored`). Under `FAIL_OPEN` a lag
+release also releases the held-back buffer, so a lag budget below B is rejected (it would make B meaningless;
+review n1).
 
 `FALLBACK` (a cheaper check when the main one is late) and `ASYNC_ONLY` (release everything, classify afterwards,
 which is monitoring rather than prevention) are not implemented. Invariant, tested over a 324-cell grid of B, k,
@@ -359,7 +381,7 @@ coalesce (54.2 checks per 1,000 tokens instead of 62).
 | --- | --- |
 | Streaming guard, `StreamGuardConfig`, `CheckResult`, events, `service_check` adapter | `serving/streaming.py` |
 | Virtual-time loop for tests and the harness | `serving/bench/vclock.py` |
-| Tests: invariant grid, flag/retract, B = 0 leak, failure flag never overridden, timeout, lag, FAIL_OPEN release, exceptions, k = 1, B longer than the stream, tail check, empty stream, window coverage, window split, validation, real loop, early consumer close, adapter | `tests/serving/test_streaming.py` |
+| Tests: invariant grid, flag/retract, B = 0 leak, failure flag never overridden, timeout, lag, FAIL_OPEN release, exceptions, k = 1, B longer than the stream, tail check, empty stream, window coverage, window split, bounded retries and given-up spans, transient and permanent outages, a 4,000-case seeded fuzz of the invariants, validation, real loop, early consumer close, adapter (including deep-scan results) | `tests/serving/test_streaming.py` |
 | Harness bookkeeping tests | `tests/serving/test_streaming_bench.py` |
 | Harness and committed outputs | `serving/bench/streaming.py`, `serving/bench_results/streaming/` |
 

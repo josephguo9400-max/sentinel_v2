@@ -623,7 +623,9 @@ stream, checks it every k tokens through the classifier service (`service_check(
 text minus a hold-back of B tokens, and on a flag closes the source and withholds everything unreleased. A check
 that did not score (its own timeout, an exception, or an allow the bundle's failure policy produced) and the lag
 budget follow its failure mode: `FAIL_CLOSED` stops the stream, so no `FAIL_CLOSED` setting ever releases text no
-check scored; `FAIL_OPEN` releases the waiting text marked unchecked and the next check re-covers it. With no
+check scored; `FAIL_OPEN` releases the waiting text marked unchecked and a later check re-covers it (with a window,
+in bounded retries; a span whose retries all fail is given up and reported in `StreamStats.abandoned` and
+`Done.unscored_tokens`). With no
 deadline and no budget the visible stream stalls for slowness, but under `FAIL_OPEN` an exception still releases
 unchecked text. A flag from the bundle, including one its own `FAIL_CLOSED` produced, always stops the stream.
 It is a client of the policy engine, not part of it: no decision-path file changed, so the engine version (1.1.0)

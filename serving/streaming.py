@@ -11,10 +11,15 @@ user may see:
   up to the newest k-token boundary that has arrived, so a slow classifier coalesces boundaries (the effective k
   grows) instead of queueing checks.
 - **Window (`window_tokens`).** `None` re-scores the full prefix on every check. W > 0 scores the last W tokens,
-  extended back to the first token no check has scored yet (`scored_to`): after coalescing, and after a check that
-  did not score (timeout, exception, failed-allow under FAIL_OPEN), the next window re-covers that span. Scored
-  tokens are therefore always a prefix [0, scored_to), and a stream ends `Done` with every token inside a check that
-  returned allow, unless FAIL_OPEN released text whose every covering check failed (then it is `checked=False`).
+  extended back over every token that arrived since the previous check (coalescing never skips text). A window never
+  extends back over text a *failed* check left unscored (timeout, exception, failed-allow under FAIL_OPEN) beyond
+  that: such text is re-covered while it is still inside the last W tokens, and once it falls out it is scored
+  *in order* by separate retry checks of at most L = max(W, k) tokens, scheduled before the next regular check (after
+  a failed retry, one regular check runs first). So no check is ever longer than a regular one (W, or the coalesced
+  new tokens), and a transient outage cannot grow the window until every check times out (review streaming-r2
+  M1-r2). A span whose retry fails `retry_attempts` times is given up: it is recorded in `StreamStats.abandoned`,
+  counted in `Done.unscored_tokens`, its tokens stay `checked=False`, and checking goes on with the next span.
+  Under FAIL_CLOSED no check fails without stopping, so retries never run and nothing is given up.
 - **Flag.** Any check that returns `flag` stops the stream: the source is closed, every unreleased token is
   retracted (never shown) and a `Stop` event is the last event. Text already released stays released; this guard
   cannot unsay it, which is what B is for.
@@ -22,7 +27,8 @@ user may see:
   `failed=True`, i.e. its own failure policy allowed text it did not score), and the lag rule (more than
   `max_unchecked_tokens` generated tokens waiting for a check), follow `failure_mode`: `FAIL_CLOSED` stops the
   stream (`classifier_failure` or `lag`); `FAIL_OPEN` releases the affected text marked `checked=False`, counts it,
-  continues, and the next check re-covers it (see Window), so a later flag can still stop the stream.
+  continues, and a later check re-covers it (see Window), so a later flag can still stop the stream.
+  With a full-prefix window every check re-covers all failed text, but every check also grows with the prefix.
 - **Which settings guarantee no unchecked release.** Every `FAIL_CLOSED` configuration, with or without a deadline
   or lag budget: a token is released only after a check that covered it returned allow with `failed=False`
   (tests/serving/test_streaming.py, the invariant grid and `test_failed_check_under_each_setting`). No `FAIL_OPEN`
@@ -58,6 +64,7 @@ class StreamGuardConfig:
     failure_mode: FailureMode = "FAIL_CLOSED"
     check_timeout_s: float | None = None  # None: wait for the check (stall)
     max_unchecked_tokens: int | None = None  # generated tokens waiting for a check; None: unbounded (stall)
+    retry_attempts: int = 2  # FAIL_OPEN, W set: retries of a failed span before it is given up (see Window)
 
     def __post_init__(self):
         if not isinstance(self.holdback_tokens, int) or self.holdback_tokens < 0:
@@ -68,6 +75,8 @@ class StreamGuardConfig:
             raise ValueError("window_tokens must be None (full prefix) or an int >= 1")
         if self.failure_mode not in ("FAIL_OPEN", "FAIL_CLOSED"):
             raise ValueError("failure_mode must be FAIL_OPEN or FAIL_CLOSED")
+        if not isinstance(self.retry_attempts, int) or self.retry_attempts < 1:
+            raise ValueError("retry_attempts must be an int >= 1")
         if self.check_timeout_s is not None and not self.check_timeout_s > 0:
             raise ValueError("check_timeout_s must be None or > 0")
         if self.max_unchecked_tokens is not None and self.max_unchecked_tokens < self.check_every:
@@ -123,6 +132,7 @@ class Done:
     generated_tokens: int
     released_tokens: int
     t: float
+    unscored_tokens: int = 0  # never inside a check that returned allow (FAIL_OPEN only; all released checked=False)
 
 
 Event = Release | Stop | Done
@@ -135,6 +145,7 @@ class CheckRecord:
     t_end: float | None = None
     outcome: str | None = None  # allow | flag | failed_open | failed_closed | timeout | exception | abandoned
     score: float | None = None
+    retry: bool = False  # a retry of text a failed check left unscored (window_tokens set, FAIL_OPEN only)
 
 
 @dataclass
@@ -146,6 +157,7 @@ class StreamStats:
     checked: list[bool] = field(default_factory=list)  # token is inside a check that returned allow (failed=False)
     released_unchecked: int = 0
     checks: list[CheckRecord] = field(default_factory=list)
+    abandoned: list[tuple[int, int]] = field(default_factory=list)  # spans given up after a failed retry
     stop: Stop | None = None
     end_t: float | None = None
 
@@ -156,6 +168,10 @@ class StreamStats:
     @property
     def released(self) -> int:
         return sum(t is not None for t in self.release_t)
+
+    @property
+    def abandoned_tokens(self) -> int:
+        return sum(e - s for s, e in self.abandoned)
 
 
 async def guard_stream(tokens: AsyncIterable[str], check: Check, config: StreamGuardConfig,
@@ -169,13 +185,26 @@ async def guard_stream(tokens: AsyncIterable[str], check: Check, config: StreamG
     toks: list[str] = []
     released = 0  # r: tokens [0, r) are visible
     checked_to = 0  # c: the last resolved check ended here (FAIL_OPEN: resolved includes failed)
-    scored_to = 0  # tokens [0, scored_to) are inside a check that returned allow with failed=False
-    sched_to = 0  # end of the last scheduled check
+    # Tokens [0, resolved_to) are scored (inside a check that returned allow with failed=False) or given up. Below
+    # the regular window's start, unscored tokens at resolved_to and after are the retry debt. Only FAIL_OPEN ever
+    # leaves unscored text behind a resolved check, so under FAIL_CLOSED there is never any debt.
+    resolved_to = 0
+    retry_fails = 0  # failed retries of the debt's head span
+    prefer_regular = False  # after a failed retry, run a regular check before retrying again
+    sched_to = 0  # end of the last scheduled regular check
+    retry_len = None if cfg.window_tokens is None else max(cfg.window_tokens, cfg.check_every)  # L
     source_done = False
     next_tok: asyncio.Task | None = asyncio.ensure_future(it.__anext__())
     inflight: asyncio.Task | None = None
     inflight_span: tuple[int, int] | None = None
     inflight_rec: CheckRecord | None = None
+    inflight_retry = False
+
+    def debt_head() -> int:
+        nonlocal resolved_to
+        while resolved_to < len(toks) and st.checked[resolved_to]:  # a regular window scored it meanwhile
+            resolved_to += 1
+        return resolved_to
 
     def release_to(end: int) -> list[Release]:
         nonlocal released
@@ -225,6 +254,13 @@ async def guard_stream(tokens: AsyncIterable[str], check: Check, config: StreamG
             return await check(text)
         return await asyncio.wait_for(check(text), cfg.check_timeout_s)
 
+    def start_check(s: int, e: int, retry: bool):
+        nonlocal inflight, inflight_span, inflight_rec, inflight_retry
+        inflight_span, inflight_retry = (s, e), retry
+        inflight_rec = CheckRecord(span=inflight_span, t_start=loop.time(), retry=retry)
+        st.checks.append(inflight_rec)
+        inflight = asyncio.ensure_future(run_check("".join(toks[s:e])))
+
     try:
         while True:
             # ---- schedule the next check (one at a time; coalesce to the newest k boundary)
@@ -235,19 +271,30 @@ async def guard_stream(tokens: AsyncIterable[str], check: Check, config: StreamG
                 else:
                     p = sched_to + cfg.check_every * ((n - sched_to) // cfg.check_every)
                     p = p if p > sched_to else None
-                if p is not None:
-                    # start no later than the first unscored token: re-covers coalesced gaps and failed checks
-                    s = 0 if cfg.window_tokens is None else max(0, min(p - cfg.window_tokens, scored_to))
-                    inflight_span = (s, p)
-                    inflight_rec = CheckRecord(span=inflight_span, t_start=loop.time())
-                    st.checks.append(inflight_rec)
-                    inflight = asyncio.ensure_future(run_check("".join(toks[s:p])))
-                    sched_to = p
+                if cfg.window_tokens is None:
+                    if p is not None:
+                        start_check(0, p, False)
+                        sched_to = p
+                elif p is not None or source_done:
+                    # the regular window: the last W tokens, extended back over all new (coalesced) tokens
+                    s = max(0, min(p - cfg.window_tokens, sched_to)) if p is not None else sched_to
+                    h = debt_head()
+                    if h < s and (p is None or not prefer_regular):
+                        # failed-check text the regular window no longer covers (window starts only move forward,
+                        # so no regular check covers it again): retry it, in order, as one unscored run of at most
+                        # L tokens, never longer than a regular check
+                        e = h
+                        while e < min(h + retry_len, s) and not st.checked[e]:
+                            e += 1
+                        start_check(h, e, True)
+                    elif p is not None:
+                        start_check(s, p, False)
+                        sched_to, prefer_regular = p, False
             if source_done and inflight is None:
                 for ev in release_to(len(toks)):
                     yield ev
                 st.end_t = loop.time()
-                yield Done(len(toks), released, st.end_t)
+                yield Done(len(toks), released, st.end_t, unscored_tokens=st.checked.count(False))
                 return
 
             waiting = [t for t in (next_tok, inflight) if t is not None]
@@ -255,7 +302,7 @@ async def guard_stream(tokens: AsyncIterable[str], check: Check, config: StreamG
 
             # ---- a check finished (handled first: it may stop the stream)
             if inflight is not None and inflight.done():
-                task, span, rec = inflight, inflight_span, inflight_rec
+                task, span, rec, retry = inflight, inflight_span, inflight_rec, inflight_retry
                 inflight = inflight_span = inflight_rec = None
                 rec.t_end = loop.time()
                 try:
@@ -281,15 +328,27 @@ async def guard_stream(tokens: AsyncIterable[str], check: Check, config: StreamG
                 if rec.outcome != "allow" and cfg.failure_mode == "FAIL_CLOSED":
                     yield await stop("classifier_failure", span, err)
                     return
+                if retry and span[0] != resolved_to:  # by construction: one check in flight, retries in order
+                    raise RuntimeError(f"retry {span} does not start at the debt head {resolved_to}")
                 if rec.outcome == "allow":
-                    assert span[0] <= scored_to  # windows never start past the first unscored token
                     for i in range(span[0], span[1]):
                         st.checked[i] = True
-                    scored_to = max(scored_to, span[1])
-                # FAIL_OPEN failure: the span counts as resolved for release (its tokens go out checked=False);
-                # scored_to stays, so the next check re-covers it
+                    if retry:
+                        retry_fails = 0
+                    debt_head()
+                elif retry:
+                    retry_fails += 1
+                    if retry_fails >= cfg.retry_attempts:
+                        # FAIL_OPEN, every retry failed: give the span up (reported) and go on with the next one
+                        st.abandoned.append(span)
+                        resolved_to, retry_fails = span[1], 0
+                    else:
+                        prefer_regular = True  # let new text be checked (and released) before trying it again
+                # FAIL_OPEN failure of a regular check: the span counts as resolved for release (its tokens go out
+                # checked=False) but stays unscored, so a later regular window or a retry re-covers it
                 checked_to = max(checked_to, span[1])  # a FAIL_OPEN lag release may already be past it
-                final = source_done and checked_to == len(toks)
+                final = (source_done and checked_to == len(toks)
+                         and (cfg.window_tokens is None or debt_head() == len(toks)))
                 for ev in release_to(len(toks) if final else checked_to - cfg.holdback_tokens):
                     yield ev
 

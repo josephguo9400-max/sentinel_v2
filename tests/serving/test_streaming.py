@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import asyncio
 import itertools
+import random
 from types import SimpleNamespace
 
 import pytest
@@ -275,16 +276,36 @@ class Flaky(FakeClassifier):
 @pytest.mark.parametrize("W", [None, 1, 8, 16, 64])
 @pytest.mark.parametrize("how", ["timeout", "exception", "failed_allow"])
 def test_fail_open_rescores_a_failed_window(W, how):
-    """Review streaming-r1 M1: under FAIL_OPEN a check that did not score releases its text unchecked, and the next
-    check starts at the first unscored token, so every token still ends up in a scored window."""
+    """Review streaming-r1 M1: under FAIL_OPEN a check that did not score releases its text unchecked, and a later
+    check scores that text again, so every token still ends up in a scored window."""
+    cfg = StreamGuardConfig(0, 8, W, "FAIL_OPEN", check_timeout_s=0.2 if how == "timeout" else None)
+    events, st, _, clf = run(make_tokens(150), cfg, Flaky(how, on={3}))
+    assert isinstance(events[-1], Done) and st.released == 150 and events[-1].unscored_tokens == 0
+    assert st.released_unchecked > 0 and any(not e.checked for e in events if isinstance(e, Release))
+    assert st.checks[2].outcome == {"failed_allow": "failed_open"}.get(how, how)
+    assert scored_tokens(st) == set(range(150)) and not st.abandoned
+    last_scored = st.checks[1].span[1]  # the failed check's unscored part starts here
+    assert st.checks[3].span[0] <= last_scored and st.checks[3].outcome == "allow"  # re-covers the failed span
+
+
+@pytest.mark.parametrize("W", [None, 1, 8, 16, 64])
+@pytest.mark.parametrize("how", ["timeout", "exception", "failed_allow"])
+def test_fail_open_two_failures_in_a_row(W, how):
+    """Calls 3 and 4 fail. Text inside the regular window is re-covered by it (full prefix, W = 16 and 64 overlap the
+    failed span); text that has left it is retried in its own window of at most max(W, k) tokens, alternating with
+    regular checks, up to retry_attempts (2) times. With W <= k the regular windows do not overlap: call 4 is the
+    first retry of (16, 24), it fails, a regular check runs, and the second retry scores it (review streaming-r2
+    M1-r2). Nothing is given up."""
     cfg = StreamGuardConfig(0, 8, W, "FAIL_OPEN", check_timeout_s=0.2 if how == "timeout" else None)
     events, st, _, clf = run(make_tokens(150), cfg, Flaky(how, on={3, 4}))
     assert isinstance(events[-1], Done) and st.released == 150
-    assert st.released_unchecked > 0 and any(not e.checked for e in events if isinstance(e, Release))
     assert [c.outcome for c in st.checks][2:4] == [{"failed_allow": "failed_open"}.get(how, how)] * 2
-    assert scored_tokens(st) == set(range(150))
-    last_scored = st.checks[1].span[1]  # the failed checks' unscored part starts here
-    assert st.checks[4].span[0] <= last_scored and st.checks[4].outcome == "allow"  # re-covers the failed span
+    if W is not None and W <= 8:
+        # (the regular check after the first retry is (24, 40) under a deadline: 16 tokens coalesced meanwhile)
+        assert [(c.span[0], c.outcome == "allow", c.retry) for c in st.checks[2:6]] == [
+            (16, False, False), (16, False, True), (24, True, False), (16, True, True)]
+        assert st.checks[3].span == st.checks[5].span == (16, 24)
+    assert scored_tokens(st) == set(range(150)) and not st.abandoned and events[-1].unscored_tokens == 0
 
 
 def test_fail_open_window_rescores_a_timed_out_injection_window():
@@ -313,19 +334,103 @@ def test_fail_open_window_rescores_a_timed_out_injection_window():
     assert all(not e.checked for e in events if isinstance(e, Release) and e.start < 75 and e.end > 70)
 
 
-def test_fail_open_window_keeps_rescoring_while_checks_keep_failing():
+def test_fail_open_window_gives_up_a_span_whose_retry_fails_and_keeps_guarding():
     """Probe P3 as the reviewer wrote it: every check containing the injection takes 1 s against a 0.2 s deadline.
-    FAIL_OPEN then releases the rest of the stream unchecked (counted, marked checked=False), but every later check
-    still runs over the failed span; none skips it."""
+    The window holding it (64, 80) times out, and so do both its retries; the guard then gives that span up, reports
+    it (StreamStats.abandoned, Done.unscored_tokens, released checked=False) and scores the rest of the stream. At
+    86d9004 every later check re-covered 64.. and timed out, so nothing after 64 was ever scored (review
+    streaming-r2 M1-r2)."""
     cfg = StreamGuardConfig(0, 16, window_tokens=16, failure_mode="FAIL_OPEN", check_timeout_s=0.2)
     clf = FakeClassifier(lambda text: 1.0 if MARK in text else 0.005)
     events, st, _, _ = run(make_tokens(200, inject_at=70), cfg, clf)
-    assert isinstance(events[-1], Done)
-    failed = [c for c in st.checks if c.outcome == "timeout"]
-    assert failed[0].span == (64, 80) and all(c.span[0] <= 64 for c in failed)
-    assert all(c.outcome == "timeout" for c in st.checks if c.span[1] > 64)
-    assert not set(range(70, 75)) & scored_tokens(st)
-    assert all(not st.checked[i] for i in range(64, 200)) and st.released_unchecked == 200 - 64
+    done = events[-1]
+    assert isinstance(done, Done) and done.released_tokens == 200
+    assert [(c.span, c.outcome, c.retry) for c in st.checks if c.outcome != "allow"] == [
+        ((64, 80), "timeout", False), ((64, 80), "timeout", True), ((64, 80), "timeout", True)]
+    assert st.abandoned == [(64, 80)] and st.abandoned_tokens == 16 == done.unscored_tokens
+    assert scored_tokens(st) == set(range(200)) - set(range(64, 80))
+    assert st.released_unchecked == 16 and all(e.checked == (not (64 <= e.start < 80))
+                                               for e in events if isinstance(e, Release))
+    assert max(c.span[1] - c.span[0] for c in st.checks) <= 16
+
+
+def assert_window_lengths_bounded(st, W, k):
+    """No check is longer than a regular window: W extended back over the tokens new since the previous regular check
+    (coalescing), and a retry is at most max(W, k). This is what M1-r2 broke: re-covering windows grew without bound."""
+    prev_end = 0
+    for c in st.checks:
+        ln = c.span[1] - c.span[0]
+        if getattr(c, "retry", False):  # getattr: lets this helper run against 86d9004, which had no retries
+            assert ln <= max(W, k), c
+        else:
+            assert ln <= max(W, c.span[1] - prev_end), c
+            prev_end = c.span[1]
+
+
+def outage_classifier(start, duration, base=0.005, per_token=0.0025):
+    """Latency grows with the window (64 tokens: 0.165 s; more than 98 tokens: over 0.25 s), and the classifier
+    stalls (GC pause, overloaded node) for every call started in [start, start + duration)."""
+    async def check(text):
+        now = asyncio.get_running_loop().time()
+        if start <= now < start + duration:
+            await asyncio.sleep(10.0)
+        await asyncio.sleep(base + per_token * text.count(" "))
+        return CheckResult("flag" if MARK in text else "allow")
+    return check
+
+
+@pytest.mark.parametrize("W", [16, 64])
+@pytest.mark.parametrize("duration", [0.5, 1.0, 2.0, 3.0])
+def test_transient_outage_does_not_disable_a_windowed_fail_open_guard(W, duration):
+    """Review streaming-r2 M1-r2 (scratchpad outage_sweep.py): benign text with an injection at tokens 300-304,
+    k = B = 16, FAIL_OPEN, a 0.25 s deadline, and a classifier stall from t = 1 s. At 86d9004 the re-covering window
+    grew by k per failed check until every check timed out: with W = 64 and a 2 s stall the stream ended Done with
+    352 of 400 tokens unchecked and the injection released. The guard must recover after the stall, catch the
+    injection, keep every check within a regular window's length, and report what it gave up."""
+    cfg = StreamGuardConfig(16, 16, W, "FAIL_OPEN", check_timeout_s=0.25)
+    events, st, _, _ = run(make_tokens(400, inject_at=300), cfg, outage_classifier(1.0, duration))
+    assert_well_formed(events, st)
+    stop = events[-1]
+    assert isinstance(stop, Stop) and stop.reason == "flag" and MARK not in released_text(events)
+    assert any(c.outcome == "timeout" for c in st.checks)
+    assert_window_lengths_bounded(st, W, 16)
+    # everything released unchecked was scored later or is reported as given up
+    unchecked = {i for e in events if isinstance(e, Release) and not e.checked for i in range(e.start, e.end)}
+    given_up = {i for s, e in st.abandoned for i in range(s, e)}
+    assert unchecked <= scored_tokens(st) | given_up and given_up <= unchecked
+    assert not given_up & scored_tokens(st)
+
+
+def test_transient_outage_w64_two_seconds_catches_the_injection_after_recovery():
+    """The reviewer's exact row: W = 64, 2 s stall. Pinned: 64 tokens (48, 112) go out unchecked during the stall.
+    The first retry of (48, 64) runs inside the stall and fails; after the stall the second retry (48, 80) and the
+    regular window (80, 144) score all of it, nothing is given up, and the regular window (240, 304) flags the
+    injection. Every check is at most W = 64 tokens (at 86d9004 the window grew to 352)."""
+    cfg = StreamGuardConfig(16, 16, 64, "FAIL_OPEN", check_timeout_s=0.25)
+    events, st, _, _ = run(make_tokens(400, inject_at=300), cfg, outage_classifier(1.0, 2.0))
+    stop = events[-1]
+    assert isinstance(stop, Stop) and stop.reason == "flag" and stop.check_span == (240, 304)
+    assert MARK not in released_text(events) and st.released == 272
+    assert not st.abandoned and [(c.span, c.outcome) for c in st.checks if c.retry] == [
+        ((48, 64), "timeout"), ((48, 80), "allow")]
+    assert max(c.span[1] - c.span[0] for c in st.checks) == 64
+    assert st.released_unchecked == 64 and all(st.checked[i] for i in range(st.released))
+
+
+def test_permanent_outage_under_fail_open_terminates_and_reports_everything_unscored():
+    """A classifier that always raises: FAIL_OPEN releases everything unchecked, retries each span retry_attempts
+    times, gives it up, and ends Done with every token reported unscored, after a bounded number of checks."""
+    clf = FakeClassifier(0.005, fail=lambda n: True)
+    n, k, W = 150, 8, 16
+    events, st, _, _ = run(make_tokens(n), StreamGuardConfig(4, k, W, "FAIL_OPEN"), clf)
+    done = events[-1]
+    assert isinstance(done, Done) and done.released_tokens == n and done.unscored_tokens == n
+    assert st.released_unchecked == n and st.abandoned_tokens == n
+    assert [s for s, _ in st.abandoned] == sorted(s for s, _ in st.abandoned)  # given up in order
+    regular = [c for c in st.checks if not c.retry]
+    retries = [c for c in st.checks if c.retry]
+    assert len(regular) <= -(-n // k) + 1 and len(retries) <= 2 * (-(-n // max(W, k)) + 2 * len(regular) + 1)
+    assert all(c.span[1] - c.span[0] <= max(W, k) for c in retries)
 
 
 def test_fail_closed_window_stops_on_a_failed_allow():
@@ -418,7 +523,7 @@ def test_window_misses_an_injection_split_across_checks_only_if_window_is_too_sm
                                 dict(failure_mode="FALLBACK"), dict(check_timeout_s=0),
                                 dict(check_every=16, max_unchecked_tokens=8),
                                 dict(holdback_tokens=64, check_every=8, failure_mode="FAIL_OPEN",
-                                     max_unchecked_tokens=40)])
+                                     max_unchecked_tokens=40), dict(retry_attempts=0)])
 def test_config_validation(kw):
     with pytest.raises(ValueError):
         StreamGuardConfig(**kw)
@@ -429,6 +534,97 @@ def test_lag_budget_below_holdback_is_allowed_only_fail_closed():
     meaningless and is rejected; under FAIL_CLOSED the lag rule stops the stream instead, so it is fine."""
     StreamGuardConfig(holdback_tokens=64, check_every=8, failure_mode="FAIL_CLOSED", max_unchecked_tokens=40)
     StreamGuardConfig(holdback_tokens=40, check_every=8, failure_mode="FAIL_OPEN", max_unchecked_tokens=40)
+
+
+# ------------------------------------------------------------------ randomized invariants (review streaming-r2 R1)
+
+def _fuzz_case(case):
+    rng = random.Random(case)
+    mode = rng.choice(["FAIL_CLOSED", "FAIL_OPEN"])
+    k, B = rng.choice([1, 4, 8, 16]), rng.choice([0, 4, 8, 16, 32])
+    W = rng.choice([None, 1, 4, 8, 16, 64])
+    to = rng.choice([None, 0.05, 0.2])
+    lagb = rng.choice([None, max(k, B), max(k, B) + 24])
+    try:
+        cfg = StreamGuardConfig(B, k, W, mode, check_timeout_s=to, max_unchecked_tokens=lagb)
+    except ValueError:
+        return None
+    n = rng.randint(0, 120)
+    inj = rng.choice([None, rng.randint(0, n - 1)]) if n else None
+    toks = make_tokens(n, inj, rng.randint(1, 6))
+    crng = random.Random(10_000 + case)
+    outage = (crng.uniform(0, 2), crng.choice([0.0, 0.3, 1.5]))  # a stall window on top of random failures
+
+    async def check(text):
+        r, lat = crng.random(), crng.choice([0.001, 0.02, 0.1, 0.3])
+        now = asyncio.get_running_loop().time()
+        if outage[0] <= now < outage[0] + outage[1]:
+            lat += 10.0
+        await asyncio.sleep(lat)
+        if r < 0.1:
+            raise RuntimeError("x")
+        if r < 0.2:
+            return CheckResult("allow", failed=True)
+        if r < 0.25:
+            return CheckResult("flag", failed=True)
+        return CheckResult("flag" if MARK in text else "allow")
+
+    src = Source(toks, crng.choice([20.0, 50.0, 200.0]))
+    events, st = run_virtual(collect(src.gen(), check, cfg))
+    return cfg, n, inj, events, st
+
+
+FUZZ_CASES = 4000
+
+
+def test_randomized_invariants():
+    """Seeded fuzz over both modes, k, B, W, deadlines, lag budgets, random raises, failed-allows, failed-flags,
+    latencies and stalls. Checked per case: well-formed events; FAIL_CLOSED releases only text a check passed with
+    failed=False, after that check; FAIL_OPEN accounting (released_unchecked, Done.unscored_tokens, given-up spans
+    disjoint from scored text); window lengths bounded; and a bounded number of checks: regular checks at most
+    ceil(n/k) + 1, and retries at most retry_attempts * (ceil(n/L) + 2 * regular + 1) with L = max(W, k): each span
+    a retry covers ends at L tokens, at text a regular window scored, or at the regular window's start."""
+    seen = {"FAIL_CLOSED": 0, "FAIL_OPEN": 0, "abandoned": 0, "retries": 0}
+    for case in range(FUZZ_CASES):
+        got = _fuzz_case(case)
+        if got is None:
+            continue
+        cfg, n, inj, events, st = got
+        k, W = cfg.check_every, cfg.window_tokens
+        seen[cfg.failure_mode] += 1
+        assert_well_formed(events, st)
+        assert st.released_unchecked == sum(e.end - e.start for e in events if isinstance(e, Release) and not e.checked)
+        regular = [c for c in st.checks if not c.retry]
+        retries = [c for c in st.checks if c.retry]
+        assert len(regular) <= -(-n // k) + 1, case
+        if W is None:
+            assert not retries and not st.abandoned, case
+        else:
+            assert len(retries) <= cfg.retry_attempts * (-(-n // max(W, k)) + 2 * len(regular) + 1), case
+            assert_window_lengths_bounded(st, W, k)
+        scored = scored_tokens(st)
+        given_up = {i for s, e in st.abandoned for i in range(s, e)}
+        assert not given_up & scored, case
+        allowed = [c for c in st.checks if c.outcome == "allow"]
+        if cfg.failure_mode == "FAIL_CLOSED":
+            assert st.released_unchecked == 0 and not retries and not st.abandoned, case
+            for i in range(st.released):
+                assert any(c.span[0] <= i < c.span[1] and c.t_end <= st.release_t[i] for c in allowed), (case, i)
+            if inj is not None and MARK in released_text(events):
+                raise AssertionError(("FAIL_CLOSED released the marker", case))
+        else:
+            unchecked = {i for e in events if isinstance(e, Release) and not e.checked for i in range(e.start, e.end)}
+            assert given_up <= unchecked | set(range(st.released, n)), case  # released unchecked, or retracted
+            if isinstance(events[-1], Done):
+                # every token is scored, or was released unchecked and is reported unscored
+                assert events[-1].unscored_tokens == n - len(scored & set(range(n))), case
+                assert set(range(n)) - scored <= unchecked, case
+                if W is not None:
+                    assert set(range(n)) - scored == given_up, case
+        seen["abandoned"] += bool(st.abandoned)
+        seen["retries"] += bool(retries)
+    # the fuzz actually reaches the cases it is for
+    assert min(seen["FAIL_CLOSED"], seen["FAIL_OPEN"]) > 500 and seen["abandoned"] > 20 and seen["retries"] > 50, seen
 
 
 # ------------------------------------------------------------------ real event loop and the service adapter
