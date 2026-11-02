@@ -127,6 +127,15 @@
             "n": 124,
             "rate": 0.4032
           },
+          "caught_excluding_stopped_before": {
+            "ci95": [
+              0.3793,
+              0.566
+            ],
+            "k": 50,
+            "n": 106,
+            "rate": 0.4717
+          },
           "caught_zero_leak": {
             "ci95": [
               0.291,
@@ -135,6 +144,15 @@
             "k": 46,
             "n": 124,
             "rate": 0.371
+          },
+          "caught_zero_leak_excluding_stopped_before": {
+            "ci95": [
+              0.3436,
+              0.529
+            ],
+            "k": 46,
+            "n": 106,
+            "rate": 0.434
           },
           "delay_tokens_caught": {
             "max": 90,
@@ -155,6 +173,24 @@
           "leaked_tokens_mean_caught": 1.28,
           "stop_reasons": {
             "flag": 68
+          },
+          "stopped_before_injection": {
+            "ci95": [
+              0.0938,
+              0.2178
+            ],
+            "k": 18,
+            "n": 124,
+            "rate": 0.1452
+          },
+          "stopped_before_injection_by_flag": {
+            "ci95": [
+              0.0938,
+              0.2178
+            ],
+            "k": 18,
+            "n": 124,
+            "rate": 0.1452
           },
           "stopped_by_failure_or_lag": {
             "ci95": [
@@ -319,6 +355,15 @@
             "n": 124,
             "rate": 0.4032
           },
+          "caught_excluding_stopped_before": {
+            "ci95": [
+              0.3793,
+              0.566
+            ],
+            "k": 50,
+            "n": 106,
+            "rate": 0.4717
+          },
           "caught_zero_leak": {
             "ci95": [
               0.291,
@@ -327,6 +372,15 @@
             "k": 46,
             "n": 124,
             "rate": 0.371
+          },
+          "caught_zero_leak_excluding_stopped_before": {
+            "ci95": [
+              0.3436,
+              0.529
+            ],
+            "k": 46,
+            "n": 106,
+            "rate": 0.434
           },
           "delay_tokens_caught": {
             "max": 90,
@@ -348,6 +402,24 @@
           "stop_reasons": {
             "flag": 68,
             "lag": 9
+          },
+          "stopped_before_injection": {
+            "ci95": [
+              0.0938,
+              0.2178
+            ],
+            "k": 18,
+            "n": 124,
+            "rate": 0.1452
+          },
+          "stopped_before_injection_by_flag": {
+            "ci95": [
+              0.0938,
+              0.2178
+            ],
+            "k": 18,
+            "n": 124,
+            "rate": 0.1452
           },
           "stopped_by_failure_or_lag": {
             "ci95": [
@@ -511,6 +583,15 @@
             "n": 124,
             "rate": 0.4032
           },
+          "caught_excluding_stopped_before": {
+            "ci95": [
+              0.3793,
+              0.566
+            ],
+            "k": 50,
+            "n": 106,
+            "rate": 0.4717
+          },
           "caught_zero_leak": {
             "ci95": [
               0.291,
@@ -519,6 +600,15 @@
             "k": 46,
             "n": 124,
             "rate": 0.371
+          },
+          "caught_zero_leak_excluding_stopped_before": {
+            "ci95": [
+              0.3436,
+              0.529
+            ],
+            "k": 46,
+            "n": 106,
+            "rate": 0.434
           },
           "delay_tokens_caught": {
             "max": 90,
@@ -539,6 +629,24 @@
           "leaked_tokens_mean_caught": 1.28,
           "stop_reasons": {
             "flag": 68
+          },
+          "stopped_before_injection": {
+            "ci95": [
+              0.0938,
+              0.2178
+            ],
+            "k": 18,
+            "n": 124,
+            "rate": 0.1452
+          },
+          "stopped_before_injection_by_flag": {
+            "ci95": [
+              0.0938,
+              0.2178
+            ],
+            "k": 18,
+            "n": 124,
+            "rate": 0.1452
           },
           "stopped_by_failure_or_lag": {
             "ci95": [
@@ -702,6 +810,15 @@
             "n": 124,
             "rate": 0.3629
           },
+          "caught_excluding_stopped_before": {
+            "ci95": [
+              0.3281,
+              0.5109
+            ],
+            "k": 45,
+            "n": 108,
+            "rate": 0.4167
+          },
           "caught_zero_leak": {
             "ci95": [
               0.2836,
@@ -710,6 +827,15 @@
             "k": 45,
             "n": 124,
             "rate": 0.3629
+          },
+          "caught_zero_leak_excluding_stopped_before": {
+            "ci95": [
+              0.3281,
+              0.5109
+            ],
+            "k": 45,
+            "n": 108,
+            "rate": 0.4167
           },
           "delay_tokens_caught": {
             "max": 142,
@@ -730,6 +856,24 @@
           "leaked_tokens_mean_caught": 0.0,
           "stop_reasons": {
             "flag": 61
+          },
+          "stopped_before_injection": {
+            "ci95": [
+              0.081,
+              0.1994
+            ],
+            "k": 16,
+            "n": 124,
+            "rate": 0.129
+          },
+          "stopped_before_injection_by_flag": {
+            "ci95": [
+              0.081,
+              0.1994
+            ],
+            "k": 16,
+            "n": 124,
+            "rate": 0.129
           },
           "stopped_by_failure_or_lag": {
             "ci95": [
@@ -891,6 +1035,15 @@
             "n": 124,
             "rate": 0.0
           },
+          "caught_excluding_stopped_before": {
+            "ci95": [
+              0.0,
+              0.7935
+            ],
+            "k": 0,
+            "n": 1,
+            "rate": 0.0
+          },
           "caught_zero_leak": {
             "ci95": [
               0.0,
@@ -898,6 +1051,15 @@
             ],
             "k": 0,
             "n": 124,
+            "rate": 0.0
+          },
+          "caught_zero_leak_excluding_stopped_before": {
+            "ci95": [
+              0.0,
+              0.7935
+            ],
+            "k": 0,
+            "n": 1,
             "rate": 0.0
           },
           "delay_tokens_caught": {
@@ -920,6 +1082,24 @@
           "stop_reasons": {
             "flag": 10,
             "lag": 114
+          },
+          "stopped_before_injection": {
+            "ci95": [
+              0.9557,
+              0.9986
+            ],
+            "k": 123,
+            "n": 124,
+            "rate": 0.9919
+          },
+          "stopped_before_injection_by_flag": {
+            "ci95": [
+              0.0444,
+              0.1421
+            ],
+            "k": 10,
+            "n": 124,
+            "rate": 0.0806
           },
           "stopped_by_failure_or_lag": {
             "ci95": [
@@ -1083,6 +1263,15 @@
             "n": 124,
             "rate": 0.3629
           },
+          "caught_excluding_stopped_before": {
+            "ci95": [
+              0.3281,
+              0.5109
+            ],
+            "k": 45,
+            "n": 108,
+            "rate": 0.4167
+          },
           "caught_zero_leak": {
             "ci95": [
               0.0,
@@ -1090,6 +1279,15 @@
             ],
             "k": 0,
             "n": 124,
+            "rate": 0.0
+          },
+          "caught_zero_leak_excluding_stopped_before": {
+            "ci95": [
+              0.0,
+              0.0343
+            ],
+            "k": 0,
+            "n": 108,
             "rate": 0.0
           },
           "delay_tokens_caught": {
@@ -1111,6 +1309,24 @@
           "leaked_tokens_mean_caught": 50.51,
           "stop_reasons": {
             "flag": 61
+          },
+          "stopped_before_injection": {
+            "ci95": [
+              0.081,
+              0.1994
+            ],
+            "k": 16,
+            "n": 124,
+            "rate": 0.129
+          },
+          "stopped_before_injection_by_flag": {
+            "ci95": [
+              0.081,
+              0.1994
+            ],
+            "k": 16,
+            "n": 124,
+            "rate": 0.129
           },
           "stopped_by_failure_or_lag": {
             "ci95": [
@@ -1274,6 +1490,15 @@
             "n": 124,
             "rate": 0.5484
           },
+          "caught_excluding_stopped_before": {
+            "ci95": [
+              0.5584,
+              0.7383
+            ],
+            "k": 68,
+            "n": 104,
+            "rate": 0.6538
+          },
           "caught_zero_leak": {
             "ci95": [
               0.3977,
@@ -1282,6 +1507,15 @@
             "k": 60,
             "n": 124,
             "rate": 0.4839
+          },
+          "caught_zero_leak_excluding_stopped_before": {
+            "ci95": [
+              0.4809,
+              0.6675
+            ],
+            "k": 60,
+            "n": 104,
+            "rate": 0.5769
           },
           "delay_tokens_caught": {
             "max": 72,
@@ -1302,6 +1536,24 @@
           "leaked_tokens_mean_caught": 2.82,
           "stop_reasons": {
             "flag": 88
+          },
+          "stopped_before_injection": {
+            "ci95": [
+              0.1069,
+              0.236
+            ],
+            "k": 20,
+            "n": 124,
+            "rate": 0.1613
+          },
+          "stopped_before_injection_by_flag": {
+            "ci95": [
+              0.1069,
+              0.236
+            ],
+            "k": 20,
+            "n": 124,
+            "rate": 0.1613
           },
           "stopped_by_failure_or_lag": {
             "ci95": [
@@ -1465,6 +1717,15 @@
             "n": 124,
             "rate": 0.5484
           },
+          "caught_excluding_stopped_before": {
+            "ci95": [
+              0.5584,
+              0.7383
+            ],
+            "k": 68,
+            "n": 104,
+            "rate": 0.6538
+          },
           "caught_zero_leak": {
             "ci95": [
               0.3977,
@@ -1473,6 +1734,15 @@
             "k": 60,
             "n": 124,
             "rate": 0.4839
+          },
+          "caught_zero_leak_excluding_stopped_before": {
+            "ci95": [
+              0.4809,
+              0.6675
+            ],
+            "k": 60,
+            "n": 104,
+            "rate": 0.5769
           },
           "delay_tokens_caught": {
             "max": 72,
@@ -1493,6 +1763,24 @@
           "leaked_tokens_mean_caught": 2.82,
           "stop_reasons": {
             "flag": 88
+          },
+          "stopped_before_injection": {
+            "ci95": [
+              0.1069,
+              0.236
+            ],
+            "k": 20,
+            "n": 124,
+            "rate": 0.1613
+          },
+          "stopped_before_injection_by_flag": {
+            "ci95": [
+              0.1069,
+              0.236
+            ],
+            "k": 20,
+            "n": 124,
+            "rate": 0.1613
           },
           "stopped_by_failure_or_lag": {
             "ci95": [
@@ -1656,6 +1944,15 @@
             "n": 124,
             "rate": 0.5484
           },
+          "caught_excluding_stopped_before": {
+            "ci95": [
+              0.5584,
+              0.7383
+            ],
+            "k": 68,
+            "n": 104,
+            "rate": 0.6538
+          },
           "caught_zero_leak": {
             "ci95": [
               0.3977,
@@ -1664,6 +1961,15 @@
             "k": 60,
             "n": 124,
             "rate": 0.4839
+          },
+          "caught_zero_leak_excluding_stopped_before": {
+            "ci95": [
+              0.4809,
+              0.6675
+            ],
+            "k": 60,
+            "n": 104,
+            "rate": 0.5769
           },
           "delay_tokens_caught": {
             "max": 72,
@@ -1684,6 +1990,24 @@
           "leaked_tokens_mean_caught": 2.82,
           "stop_reasons": {
             "flag": 88
+          },
+          "stopped_before_injection": {
+            "ci95": [
+              0.1069,
+              0.236
+            ],
+            "k": 20,
+            "n": 124,
+            "rate": 0.1613
+          },
+          "stopped_before_injection_by_flag": {
+            "ci95": [
+              0.1069,
+              0.236
+            ],
+            "k": 20,
+            "n": 124,
+            "rate": 0.1613
           },
           "stopped_by_failure_or_lag": {
             "ci95": [
@@ -1847,6 +2171,15 @@
             "n": 124,
             "rate": 0.5565
           },
+          "caught_excluding_stopped_before": {
+            "ci95": [
+              0.545,
+              0.7233
+            ],
+            "k": 69,
+            "n": 108,
+            "rate": 0.6389
+          },
           "caught_zero_leak": {
             "ci95": [
               0.4369,
@@ -1855,6 +2188,15 @@
             "k": 65,
             "n": 124,
             "rate": 0.5242
+          },
+          "caught_zero_leak_excluding_stopped_before": {
+            "ci95": [
+              0.5076,
+              0.6891
+            ],
+            "k": 65,
+            "n": 108,
+            "rate": 0.6019
           },
           "delay_tokens_caught": {
             "max": 109,
@@ -1875,6 +2217,24 @@
           "leaked_tokens_mean_caught": 0.93,
           "stop_reasons": {
             "flag": 85
+          },
+          "stopped_before_injection": {
+            "ci95": [
+              0.081,
+              0.1994
+            ],
+            "k": 16,
+            "n": 124,
+            "rate": 0.129
+          },
+          "stopped_before_injection_by_flag": {
+            "ci95": [
+              0.081,
+              0.1994
+            ],
+            "k": 16,
+            "n": 124,
+            "rate": 0.129
           },
           "stopped_by_failure_or_lag": {
             "ci95": [
@@ -2036,6 +2396,15 @@
             "n": 124,
             "rate": 0.0
           },
+          "caught_excluding_stopped_before": {
+            "ci95": [
+              0.0,
+              0.7935
+            ],
+            "k": 0,
+            "n": 1,
+            "rate": 0.0
+          },
           "caught_zero_leak": {
             "ci95": [
               0.0,
@@ -2043,6 +2412,15 @@
             ],
             "k": 0,
             "n": 124,
+            "rate": 0.0
+          },
+          "caught_zero_leak_excluding_stopped_before": {
+            "ci95": [
+              0.0,
+              0.7935
+            ],
+            "k": 0,
+            "n": 1,
             "rate": 0.0
           },
           "delay_tokens_caught": {
@@ -2065,6 +2443,24 @@
           "stop_reasons": {
             "flag": 10,
             "lag": 114
+          },
+          "stopped_before_injection": {
+            "ci95": [
+              0.9557,
+              0.9986
+            ],
+            "k": 123,
+            "n": 124,
+            "rate": 0.9919
+          },
+          "stopped_before_injection_by_flag": {
+            "ci95": [
+              0.0444,
+              0.1421
+            ],
+            "k": 10,
+            "n": 124,
+            "rate": 0.0806
           },
           "stopped_by_failure_or_lag": {
             "ci95": [
@@ -2228,6 +2624,15 @@
             "n": 124,
             "rate": 0.5565
           },
+          "caught_excluding_stopped_before": {
+            "ci95": [
+              0.545,
+              0.7233
+            ],
+            "k": 69,
+            "n": 108,
+            "rate": 0.6389
+          },
           "caught_zero_leak": {
             "ci95": [
               0.1611,
@@ -2236,6 +2641,15 @@
             "k": 28,
             "n": 124,
             "rate": 0.2258
+          },
+          "caught_zero_leak_excluding_stopped_before": {
+            "ci95": [
+              0.1859,
+              0.3492
+            ],
+            "k": 28,
+            "n": 108,
+            "rate": 0.2593
           },
           "delay_tokens_caught": {
             "max": 109,
@@ -2256,6 +2670,24 @@
           "leaked_tokens_mean_caught": 10.78,
           "stop_reasons": {
             "flag": 85
+          },
+          "stopped_before_injection": {
+            "ci95": [
+              0.081,
+              0.1994
+            ],
+            "k": 16,
+            "n": 124,
+            "rate": 0.129
+          },
+          "stopped_before_injection_by_flag": {
+            "ci95": [
+              0.081,
+              0.1994
+            ],
+            "k": 16,
+            "n": 124,
+            "rate": 0.129
           },
           "stopped_by_failure_or_lag": {
             "ci95": [
@@ -2297,7 +2729,7 @@
     "bundle_sha256_prefixes": [
       "2ebc7d9ae676"
     ],
-    "misses_this_run": 74,
+    "misses_this_run": 0,
     "path": "serving/bench_results/streaming/check_cache.jsonl",
     "rows": 9732
   },
@@ -2329,7 +2761,7 @@
       "p95": 390.73
     }
   },
-  "generated_at": "2026-11-01T23:28:59Z",
+  "generated_at": "2026-11-02T00:06:20Z",
   "host": {
     "cpu": "Intel(R) Xeon(R) Processor @ 2.10GHz",
     "logical_cores": 2,
@@ -2467,6 +2899,15 @@
             "n": 124,
             "rate": 0.4113
           },
+          "caught_excluding_stopped_before": {
+            "ci95": [
+              0.3884,
+              0.5752
+            ],
+            "k": 51,
+            "n": 106,
+            "rate": 0.4811
+          },
           "caught_zero_leak": {
             "ci95": [
               0.291,
@@ -2475,6 +2916,15 @@
             "k": 46,
             "n": 124,
             "rate": 0.371
+          },
+          "caught_zero_leak_excluding_stopped_before": {
+            "ci95": [
+              0.3436,
+              0.529
+            ],
+            "k": 46,
+            "n": 106,
+            "rate": 0.434
           },
           "delay_tokens_caught": {
             "max": 69,
@@ -2495,6 +2945,24 @@
           "leaked_tokens_mean_caught": 1.88,
           "stop_reasons": {
             "flag": 69
+          },
+          "stopped_before_injection": {
+            "ci95": [
+              0.0938,
+              0.2178
+            ],
+            "k": 18,
+            "n": 124,
+            "rate": 0.1452
+          },
+          "stopped_before_injection_by_flag": {
+            "ci95": [
+              0.0938,
+              0.2178
+            ],
+            "k": 18,
+            "n": 124,
+            "rate": 0.1452
           },
           "stopped_by_failure_or_lag": {
             "ci95": [
@@ -2658,6 +3126,15 @@
             "n": 124,
             "rate": 0.4113
           },
+          "caught_excluding_stopped_before": {
+            "ci95": [
+              0.3884,
+              0.5752
+            ],
+            "k": 51,
+            "n": 106,
+            "rate": 0.4811
+          },
           "caught_zero_leak": {
             "ci95": [
               0.291,
@@ -2666,6 +3143,15 @@
             "k": 46,
             "n": 124,
             "rate": 0.371
+          },
+          "caught_zero_leak_excluding_stopped_before": {
+            "ci95": [
+              0.3436,
+              0.529
+            ],
+            "k": 46,
+            "n": 106,
+            "rate": 0.434
           },
           "delay_tokens_caught": {
             "max": 77,
@@ -2686,6 +3172,24 @@
           "leaked_tokens_mean_caught": 1.88,
           "stop_reasons": {
             "flag": 69
+          },
+          "stopped_before_injection": {
+            "ci95": [
+              0.0938,
+              0.2178
+            ],
+            "k": 18,
+            "n": 124,
+            "rate": 0.1452
+          },
+          "stopped_before_injection_by_flag": {
+            "ci95": [
+              0.0938,
+              0.2178
+            ],
+            "k": 18,
+            "n": 124,
+            "rate": 0.1452
           },
           "stopped_by_failure_or_lag": {
             "ci95": [
@@ -2849,6 +3353,15 @@
             "n": 124,
             "rate": 0.4032
           },
+          "caught_excluding_stopped_before": {
+            "ci95": [
+              0.3793,
+              0.566
+            ],
+            "k": 50,
+            "n": 106,
+            "rate": 0.4717
+          },
           "caught_zero_leak": {
             "ci95": [
               0.291,
@@ -2857,6 +3370,15 @@
             "k": 46,
             "n": 124,
             "rate": 0.371
+          },
+          "caught_zero_leak_excluding_stopped_before": {
+            "ci95": [
+              0.3436,
+              0.529
+            ],
+            "k": 46,
+            "n": 106,
+            "rate": 0.434
           },
           "delay_tokens_caught": {
             "max": 90,
@@ -2877,6 +3399,24 @@
           "leaked_tokens_mean_caught": 1.28,
           "stop_reasons": {
             "flag": 68
+          },
+          "stopped_before_injection": {
+            "ci95": [
+              0.0938,
+              0.2178
+            ],
+            "k": 18,
+            "n": 124,
+            "rate": 0.1452
+          },
+          "stopped_before_injection_by_flag": {
+            "ci95": [
+              0.0938,
+              0.2178
+            ],
+            "k": 18,
+            "n": 124,
+            "rate": 0.1452
           },
           "stopped_by_failure_or_lag": {
             "ci95": [
@@ -3040,6 +3580,15 @@
             "n": 124,
             "rate": 0.5484
           },
+          "caught_excluding_stopped_before": {
+            "ci95": [
+              0.5584,
+              0.7383
+            ],
+            "k": 68,
+            "n": 104,
+            "rate": 0.6538
+          },
           "caught_zero_leak": {
             "ci95": [
               0.3977,
@@ -3048,6 +3597,15 @@
             "k": 60,
             "n": 124,
             "rate": 0.4839
+          },
+          "caught_zero_leak_excluding_stopped_before": {
+            "ci95": [
+              0.4809,
+              0.6675
+            ],
+            "k": 60,
+            "n": 104,
+            "rate": 0.5769
           },
           "delay_tokens_caught": {
             "max": 65,
@@ -3068,6 +3626,24 @@
           "leaked_tokens_mean_caught": 2.82,
           "stop_reasons": {
             "flag": 88
+          },
+          "stopped_before_injection": {
+            "ci95": [
+              0.1069,
+              0.236
+            ],
+            "k": 20,
+            "n": 124,
+            "rate": 0.1613
+          },
+          "stopped_before_injection_by_flag": {
+            "ci95": [
+              0.1069,
+              0.236
+            ],
+            "k": 20,
+            "n": 124,
+            "rate": 0.1613
           },
           "stopped_by_failure_or_lag": {
             "ci95": [
@@ -3231,6 +3807,15 @@
             "n": 124,
             "rate": 0.5484
           },
+          "caught_excluding_stopped_before": {
+            "ci95": [
+              0.5584,
+              0.7383
+            ],
+            "k": 68,
+            "n": 104,
+            "rate": 0.6538
+          },
           "caught_zero_leak": {
             "ci95": [
               0.3977,
@@ -3239,6 +3824,15 @@
             "k": 60,
             "n": 124,
             "rate": 0.4839
+          },
+          "caught_zero_leak_excluding_stopped_before": {
+            "ci95": [
+              0.4809,
+              0.6675
+            ],
+            "k": 60,
+            "n": 104,
+            "rate": 0.5769
           },
           "delay_tokens_caught": {
             "max": 68,
@@ -3259,6 +3853,24 @@
           "leaked_tokens_mean_caught": 2.82,
           "stop_reasons": {
             "flag": 88
+          },
+          "stopped_before_injection": {
+            "ci95": [
+              0.1069,
+              0.236
+            ],
+            "k": 20,
+            "n": 124,
+            "rate": 0.1613
+          },
+          "stopped_before_injection_by_flag": {
+            "ci95": [
+              0.1069,
+              0.236
+            ],
+            "k": 20,
+            "n": 124,
+            "rate": 0.1613
           },
           "stopped_by_failure_or_lag": {
             "ci95": [
@@ -3422,6 +4034,15 @@
             "n": 124,
             "rate": 0.5484
           },
+          "caught_excluding_stopped_before": {
+            "ci95": [
+              0.5584,
+              0.7383
+            ],
+            "k": 68,
+            "n": 104,
+            "rate": 0.6538
+          },
           "caught_zero_leak": {
             "ci95": [
               0.3977,
@@ -3430,6 +4051,15 @@
             "k": 60,
             "n": 124,
             "rate": 0.4839
+          },
+          "caught_zero_leak_excluding_stopped_before": {
+            "ci95": [
+              0.4809,
+              0.6675
+            ],
+            "k": 60,
+            "n": 104,
+            "rate": 0.5769
           },
           "delay_tokens_caught": {
             "max": 72,
@@ -3450,6 +4080,24 @@
           "leaked_tokens_mean_caught": 2.82,
           "stop_reasons": {
             "flag": 88
+          },
+          "stopped_before_injection": {
+            "ci95": [
+              0.1069,
+              0.236
+            ],
+            "k": 20,
+            "n": 124,
+            "rate": 0.1613
+          },
+          "stopped_before_injection_by_flag": {
+            "ci95": [
+              0.1069,
+              0.236
+            ],
+            "k": 20,
+            "n": 124,
+            "rate": 0.1613
           },
           "stopped_by_failure_or_lag": {
             "ci95": [
@@ -3637,6 +4285,15 @@
             "n": 124,
             "rate": 0.4113
           },
+          "caught_excluding_stopped_before": {
+            "ci95": [
+              0.3964,
+              0.5851
+            ],
+            "k": 51,
+            "n": 104,
+            "rate": 0.4904
+          },
           "caught_zero_leak": {
             "ci95": [
               0.0562,
@@ -3645,6 +4302,15 @@
             "k": 12,
             "n": 124,
             "rate": 0.0968
+          },
+          "caught_zero_leak_excluding_stopped_before": {
+            "ci95": [
+              0.0672,
+              0.1909
+            ],
+            "k": 12,
+            "n": 104,
+            "rate": 0.1154
           },
           "delay_tokens_caught": {
             "max": 72,
@@ -3665,6 +4331,24 @@
           "leaked_tokens_mean_caught": 12.0,
           "stop_reasons": {
             "flag": 71
+          },
+          "stopped_before_injection": {
+            "ci95": [
+              0.1069,
+              0.236
+            ],
+            "k": 20,
+            "n": 124,
+            "rate": 0.1613
+          },
+          "stopped_before_injection_by_flag": {
+            "ci95": [
+              0.1069,
+              0.236
+            ],
+            "k": 20,
+            "n": 124,
+            "rate": 0.1613
           },
           "stopped_by_failure_or_lag": {
             "ci95": [
@@ -3828,6 +4512,15 @@
             "n": 124,
             "rate": 0.4113
           },
+          "caught_excluding_stopped_before": {
+            "ci95": [
+              0.3964,
+              0.5851
+            ],
+            "k": 51,
+            "n": 104,
+            "rate": 0.4904
+          },
           "caught_zero_leak": {
             "ci95": [
               0.175,
@@ -3836,6 +4529,15 @@
             "k": 30,
             "n": 124,
             "rate": 0.2419
+          },
+          "caught_zero_leak_excluding_stopped_before": {
+            "ci95": [
+              0.2102,
+              0.3818
+            ],
+            "k": 30,
+            "n": 104,
+            "rate": 0.2885
           },
           "delay_tokens_caught": {
             "max": 72,
@@ -3856,6 +4558,24 @@
           "leaked_tokens_mean_caught": 5.96,
           "stop_reasons": {
             "flag": 71
+          },
+          "stopped_before_injection": {
+            "ci95": [
+              0.1069,
+              0.236
+            ],
+            "k": 20,
+            "n": 124,
+            "rate": 0.1613
+          },
+          "stopped_before_injection_by_flag": {
+            "ci95": [
+              0.1069,
+              0.236
+            ],
+            "k": 20,
+            "n": 124,
+            "rate": 0.1613
           },
           "stopped_by_failure_or_lag": {
             "ci95": [
@@ -4019,6 +4739,15 @@
             "n": 124,
             "rate": 0.4113
           },
+          "caught_excluding_stopped_before": {
+            "ci95": [
+              0.3964,
+              0.5851
+            ],
+            "k": 51,
+            "n": 104,
+            "rate": 0.4904
+          },
           "caught_zero_leak": {
             "ci95": [
               0.2614,
@@ -4027,6 +4756,15 @@
             "k": 42,
             "n": 124,
             "rate": 0.3387
+          },
+          "caught_zero_leak_excluding_stopped_before": {
+            "ci95": [
+              0.3146,
+              0.4999
+            ],
+            "k": 42,
+            "n": 104,
+            "rate": 0.4038
           },
           "delay_tokens_caught": {
             "max": 72,
@@ -4047,6 +4785,24 @@
           "leaked_tokens_mean_caught": 2.67,
           "stop_reasons": {
             "flag": 71
+          },
+          "stopped_before_injection": {
+            "ci95": [
+              0.1069,
+              0.236
+            ],
+            "k": 20,
+            "n": 124,
+            "rate": 0.1613
+          },
+          "stopped_before_injection_by_flag": {
+            "ci95": [
+              0.1069,
+              0.236
+            ],
+            "k": 20,
+            "n": 124,
+            "rate": 0.1613
           },
           "stopped_by_failure_or_lag": {
             "ci95": [
@@ -4210,6 +4966,15 @@
             "n": 124,
             "rate": 0.4113
           },
+          "caught_excluding_stopped_before": {
+            "ci95": [
+              0.3964,
+              0.5851
+            ],
+            "k": 51,
+            "n": 104,
+            "rate": 0.4904
+          },
           "caught_zero_leak": {
             "ci95": [
               0.306,
@@ -4218,6 +4983,15 @@
             "k": 48,
             "n": 124,
             "rate": 0.3871
+          },
+          "caught_zero_leak_excluding_stopped_before": {
+            "ci95": [
+              0.3688,
+              0.557
+            ],
+            "k": 48,
+            "n": 104,
+            "rate": 0.4615
           },
           "delay_tokens_caught": {
             "max": 72,
@@ -4238,6 +5012,24 @@
           "leaked_tokens_mean_caught": 0.63,
           "stop_reasons": {
             "flag": 71
+          },
+          "stopped_before_injection": {
+            "ci95": [
+              0.1069,
+              0.236
+            ],
+            "k": 20,
+            "n": 124,
+            "rate": 0.1613
+          },
+          "stopped_before_injection_by_flag": {
+            "ci95": [
+              0.1069,
+              0.236
+            ],
+            "k": 20,
+            "n": 124,
+            "rate": 0.1613
           },
           "stopped_by_failure_or_lag": {
             "ci95": [
@@ -4401,6 +5193,15 @@
             "n": 124,
             "rate": 0.4113
           },
+          "caught_excluding_stopped_before": {
+            "ci95": [
+              0.3964,
+              0.5851
+            ],
+            "k": 51,
+            "n": 104,
+            "rate": 0.4904
+          },
           "caught_zero_leak": {
             "ci95": [
               0.3286,
@@ -4409,6 +5210,15 @@
             "k": 51,
             "n": 124,
             "rate": 0.4113
+          },
+          "caught_zero_leak_excluding_stopped_before": {
+            "ci95": [
+              0.3964,
+              0.5851
+            ],
+            "k": 51,
+            "n": 104,
+            "rate": 0.4904
           },
           "delay_tokens_caught": {
             "max": 72,
@@ -4429,6 +5239,24 @@
           "leaked_tokens_mean_caught": 0.0,
           "stop_reasons": {
             "flag": 71
+          },
+          "stopped_before_injection": {
+            "ci95": [
+              0.1069,
+              0.236
+            ],
+            "k": 20,
+            "n": 124,
+            "rate": 0.1613
+          },
+          "stopped_before_injection_by_flag": {
+            "ci95": [
+              0.1069,
+              0.236
+            ],
+            "k": 20,
+            "n": 124,
+            "rate": 0.1613
           },
           "stopped_by_failure_or_lag": {
             "ci95": [
@@ -4592,6 +5420,15 @@
             "n": 124,
             "rate": 0.4113
           },
+          "caught_excluding_stopped_before": {
+            "ci95": [
+              0.3884,
+              0.5752
+            ],
+            "k": 51,
+            "n": 106,
+            "rate": 0.4811
+          },
           "caught_zero_leak": {
             "ci95": [
               0.1681,
@@ -4600,6 +5437,15 @@
             "k": 29,
             "n": 124,
             "rate": 0.2339
+          },
+          "caught_zero_leak_excluding_stopped_before": {
+            "ci95": [
+              0.1978,
+              0.3652
+            ],
+            "k": 29,
+            "n": 106,
+            "rate": 0.2736
           },
           "delay_tokens_caught": {
             "max": 77,
@@ -4620,6 +5466,24 @@
           "leaked_tokens_mean_caught": 8.71,
           "stop_reasons": {
             "flag": 69
+          },
+          "stopped_before_injection": {
+            "ci95": [
+              0.0938,
+              0.2178
+            ],
+            "k": 18,
+            "n": 124,
+            "rate": 0.1452
+          },
+          "stopped_before_injection_by_flag": {
+            "ci95": [
+              0.0938,
+              0.2178
+            ],
+            "k": 18,
+            "n": 124,
+            "rate": 0.1452
           },
           "stopped_by_failure_or_lag": {
             "ci95": [
@@ -4783,6 +5647,15 @@
             "n": 124,
             "rate": 0.4113
           },
+          "caught_excluding_stopped_before": {
+            "ci95": [
+              0.3884,
+              0.5752
+            ],
+            "k": 51,
+            "n": 106,
+            "rate": 0.4811
+          },
           "caught_zero_leak": {
             "ci95": [
               0.1681,
@@ -4791,6 +5664,15 @@
             "k": 29,
             "n": 124,
             "rate": 0.2339
+          },
+          "caught_zero_leak_excluding_stopped_before": {
+            "ci95": [
+              0.1978,
+              0.3652
+            ],
+            "k": 29,
+            "n": 106,
+            "rate": 0.2736
           },
           "delay_tokens_caught": {
             "max": 77,
@@ -4811,6 +5693,24 @@
           "leaked_tokens_mean_caught": 5.33,
           "stop_reasons": {
             "flag": 69
+          },
+          "stopped_before_injection": {
+            "ci95": [
+              0.0938,
+              0.2178
+            ],
+            "k": 18,
+            "n": 124,
+            "rate": 0.1452
+          },
+          "stopped_before_injection_by_flag": {
+            "ci95": [
+              0.0938,
+              0.2178
+            ],
+            "k": 18,
+            "n": 124,
+            "rate": 0.1452
           },
           "stopped_by_failure_or_lag": {
             "ci95": [
@@ -4974,6 +5874,15 @@
             "n": 124,
             "rate": 0.4113
           },
+          "caught_excluding_stopped_before": {
+            "ci95": [
+              0.3884,
+              0.5752
+            ],
+            "k": 51,
+            "n": 106,
+            "rate": 0.4811
+          },
           "caught_zero_leak": {
             "ci95": [
               0.291,
@@ -4982,6 +5891,15 @@
             "k": 46,
             "n": 124,
             "rate": 0.371
+          },
+          "caught_zero_leak_excluding_stopped_before": {
+            "ci95": [
+              0.3436,
+              0.529
+            ],
+            "k": 46,
+            "n": 106,
+            "rate": 0.434
           },
           "delay_tokens_caught": {
             "max": 77,
@@ -5002,6 +5920,24 @@
           "leaked_tokens_mean_caught": 1.88,
           "stop_reasons": {
             "flag": 69
+          },
+          "stopped_before_injection": {
+            "ci95": [
+              0.0938,
+              0.2178
+            ],
+            "k": 18,
+            "n": 124,
+            "rate": 0.1452
+          },
+          "stopped_before_injection_by_flag": {
+            "ci95": [
+              0.0938,
+              0.2178
+            ],
+            "k": 18,
+            "n": 124,
+            "rate": 0.1452
           },
           "stopped_by_failure_or_lag": {
             "ci95": [
@@ -5165,6 +6101,15 @@
             "n": 124,
             "rate": 0.4113
           },
+          "caught_excluding_stopped_before": {
+            "ci95": [
+              0.3884,
+              0.5752
+            ],
+            "k": 51,
+            "n": 106,
+            "rate": 0.4811
+          },
           "caught_zero_leak": {
             "ci95": [
               0.3211,
@@ -5173,6 +6118,15 @@
             "k": 50,
             "n": 124,
             "rate": 0.4032
+          },
+          "caught_zero_leak_excluding_stopped_before": {
+            "ci95": [
+              0.3793,
+              0.566
+            ],
+            "k": 50,
+            "n": 106,
+            "rate": 0.4717
           },
           "delay_tokens_caught": {
             "max": 77,
@@ -5193,6 +6147,24 @@
           "leaked_tokens_mean_caught": 0.31,
           "stop_reasons": {
             "flag": 69
+          },
+          "stopped_before_injection": {
+            "ci95": [
+              0.0938,
+              0.2178
+            ],
+            "k": 18,
+            "n": 124,
+            "rate": 0.1452
+          },
+          "stopped_before_injection_by_flag": {
+            "ci95": [
+              0.0938,
+              0.2178
+            ],
+            "k": 18,
+            "n": 124,
+            "rate": 0.1452
           },
           "stopped_by_failure_or_lag": {
             "ci95": [
@@ -5356,6 +6328,15 @@
             "n": 124,
             "rate": 0.4113
           },
+          "caught_excluding_stopped_before": {
+            "ci95": [
+              0.3884,
+              0.5752
+            ],
+            "k": 51,
+            "n": 106,
+            "rate": 0.4811
+          },
           "caught_zero_leak": {
             "ci95": [
               0.3286,
@@ -5364,6 +6345,15 @@
             "k": 51,
             "n": 124,
             "rate": 0.4113
+          },
+          "caught_zero_leak_excluding_stopped_before": {
+            "ci95": [
+              0.3884,
+              0.5752
+            ],
+            "k": 51,
+            "n": 106,
+            "rate": 0.4811
           },
           "delay_tokens_caught": {
             "max": 77,
@@ -5384,6 +6374,24 @@
           "leaked_tokens_mean_caught": 0.0,
           "stop_reasons": {
             "flag": 69
+          },
+          "stopped_before_injection": {
+            "ci95": [
+              0.0938,
+              0.2178
+            ],
+            "k": 18,
+            "n": 124,
+            "rate": 0.1452
+          },
+          "stopped_before_injection_by_flag": {
+            "ci95": [
+              0.0938,
+              0.2178
+            ],
+            "k": 18,
+            "n": 124,
+            "rate": 0.1452
           },
           "stopped_by_failure_or_lag": {
             "ci95": [
@@ -5547,6 +6555,15 @@
             "n": 124,
             "rate": 0.4032
           },
+          "caught_excluding_stopped_before": {
+            "ci95": [
+              0.3755,
+              0.5613
+            ],
+            "k": 50,
+            "n": 107,
+            "rate": 0.4673
+          },
           "caught_zero_leak": {
             "ci95": [
               0.2761,
@@ -5555,6 +6572,15 @@
             "k": 44,
             "n": 124,
             "rate": 0.3548
+          },
+          "caught_zero_leak_excluding_stopped_before": {
+            "ci95": [
+              0.3226,
+              0.5059
+            ],
+            "k": 44,
+            "n": 107,
+            "rate": 0.4112
           },
           "delay_tokens_caught": {
             "max": 77,
@@ -5575,6 +6601,24 @@
           "leaked_tokens_mean_caught": 3.84,
           "stop_reasons": {
             "flag": 67
+          },
+          "stopped_before_injection": {
+            "ci95": [
+              0.0874,
+              0.2086
+            ],
+            "k": 17,
+            "n": 124,
+            "rate": 0.1371
+          },
+          "stopped_before_injection_by_flag": {
+            "ci95": [
+              0.0874,
+              0.2086
+            ],
+            "k": 17,
+            "n": 124,
+            "rate": 0.1371
           },
           "stopped_by_failure_or_lag": {
             "ci95": [
@@ -5738,6 +6782,15 @@
             "n": 124,
             "rate": 0.4032
           },
+          "caught_excluding_stopped_before": {
+            "ci95": [
+              0.3755,
+              0.5613
+            ],
+            "k": 50,
+            "n": 107,
+            "rate": 0.4673
+          },
           "caught_zero_leak": {
             "ci95": [
               0.2761,
@@ -5746,6 +6799,15 @@
             "k": 44,
             "n": 124,
             "rate": 0.3548
+          },
+          "caught_zero_leak_excluding_stopped_before": {
+            "ci95": [
+              0.3226,
+              0.5059
+            ],
+            "k": 44,
+            "n": 107,
+            "rate": 0.4112
           },
           "delay_tokens_caught": {
             "max": 77,
@@ -5766,6 +6828,24 @@
           "leaked_tokens_mean_caught": 2.88,
           "stop_reasons": {
             "flag": 67
+          },
+          "stopped_before_injection": {
+            "ci95": [
+              0.0874,
+              0.2086
+            ],
+            "k": 17,
+            "n": 124,
+            "rate": 0.1371
+          },
+          "stopped_before_injection_by_flag": {
+            "ci95": [
+              0.0874,
+              0.2086
+            ],
+            "k": 17,
+            "n": 124,
+            "rate": 0.1371
           },
           "stopped_by_failure_or_lag": {
             "ci95": [
@@ -5929,6 +7009,15 @@
             "n": 124,
             "rate": 0.4032
           },
+          "caught_excluding_stopped_before": {
+            "ci95": [
+              0.3755,
+              0.5613
+            ],
+            "k": 50,
+            "n": 107,
+            "rate": 0.4673
+          },
           "caught_zero_leak": {
             "ci95": [
               0.2761,
@@ -5937,6 +7026,15 @@
             "k": 44,
             "n": 124,
             "rate": 0.3548
+          },
+          "caught_zero_leak_excluding_stopped_before": {
+            "ci95": [
+              0.3226,
+              0.5059
+            ],
+            "k": 44,
+            "n": 107,
+            "rate": 0.4112
           },
           "delay_tokens_caught": {
             "max": 77,
@@ -5957,6 +7055,24 @@
           "leaked_tokens_mean_caught": 1.92,
           "stop_reasons": {
             "flag": 67
+          },
+          "stopped_before_injection": {
+            "ci95": [
+              0.0874,
+              0.2086
+            ],
+            "k": 17,
+            "n": 124,
+            "rate": 0.1371
+          },
+          "stopped_before_injection_by_flag": {
+            "ci95": [
+              0.0874,
+              0.2086
+            ],
+            "k": 17,
+            "n": 124,
+            "rate": 0.1371
           },
           "stopped_by_failure_or_lag": {
             "ci95": [
@@ -6120,6 +7236,15 @@
             "n": 124,
             "rate": 0.4032
           },
+          "caught_excluding_stopped_before": {
+            "ci95": [
+              0.3755,
+              0.5613
+            ],
+            "k": 50,
+            "n": 107,
+            "rate": 0.4673
+          },
           "caught_zero_leak": {
             "ci95": [
               0.3211,
@@ -6128,6 +7253,15 @@
             "k": 50,
             "n": 124,
             "rate": 0.4032
+          },
+          "caught_zero_leak_excluding_stopped_before": {
+            "ci95": [
+              0.3755,
+              0.5613
+            ],
+            "k": 50,
+            "n": 107,
+            "rate": 0.4673
           },
           "delay_tokens_caught": {
             "max": 77,
@@ -6148,6 +7282,24 @@
           "leaked_tokens_mean_caught": 0.0,
           "stop_reasons": {
             "flag": 67
+          },
+          "stopped_before_injection": {
+            "ci95": [
+              0.0874,
+              0.2086
+            ],
+            "k": 17,
+            "n": 124,
+            "rate": 0.1371
+          },
+          "stopped_before_injection_by_flag": {
+            "ci95": [
+              0.0874,
+              0.2086
+            ],
+            "k": 17,
+            "n": 124,
+            "rate": 0.1371
           },
           "stopped_by_failure_or_lag": {
             "ci95": [
@@ -6311,6 +7463,15 @@
             "n": 124,
             "rate": 0.4032
           },
+          "caught_excluding_stopped_before": {
+            "ci95": [
+              0.3755,
+              0.5613
+            ],
+            "k": 50,
+            "n": 107,
+            "rate": 0.4673
+          },
           "caught_zero_leak": {
             "ci95": [
               0.3211,
@@ -6319,6 +7480,15 @@
             "k": 50,
             "n": 124,
             "rate": 0.4032
+          },
+          "caught_zero_leak_excluding_stopped_before": {
+            "ci95": [
+              0.3755,
+              0.5613
+            ],
+            "k": 50,
+            "n": 107,
+            "rate": 0.4673
           },
           "delay_tokens_caught": {
             "max": 77,
@@ -6339,6 +7509,24 @@
           "leaked_tokens_mean_caught": 0.0,
           "stop_reasons": {
             "flag": 67
+          },
+          "stopped_before_injection": {
+            "ci95": [
+              0.0874,
+              0.2086
+            ],
+            "k": 17,
+            "n": 124,
+            "rate": 0.1371
+          },
+          "stopped_before_injection_by_flag": {
+            "ci95": [
+              0.0874,
+              0.2086
+            ],
+            "k": 17,
+            "n": 124,
+            "rate": 0.1371
           },
           "stopped_by_failure_or_lag": {
             "ci95": [
@@ -6502,6 +7690,15 @@
             "n": 124,
             "rate": 0.3871
           },
+          "caught_excluding_stopped_before": {
+            "ci95": [
+              0.3542,
+              0.5385
+            ],
+            "k": 48,
+            "n": 108,
+            "rate": 0.4444
+          },
           "caught_zero_leak": {
             "ci95": [
               0.306,
@@ -6510,6 +7707,15 @@
             "k": 48,
             "n": 124,
             "rate": 0.3871
+          },
+          "caught_zero_leak_excluding_stopped_before": {
+            "ci95": [
+              0.3542,
+              0.5385
+            ],
+            "k": 48,
+            "n": 108,
+            "rate": 0.4444
           },
           "delay_tokens_caught": {
             "max": 83,
@@ -6530,6 +7736,24 @@
           "leaked_tokens_mean_caught": 0.0,
           "stop_reasons": {
             "flag": 64
+          },
+          "stopped_before_injection": {
+            "ci95": [
+              0.081,
+              0.1994
+            ],
+            "k": 16,
+            "n": 124,
+            "rate": 0.129
+          },
+          "stopped_before_injection_by_flag": {
+            "ci95": [
+              0.081,
+              0.1994
+            ],
+            "k": 16,
+            "n": 124,
+            "rate": 0.129
           },
           "stopped_by_failure_or_lag": {
             "ci95": [
@@ -6693,6 +7917,15 @@
             "n": 124,
             "rate": 0.3871
           },
+          "caught_excluding_stopped_before": {
+            "ci95": [
+              0.3542,
+              0.5385
+            ],
+            "k": 48,
+            "n": 108,
+            "rate": 0.4444
+          },
           "caught_zero_leak": {
             "ci95": [
               0.306,
@@ -6701,6 +7934,15 @@
             "k": 48,
             "n": 124,
             "rate": 0.3871
+          },
+          "caught_zero_leak_excluding_stopped_before": {
+            "ci95": [
+              0.3542,
+              0.5385
+            ],
+            "k": 48,
+            "n": 108,
+            "rate": 0.4444
           },
           "delay_tokens_caught": {
             "max": 83,
@@ -6721,6 +7963,24 @@
           "leaked_tokens_mean_caught": 0.0,
           "stop_reasons": {
             "flag": 64
+          },
+          "stopped_before_injection": {
+            "ci95": [
+              0.081,
+              0.1994
+            ],
+            "k": 16,
+            "n": 124,
+            "rate": 0.129
+          },
+          "stopped_before_injection_by_flag": {
+            "ci95": [
+              0.081,
+              0.1994
+            ],
+            "k": 16,
+            "n": 124,
+            "rate": 0.129
           },
           "stopped_by_failure_or_lag": {
             "ci95": [
@@ -6884,6 +8144,15 @@
             "n": 124,
             "rate": 0.3871
           },
+          "caught_excluding_stopped_before": {
+            "ci95": [
+              0.3542,
+              0.5385
+            ],
+            "k": 48,
+            "n": 108,
+            "rate": 0.4444
+          },
           "caught_zero_leak": {
             "ci95": [
               0.306,
@@ -6892,6 +8161,15 @@
             "k": 48,
             "n": 124,
             "rate": 0.3871
+          },
+          "caught_zero_leak_excluding_stopped_before": {
+            "ci95": [
+              0.3542,
+              0.5385
+            ],
+            "k": 48,
+            "n": 108,
+            "rate": 0.4444
           },
           "delay_tokens_caught": {
             "max": 83,
@@ -6912,6 +8190,24 @@
           "leaked_tokens_mean_caught": 0.0,
           "stop_reasons": {
             "flag": 64
+          },
+          "stopped_before_injection": {
+            "ci95": [
+              0.081,
+              0.1994
+            ],
+            "k": 16,
+            "n": 124,
+            "rate": 0.129
+          },
+          "stopped_before_injection_by_flag": {
+            "ci95": [
+              0.081,
+              0.1994
+            ],
+            "k": 16,
+            "n": 124,
+            "rate": 0.129
           },
           "stopped_by_failure_or_lag": {
             "ci95": [
@@ -7075,6 +8371,15 @@
             "n": 124,
             "rate": 0.3871
           },
+          "caught_excluding_stopped_before": {
+            "ci95": [
+              0.3542,
+              0.5385
+            ],
+            "k": 48,
+            "n": 108,
+            "rate": 0.4444
+          },
           "caught_zero_leak": {
             "ci95": [
               0.306,
@@ -7083,6 +8388,15 @@
             "k": 48,
             "n": 124,
             "rate": 0.3871
+          },
+          "caught_zero_leak_excluding_stopped_before": {
+            "ci95": [
+              0.3542,
+              0.5385
+            ],
+            "k": 48,
+            "n": 108,
+            "rate": 0.4444
           },
           "delay_tokens_caught": {
             "max": 83,
@@ -7103,6 +8417,24 @@
           "leaked_tokens_mean_caught": 0.0,
           "stop_reasons": {
             "flag": 64
+          },
+          "stopped_before_injection": {
+            "ci95": [
+              0.081,
+              0.1994
+            ],
+            "k": 16,
+            "n": 124,
+            "rate": 0.129
+          },
+          "stopped_before_injection_by_flag": {
+            "ci95": [
+              0.081,
+              0.1994
+            ],
+            "k": 16,
+            "n": 124,
+            "rate": 0.129
           },
           "stopped_by_failure_or_lag": {
             "ci95": [
@@ -7266,6 +8598,15 @@
             "n": 124,
             "rate": 0.3871
           },
+          "caught_excluding_stopped_before": {
+            "ci95": [
+              0.3542,
+              0.5385
+            ],
+            "k": 48,
+            "n": 108,
+            "rate": 0.4444
+          },
           "caught_zero_leak": {
             "ci95": [
               0.306,
@@ -7274,6 +8615,15 @@
             "k": 48,
             "n": 124,
             "rate": 0.3871
+          },
+          "caught_zero_leak_excluding_stopped_before": {
+            "ci95": [
+              0.3542,
+              0.5385
+            ],
+            "k": 48,
+            "n": 108,
+            "rate": 0.4444
           },
           "delay_tokens_caught": {
             "max": 83,
@@ -7294,6 +8644,24 @@
           "leaked_tokens_mean_caught": 0.0,
           "stop_reasons": {
             "flag": 64
+          },
+          "stopped_before_injection": {
+            "ci95": [
+              0.081,
+              0.1994
+            ],
+            "k": 16,
+            "n": 124,
+            "rate": 0.129
+          },
+          "stopped_before_injection_by_flag": {
+            "ci95": [
+              0.081,
+              0.1994
+            ],
+            "k": 16,
+            "n": 124,
+            "rate": 0.129
           },
           "stopped_by_failure_or_lag": {
             "ci95": [
@@ -7457,6 +8825,15 @@
             "n": 124,
             "rate": 0.4839
           },
+          "caught_excluding_stopped_before": {
+            "ci95": [
+              0.4809,
+              0.6675
+            ],
+            "k": 60,
+            "n": 104,
+            "rate": 0.5769
+          },
           "caught_zero_leak": {
             "ci95": [
               0.0938,
@@ -7465,6 +8842,15 @@
             "k": 18,
             "n": 124,
             "rate": 0.1452
+          },
+          "caught_zero_leak_excluding_stopped_before": {
+            "ci95": [
+              0.1124,
+              0.2571
+            ],
+            "k": 18,
+            "n": 104,
+            "rate": 0.1731
           },
           "delay_tokens_caught": {
             "max": 139,
@@ -7485,6 +8871,24 @@
           "leaked_tokens_mean_caught": 13.52,
           "stop_reasons": {
             "flag": 80
+          },
+          "stopped_before_injection": {
+            "ci95": [
+              0.1069,
+              0.236
+            ],
+            "k": 20,
+            "n": 124,
+            "rate": 0.1613
+          },
+          "stopped_before_injection_by_flag": {
+            "ci95": [
+              0.1069,
+              0.236
+            ],
+            "k": 20,
+            "n": 124,
+            "rate": 0.1613
           },
           "stopped_by_failure_or_lag": {
             "ci95": [
@@ -7648,6 +9052,15 @@
             "n": 124,
             "rate": 0.4839
           },
+          "caught_excluding_stopped_before": {
+            "ci95": [
+              0.4809,
+              0.6675
+            ],
+            "k": 60,
+            "n": 104,
+            "rate": 0.5769
+          },
           "caught_zero_leak": {
             "ci95": [
               0.2105,
@@ -7656,6 +9069,15 @@
             "k": 35,
             "n": 124,
             "rate": 0.2823
+          },
+          "caught_zero_leak_excluding_stopped_before": {
+            "ci95": [
+              0.253,
+              0.4317
+            ],
+            "k": 35,
+            "n": 104,
+            "rate": 0.3365
           },
           "delay_tokens_caught": {
             "max": 139,
@@ -7676,6 +9098,24 @@
           "leaked_tokens_mean_caught": 8.37,
           "stop_reasons": {
             "flag": 80
+          },
+          "stopped_before_injection": {
+            "ci95": [
+              0.1069,
+              0.236
+            ],
+            "k": 20,
+            "n": 124,
+            "rate": 0.1613
+          },
+          "stopped_before_injection_by_flag": {
+            "ci95": [
+              0.1069,
+              0.236
+            ],
+            "k": 20,
+            "n": 124,
+            "rate": 0.1613
           },
           "stopped_by_failure_or_lag": {
             "ci95": [
@@ -7839,6 +9279,15 @@
             "n": 124,
             "rate": 0.4839
           },
+          "caught_excluding_stopped_before": {
+            "ci95": [
+              0.4809,
+              0.6675
+            ],
+            "k": 60,
+            "n": 104,
+            "rate": 0.5769
+          },
           "caught_zero_leak": {
             "ci95": [
               0.306,
@@ -7847,6 +9296,15 @@
             "k": 48,
             "n": 124,
             "rate": 0.3871
+          },
+          "caught_zero_leak_excluding_stopped_before": {
+            "ci95": [
+              0.3688,
+              0.557
+            ],
+            "k": 48,
+            "n": 104,
+            "rate": 0.4615
           },
           "delay_tokens_caught": {
             "max": 139,
@@ -7867,6 +9325,24 @@
           "leaked_tokens_mean_caught": 5.43,
           "stop_reasons": {
             "flag": 80
+          },
+          "stopped_before_injection": {
+            "ci95": [
+              0.1069,
+              0.236
+            ],
+            "k": 20,
+            "n": 124,
+            "rate": 0.1613
+          },
+          "stopped_before_injection_by_flag": {
+            "ci95": [
+              0.1069,
+              0.236
+            ],
+            "k": 20,
+            "n": 124,
+            "rate": 0.1613
           },
           "stopped_by_failure_or_lag": {
             "ci95": [
@@ -8030,6 +9506,15 @@
             "n": 124,
             "rate": 0.4839
           },
+          "caught_excluding_stopped_before": {
+            "ci95": [
+              0.4809,
+              0.6675
+            ],
+            "k": 60,
+            "n": 104,
+            "rate": 0.5769
+          },
           "caught_zero_leak": {
             "ci95": [
               0.3591,
@@ -8038,6 +9523,15 @@
             "k": 55,
             "n": 124,
             "rate": 0.4435
+          },
+          "caught_zero_leak_excluding_stopped_before": {
+            "ci95": [
+              0.4336,
+              0.622
+            ],
+            "k": 55,
+            "n": 104,
+            "rate": 0.5288
           },
           "delay_tokens_caught": {
             "max": 139,
@@ -8058,6 +9552,24 @@
           "leaked_tokens_mean_caught": 3.17,
           "stop_reasons": {
             "flag": 80
+          },
+          "stopped_before_injection": {
+            "ci95": [
+              0.1069,
+              0.236
+            ],
+            "k": 20,
+            "n": 124,
+            "rate": 0.1613
+          },
+          "stopped_before_injection_by_flag": {
+            "ci95": [
+              0.1069,
+              0.236
+            ],
+            "k": 20,
+            "n": 124,
+            "rate": 0.1613
           },
           "stopped_by_failure_or_lag": {
             "ci95": [
@@ -8221,6 +9733,15 @@
             "n": 124,
             "rate": 0.4839
           },
+          "caught_excluding_stopped_before": {
+            "ci95": [
+              0.4809,
+              0.6675
+            ],
+            "k": 60,
+            "n": 104,
+            "rate": 0.5769
+          },
           "caught_zero_leak": {
             "ci95": [
               0.3745,
@@ -8229,6 +9750,15 @@
             "k": 57,
             "n": 124,
             "rate": 0.4597
+          },
+          "caught_zero_leak_excluding_stopped_before": {
+            "ci95": [
+              0.4524,
+              0.6403
+            ],
+            "k": 57,
+            "n": 104,
+            "rate": 0.5481
           },
           "delay_tokens_caught": {
             "max": 139,
@@ -8249,6 +9779,24 @@
           "leaked_tokens_mean_caught": 1.73,
           "stop_reasons": {
             "flag": 80
+          },
+          "stopped_before_injection": {
+            "ci95": [
+              0.1069,
+              0.236
+            ],
+            "k": 20,
+            "n": 124,
+            "rate": 0.1613
+          },
+          "stopped_before_injection_by_flag": {
+            "ci95": [
+              0.1069,
+              0.236
+            ],
+            "k": 20,
+            "n": 124,
+            "rate": 0.1613
           },
           "stopped_by_failure_or_lag": {
             "ci95": [
@@ -8412,6 +9960,15 @@
             "n": 124,
             "rate": 0.4839
           },
+          "caught_excluding_stopped_before": {
+            "ci95": [
+              0.471,
+              0.6564
+            ],
+            "k": 60,
+            "n": 106,
+            "rate": 0.566
+          },
           "caught_zero_leak": {
             "ci95": [
               0.2034,
@@ -8420,6 +9977,15 @@
             "k": 34,
             "n": 124,
             "rate": 0.2742
+          },
+          "caught_zero_leak_excluding_stopped_before": {
+            "ci95": [
+              0.2395,
+              0.4145
+            ],
+            "k": 34,
+            "n": 106,
+            "rate": 0.3208
           },
           "delay_tokens_caught": {
             "max": 138,
@@ -8440,6 +10006,24 @@
           "leaked_tokens_mean_caught": 11.25,
           "stop_reasons": {
             "flag": 78
+          },
+          "stopped_before_injection": {
+            "ci95": [
+              0.0938,
+              0.2178
+            ],
+            "k": 18,
+            "n": 124,
+            "rate": 0.1452
+          },
+          "stopped_before_injection_by_flag": {
+            "ci95": [
+              0.0938,
+              0.2178
+            ],
+            "k": 18,
+            "n": 124,
+            "rate": 0.1452
           },
           "stopped_by_failure_or_lag": {
             "ci95": [
@@ -8603,6 +10187,15 @@
             "n": 124,
             "rate": 0.4839
           },
+          "caught_excluding_stopped_before": {
+            "ci95": [
+              0.471,
+              0.6564
+            ],
+            "k": 60,
+            "n": 106,
+            "rate": 0.566
+          },
           "caught_zero_leak": {
             "ci95": [
               0.2034,
@@ -8611,6 +10204,15 @@
             "k": 34,
             "n": 124,
             "rate": 0.2742
+          },
+          "caught_zero_leak_excluding_stopped_before": {
+            "ci95": [
+              0.2395,
+              0.4145
+            ],
+            "k": 34,
+            "n": 106,
+            "rate": 0.3208
           },
           "delay_tokens_caught": {
             "max": 138,
@@ -8631,6 +10233,24 @@
           "leaked_tokens_mean_caught": 8.32,
           "stop_reasons": {
             "flag": 78
+          },
+          "stopped_before_injection": {
+            "ci95": [
+              0.0938,
+              0.2178
+            ],
+            "k": 18,
+            "n": 124,
+            "rate": 0.1452
+          },
+          "stopped_before_injection_by_flag": {
+            "ci95": [
+              0.0938,
+              0.2178
+            ],
+            "k": 18,
+            "n": 124,
+            "rate": 0.1452
           },
           "stopped_by_failure_or_lag": {
             "ci95": [
@@ -8794,6 +10414,15 @@
             "n": 124,
             "rate": 0.4839
           },
+          "caught_excluding_stopped_before": {
+            "ci95": [
+              0.471,
+              0.6564
+            ],
+            "k": 60,
+            "n": 106,
+            "rate": 0.566
+          },
           "caught_zero_leak": {
             "ci95": [
               0.3211,
@@ -8802,6 +10431,15 @@
             "k": 50,
             "n": 124,
             "rate": 0.4032
+          },
+          "caught_zero_leak_excluding_stopped_before": {
+            "ci95": [
+              0.3793,
+              0.566
+            ],
+            "k": 50,
+            "n": 106,
+            "rate": 0.4717
           },
           "delay_tokens_caught": {
             "max": 138,
@@ -8822,6 +10460,24 @@
           "leaked_tokens_mean_caught": 5.38,
           "stop_reasons": {
             "flag": 78
+          },
+          "stopped_before_injection": {
+            "ci95": [
+              0.0938,
+              0.2178
+            ],
+            "k": 18,
+            "n": 124,
+            "rate": 0.1452
+          },
+          "stopped_before_injection_by_flag": {
+            "ci95": [
+              0.0938,
+              0.2178
+            ],
+            "k": 18,
+            "n": 124,
+            "rate": 0.1452
           },
           "stopped_by_failure_or_lag": {
             "ci95": [
@@ -8985,6 +10641,15 @@
             "n": 124,
             "rate": 0.4839
           },
+          "caught_excluding_stopped_before": {
+            "ci95": [
+              0.471,
+              0.6564
+            ],
+            "k": 60,
+            "n": 106,
+            "rate": 0.566
+          },
           "caught_zero_leak": {
             "ci95": [
               0.3668,
@@ -8993,6 +10658,15 @@
             "k": 56,
             "n": 124,
             "rate": 0.4516
+          },
+          "caught_zero_leak_excluding_stopped_before": {
+            "ci95": [
+              0.434,
+              0.6207
+            ],
+            "k": 56,
+            "n": 106,
+            "rate": 0.5283
           },
           "delay_tokens_caught": {
             "max": 138,
@@ -9013,6 +10687,24 @@
           "leaked_tokens_mean_caught": 3.52,
           "stop_reasons": {
             "flag": 78
+          },
+          "stopped_before_injection": {
+            "ci95": [
+              0.0938,
+              0.2178
+            ],
+            "k": 18,
+            "n": 124,
+            "rate": 0.1452
+          },
+          "stopped_before_injection_by_flag": {
+            "ci95": [
+              0.0938,
+              0.2178
+            ],
+            "k": 18,
+            "n": 124,
+            "rate": 0.1452
           },
           "stopped_by_failure_or_lag": {
             "ci95": [
@@ -9176,6 +10868,15 @@
             "n": 124,
             "rate": 0.4839
           },
+          "caught_excluding_stopped_before": {
+            "ci95": [
+              0.471,
+              0.6564
+            ],
+            "k": 60,
+            "n": 106,
+            "rate": 0.566
+          },
           "caught_zero_leak": {
             "ci95": [
               0.3745,
@@ -9184,6 +10885,15 @@
             "k": 57,
             "n": 124,
             "rate": 0.4597
+          },
+          "caught_zero_leak_excluding_stopped_before": {
+            "ci95": [
+              0.4432,
+              0.6297
+            ],
+            "k": 57,
+            "n": 106,
+            "rate": 0.5377
           },
           "delay_tokens_caught": {
             "max": 138,
@@ -9204,6 +10914,24 @@
           "leaked_tokens_mean_caught": 2.13,
           "stop_reasons": {
             "flag": 78
+          },
+          "stopped_before_injection": {
+            "ci95": [
+              0.0938,
+              0.2178
+            ],
+            "k": 18,
+            "n": 124,
+            "rate": 0.1452
+          },
+          "stopped_before_injection_by_flag": {
+            "ci95": [
+              0.0938,
+              0.2178
+            ],
+            "k": 18,
+            "n": 124,
+            "rate": 0.1452
           },
           "stopped_by_failure_or_lag": {
             "ci95": [
@@ -9367,6 +11095,15 @@
             "n": 124,
             "rate": 0.4758
           },
+          "caught_excluding_stopped_before": {
+            "ci95": [
+              0.457,
+              0.6422
+            ],
+            "k": 59,
+            "n": 107,
+            "rate": 0.5514
+          },
           "caught_zero_leak": {
             "ci95": [
               0.2985,
@@ -9375,6 +11112,15 @@
             "k": 47,
             "n": 124,
             "rate": 0.379
+          },
+          "caught_zero_leak_excluding_stopped_before": {
+            "ci95": [
+              0.3489,
+              0.5338
+            ],
+            "k": 47,
+            "n": 107,
+            "rate": 0.4393
           },
           "delay_tokens_caught": {
             "max": 140,
@@ -9395,6 +11141,24 @@
           "leaked_tokens_mean_caught": 9.12,
           "stop_reasons": {
             "flag": 76
+          },
+          "stopped_before_injection": {
+            "ci95": [
+              0.0874,
+              0.2086
+            ],
+            "k": 17,
+            "n": 124,
+            "rate": 0.1371
+          },
+          "stopped_before_injection_by_flag": {
+            "ci95": [
+              0.0874,
+              0.2086
+            ],
+            "k": 17,
+            "n": 124,
+            "rate": 0.1371
           },
           "stopped_by_failure_or_lag": {
             "ci95": [
@@ -9558,6 +11322,15 @@
             "n": 124,
             "rate": 0.4758
           },
+          "caught_excluding_stopped_before": {
+            "ci95": [
+              0.457,
+              0.6422
+            ],
+            "k": 59,
+            "n": 107,
+            "rate": 0.5514
+          },
           "caught_zero_leak": {
             "ci95": [
               0.2985,
@@ -9566,6 +11339,15 @@
             "k": 47,
             "n": 124,
             "rate": 0.379
+          },
+          "caught_zero_leak_excluding_stopped_before": {
+            "ci95": [
+              0.3489,
+              0.5338
+            ],
+            "k": 47,
+            "n": 107,
+            "rate": 0.4393
           },
           "delay_tokens_caught": {
             "max": 140,
@@ -9586,6 +11368,24 @@
           "leaked_tokens_mean_caught": 8.19,
           "stop_reasons": {
             "flag": 76
+          },
+          "stopped_before_injection": {
+            "ci95": [
+              0.0874,
+              0.2086
+            ],
+            "k": 17,
+            "n": 124,
+            "rate": 0.1371
+          },
+          "stopped_before_injection_by_flag": {
+            "ci95": [
+              0.0874,
+              0.2086
+            ],
+            "k": 17,
+            "n": 124,
+            "rate": 0.1371
           },
           "stopped_by_failure_or_lag": {
             "ci95": [
@@ -9749,6 +11549,15 @@
             "n": 124,
             "rate": 0.4758
           },
+          "caught_excluding_stopped_before": {
+            "ci95": [
+              0.457,
+              0.6422
+            ],
+            "k": 59,
+            "n": 107,
+            "rate": 0.5514
+          },
           "caught_zero_leak": {
             "ci95": [
               0.2985,
@@ -9757,6 +11566,15 @@
             "k": 47,
             "n": 124,
             "rate": 0.379
+          },
+          "caught_zero_leak_excluding_stopped_before": {
+            "ci95": [
+              0.3489,
+              0.5338
+            ],
+            "k": 47,
+            "n": 107,
+            "rate": 0.4393
           },
           "delay_tokens_caught": {
             "max": 140,
@@ -9777,6 +11595,24 @@
           "leaked_tokens_mean_caught": 7.24,
           "stop_reasons": {
             "flag": 76
+          },
+          "stopped_before_injection": {
+            "ci95": [
+              0.0874,
+              0.2086
+            ],
+            "k": 17,
+            "n": 124,
+            "rate": 0.1371
+          },
+          "stopped_before_injection_by_flag": {
+            "ci95": [
+              0.0874,
+              0.2086
+            ],
+            "k": 17,
+            "n": 124,
+            "rate": 0.1371
           },
           "stopped_by_failure_or_lag": {
             "ci95": [
@@ -9940,6 +11776,15 @@
             "n": 124,
             "rate": 0.4758
           },
+          "caught_excluding_stopped_before": {
+            "ci95": [
+              0.457,
+              0.6422
+            ],
+            "k": 59,
+            "n": 107,
+            "rate": 0.5514
+          },
           "caught_zero_leak": {
             "ci95": [
               0.3515,
@@ -9948,6 +11793,15 @@
             "k": 54,
             "n": 124,
             "rate": 0.4355
+          },
+          "caught_zero_leak_excluding_stopped_before": {
+            "ci95": [
+              0.4114,
+              0.5976
+            ],
+            "k": 54,
+            "n": 107,
+            "rate": 0.5047
           },
           "delay_tokens_caught": {
             "max": 140,
@@ -9968,6 +11822,24 @@
           "leaked_tokens_mean_caught": 4.71,
           "stop_reasons": {
             "flag": 76
+          },
+          "stopped_before_injection": {
+            "ci95": [
+              0.0874,
+              0.2086
+            ],
+            "k": 17,
+            "n": 124,
+            "rate": 0.1371
+          },
+          "stopped_before_injection_by_flag": {
+            "ci95": [
+              0.0874,
+              0.2086
+            ],
+            "k": 17,
+            "n": 124,
+            "rate": 0.1371
           },
           "stopped_by_failure_or_lag": {
             "ci95": [
@@ -10131,6 +12003,15 @@
             "n": 124,
             "rate": 0.4758
           },
+          "caught_excluding_stopped_before": {
+            "ci95": [
+              0.457,
+              0.6422
+            ],
+            "k": 59,
+            "n": 107,
+            "rate": 0.5514
+          },
           "caught_zero_leak": {
             "ci95": [
               0.3591,
@@ -10139,6 +12020,15 @@
             "k": 55,
             "n": 124,
             "rate": 0.4435
+          },
+          "caught_zero_leak_excluding_stopped_before": {
+            "ci95": [
+              0.4205,
+              0.6066
+            ],
+            "k": 55,
+            "n": 107,
+            "rate": 0.514
           },
           "delay_tokens_caught": {
             "max": 140,
@@ -10159,6 +12049,24 @@
           "leaked_tokens_mean_caught": 2.71,
           "stop_reasons": {
             "flag": 76
+          },
+          "stopped_before_injection": {
+            "ci95": [
+              0.0874,
+              0.2086
+            ],
+            "k": 17,
+            "n": 124,
+            "rate": 0.1371
+          },
+          "stopped_before_injection_by_flag": {
+            "ci95": [
+              0.0874,
+              0.2086
+            ],
+            "k": 17,
+            "n": 124,
+            "rate": 0.1371
           },
           "stopped_by_failure_or_lag": {
             "ci95": [
@@ -10322,6 +12230,15 @@
             "n": 124,
             "rate": 0.4677
           },
+          "caught_excluding_stopped_before": {
+            "ci95": [
+              0.4433,
+              0.6282
+            ],
+            "k": 58,
+            "n": 108,
+            "rate": 0.537
+          },
           "caught_zero_leak": {
             "ci95": [
               0.3362,
@@ -10330,6 +12247,15 @@
             "k": 52,
             "n": 124,
             "rate": 0.4194
+          },
+          "caught_zero_leak_excluding_stopped_before": {
+            "ci95": [
+              0.3895,
+              0.5747
+            ],
+            "k": 52,
+            "n": 108,
+            "rate": 0.4815
           },
           "delay_tokens_caught": {
             "max": 140,
@@ -10350,6 +12276,24 @@
           "leaked_tokens_mean_caught": 5.6,
           "stop_reasons": {
             "flag": 74
+          },
+          "stopped_before_injection": {
+            "ci95": [
+              0.081,
+              0.1994
+            ],
+            "k": 16,
+            "n": 124,
+            "rate": 0.129
+          },
+          "stopped_before_injection_by_flag": {
+            "ci95": [
+              0.081,
+              0.1994
+            ],
+            "k": 16,
+            "n": 124,
+            "rate": 0.129
           },
           "stopped_by_failure_or_lag": {
             "ci95": [
@@ -10513,6 +12457,15 @@
             "n": 124,
             "rate": 0.4677
           },
+          "caught_excluding_stopped_before": {
+            "ci95": [
+              0.4433,
+              0.6282
+            ],
+            "k": 58,
+            "n": 108,
+            "rate": 0.537
+          },
           "caught_zero_leak": {
             "ci95": [
               0.3362,
@@ -10521,6 +12474,15 @@
             "k": 52,
             "n": 124,
             "rate": 0.4194
+          },
+          "caught_zero_leak_excluding_stopped_before": {
+            "ci95": [
+              0.3895,
+              0.5747
+            ],
+            "k": 52,
+            "n": 108,
+            "rate": 0.4815
           },
           "delay_tokens_caught": {
             "max": 140,
@@ -10541,6 +12503,24 @@
           "leaked_tokens_mean_caught": 5.33,
           "stop_reasons": {
             "flag": 74
+          },
+          "stopped_before_injection": {
+            "ci95": [
+              0.081,
+              0.1994
+            ],
+            "k": 16,
+            "n": 124,
+            "rate": 0.129
+          },
+          "stopped_before_injection_by_flag": {
+            "ci95": [
+              0.081,
+              0.1994
+            ],
+            "k": 16,
+            "n": 124,
+            "rate": 0.129
           },
           "stopped_by_failure_or_lag": {
             "ci95": [
@@ -10704,6 +12684,15 @@
             "n": 124,
             "rate": 0.4677
           },
+          "caught_excluding_stopped_before": {
+            "ci95": [
+              0.4433,
+              0.6282
+            ],
+            "k": 58,
+            "n": 108,
+            "rate": 0.537
+          },
           "caught_zero_leak": {
             "ci95": [
               0.3362,
@@ -10712,6 +12701,15 @@
             "k": 52,
             "n": 124,
             "rate": 0.4194
+          },
+          "caught_zero_leak_excluding_stopped_before": {
+            "ci95": [
+              0.3895,
+              0.5747
+            ],
+            "k": 52,
+            "n": 108,
+            "rate": 0.4815
           },
           "delay_tokens_caught": {
             "max": 140,
@@ -10732,6 +12730,24 @@
           "leaked_tokens_mean_caught": 5.05,
           "stop_reasons": {
             "flag": 74
+          },
+          "stopped_before_injection": {
+            "ci95": [
+              0.081,
+              0.1994
+            ],
+            "k": 16,
+            "n": 124,
+            "rate": 0.129
+          },
+          "stopped_before_injection_by_flag": {
+            "ci95": [
+              0.081,
+              0.1994
+            ],
+            "k": 16,
+            "n": 124,
+            "rate": 0.129
           },
           "stopped_by_failure_or_lag": {
             "ci95": [
@@ -10895,6 +12911,15 @@
             "n": 124,
             "rate": 0.4677
           },
+          "caught_excluding_stopped_before": {
+            "ci95": [
+              0.4433,
+              0.6282
+            ],
+            "k": 58,
+            "n": 108,
+            "rate": 0.537
+          },
           "caught_zero_leak": {
             "ci95": [
               0.3362,
@@ -10903,6 +12928,15 @@
             "k": 52,
             "n": 124,
             "rate": 0.4194
+          },
+          "caught_zero_leak_excluding_stopped_before": {
+            "ci95": [
+              0.3895,
+              0.5747
+            ],
+            "k": 52,
+            "n": 108,
+            "rate": 0.4815
           },
           "delay_tokens_caught": {
             "max": 140,
@@ -10923,6 +12957,24 @@
           "leaked_tokens_mean_caught": 4.07,
           "stop_reasons": {
             "flag": 74
+          },
+          "stopped_before_injection": {
+            "ci95": [
+              0.081,
+              0.1994
+            ],
+            "k": 16,
+            "n": 124,
+            "rate": 0.129
+          },
+          "stopped_before_injection_by_flag": {
+            "ci95": [
+              0.081,
+              0.1994
+            ],
+            "k": 16,
+            "n": 124,
+            "rate": 0.129
           },
           "stopped_by_failure_or_lag": {
             "ci95": [
@@ -11086,6 +13138,15 @@
             "n": 124,
             "rate": 0.4677
           },
+          "caught_excluding_stopped_before": {
+            "ci95": [
+              0.4433,
+              0.6282
+            ],
+            "k": 58,
+            "n": 108,
+            "rate": 0.537
+          },
           "caught_zero_leak": {
             "ci95": [
               0.3745,
@@ -11094,6 +13155,15 @@
             "k": 57,
             "n": 124,
             "rate": 0.4597
+          },
+          "caught_zero_leak_excluding_stopped_before": {
+            "ci95": [
+              0.4343,
+              0.6194
+            ],
+            "k": 57,
+            "n": 108,
+            "rate": 0.5278
           },
           "delay_tokens_caught": {
             "max": 140,
@@ -11114,6 +13184,24 @@
           "leaked_tokens_mean_caught": 1.1,
           "stop_reasons": {
             "flag": 74
+          },
+          "stopped_before_injection": {
+            "ci95": [
+              0.081,
+              0.1994
+            ],
+            "k": 16,
+            "n": 124,
+            "rate": 0.129
+          },
+          "stopped_before_injection_by_flag": {
+            "ci95": [
+              0.081,
+              0.1994
+            ],
+            "k": 16,
+            "n": 124,
+            "rate": 0.129
           },
           "stopped_by_failure_or_lag": {
             "ci95": [
@@ -11277,6 +13365,15 @@
             "n": 124,
             "rate": 0.5645
           },
+          "caught_excluding_stopped_before": {
+            "ci95": [
+              0.5974,
+              0.7746
+            ],
+            "k": 70,
+            "n": 101,
+            "rate": 0.6931
+          },
           "caught_zero_leak": {
             "ci95": [
               0.1202,
@@ -11285,6 +13382,15 @@
             "k": 22,
             "n": 124,
             "rate": 0.1774
+          },
+          "caught_zero_leak_excluding_stopped_before": {
+            "ci95": [
+              0.1485,
+              0.3078
+            ],
+            "k": 22,
+            "n": 101,
+            "rate": 0.2178
           },
           "delay_tokens_caught": {
             "max": 108,
@@ -11305,6 +13411,24 @@
           "leaked_tokens_mean_caught": 11.84,
           "stop_reasons": {
             "flag": 93
+          },
+          "stopped_before_injection": {
+            "ci95": [
+              0.1269,
+              0.263
+            ],
+            "k": 23,
+            "n": 124,
+            "rate": 0.1855
+          },
+          "stopped_before_injection_by_flag": {
+            "ci95": [
+              0.1269,
+              0.263
+            ],
+            "k": 23,
+            "n": 124,
+            "rate": 0.1855
           },
           "stopped_by_failure_or_lag": {
             "ci95": [
@@ -11468,6 +13592,15 @@
             "n": 124,
             "rate": 0.5645
           },
+          "caught_excluding_stopped_before": {
+            "ci95": [
+              0.5974,
+              0.7746
+            ],
+            "k": 70,
+            "n": 101,
+            "rate": 0.6931
+          },
           "caught_zero_leak": {
             "ci95": [
               0.2687,
@@ -11476,6 +13609,15 @@
             "k": 43,
             "n": 124,
             "rate": 0.3468
+          },
+          "caught_zero_leak_excluding_stopped_before": {
+            "ci95": [
+              0.3338,
+              0.5231
+            ],
+            "k": 43,
+            "n": 101,
+            "rate": 0.4257
           },
           "delay_tokens_caught": {
             "max": 108,
@@ -11496,6 +13638,24 @@
           "leaked_tokens_mean_caught": 6.79,
           "stop_reasons": {
             "flag": 93
+          },
+          "stopped_before_injection": {
+            "ci95": [
+              0.1269,
+              0.263
+            ],
+            "k": 23,
+            "n": 124,
+            "rate": 0.1855
+          },
+          "stopped_before_injection_by_flag": {
+            "ci95": [
+              0.1269,
+              0.263
+            ],
+            "k": 23,
+            "n": 124,
+            "rate": 0.1855
           },
           "stopped_by_failure_or_lag": {
             "ci95": [
@@ -11659,6 +13819,15 @@
             "n": 124,
             "rate": 0.5645
           },
+          "caught_excluding_stopped_before": {
+            "ci95": [
+              0.5974,
+              0.7746
+            ],
+            "k": 70,
+            "n": 101,
+            "rate": 0.6931
+          },
           "caught_zero_leak": {
             "ci95": [
               0.3822,
@@ -11667,6 +13836,15 @@
             "k": 58,
             "n": 124,
             "rate": 0.4677
+          },
+          "caught_zero_leak_excluding_stopped_before": {
+            "ci95": [
+              0.4769,
+              0.6662
+            ],
+            "k": 58,
+            "n": 101,
+            "rate": 0.5743
           },
           "delay_tokens_caught": {
             "max": 108,
@@ -11687,6 +13865,24 @@
           "leaked_tokens_mean_caught": 3.9,
           "stop_reasons": {
             "flag": 93
+          },
+          "stopped_before_injection": {
+            "ci95": [
+              0.1269,
+              0.263
+            ],
+            "k": 23,
+            "n": 124,
+            "rate": 0.1855
+          },
+          "stopped_before_injection_by_flag": {
+            "ci95": [
+              0.1269,
+              0.263
+            ],
+            "k": 23,
+            "n": 124,
+            "rate": 0.1855
           },
           "stopped_by_failure_or_lag": {
             "ci95": [
@@ -11850,6 +14046,15 @@
             "n": 124,
             "rate": 0.5645
           },
+          "caught_excluding_stopped_before": {
+            "ci95": [
+              0.5974,
+              0.7746
+            ],
+            "k": 70,
+            "n": 101,
+            "rate": 0.6931
+          },
           "caught_zero_leak": {
             "ci95": [
               0.429,
@@ -11858,6 +14063,15 @@
             "k": 64,
             "n": 124,
             "rate": 0.5161
+          },
+          "caught_zero_leak_excluding_stopped_before": {
+            "ci95": [
+              0.5364,
+              0.7211
+            ],
+            "k": 64,
+            "n": 101,
+            "rate": 0.6337
           },
           "delay_tokens_caught": {
             "max": 108,
@@ -11878,6 +14092,24 @@
           "leaked_tokens_mean_caught": 1.84,
           "stop_reasons": {
             "flag": 93
+          },
+          "stopped_before_injection": {
+            "ci95": [
+              0.1269,
+              0.263
+            ],
+            "k": 23,
+            "n": 124,
+            "rate": 0.1855
+          },
+          "stopped_before_injection_by_flag": {
+            "ci95": [
+              0.1269,
+              0.263
+            ],
+            "k": 23,
+            "n": 124,
+            "rate": 0.1855
           },
           "stopped_by_failure_or_lag": {
             "ci95": [
@@ -12041,6 +14273,15 @@
             "n": 124,
             "rate": 0.5645
           },
+          "caught_excluding_stopped_before": {
+            "ci95": [
+              0.5974,
+              0.7746
+            ],
+            "k": 70,
+            "n": 101,
+            "rate": 0.6931
+          },
           "caught_zero_leak": {
             "ci95": [
               0.4686,
@@ -12049,6 +14290,15 @@
             "k": 69,
             "n": 124,
             "rate": 0.5565
+          },
+          "caught_zero_leak_excluding_stopped_before": {
+            "ci95": [
+              0.5871,
+              0.7658
+            ],
+            "k": 69,
+            "n": 101,
+            "rate": 0.6832
           },
           "delay_tokens_caught": {
             "max": 108,
@@ -12069,6 +14319,24 @@
           "leaked_tokens_mean_caught": 0.46,
           "stop_reasons": {
             "flag": 93
+          },
+          "stopped_before_injection": {
+            "ci95": [
+              0.1269,
+              0.263
+            ],
+            "k": 23,
+            "n": 124,
+            "rate": 0.1855
+          },
+          "stopped_before_injection_by_flag": {
+            "ci95": [
+              0.1269,
+              0.263
+            ],
+            "k": 23,
+            "n": 124,
+            "rate": 0.1855
           },
           "stopped_by_failure_or_lag": {
             "ci95": [
@@ -12232,6 +14500,15 @@
             "n": 124,
             "rate": 0.5484
           },
+          "caught_excluding_stopped_before": {
+            "ci95": [
+              0.5584,
+              0.7383
+            ],
+            "k": 68,
+            "n": 104,
+            "rate": 0.6538
+          },
           "caught_zero_leak": {
             "ci95": [
               0.2614,
@@ -12240,6 +14517,15 @@
             "k": 42,
             "n": 124,
             "rate": 0.3387
+          },
+          "caught_zero_leak_excluding_stopped_before": {
+            "ci95": [
+              0.3146,
+              0.4999
+            ],
+            "k": 42,
+            "n": 104,
+            "rate": 0.4038
           },
           "delay_tokens_caught": {
             "max": 68,
@@ -12260,6 +14546,24 @@
           "leaked_tokens_mean_caught": 8.85,
           "stop_reasons": {
             "flag": 88
+          },
+          "stopped_before_injection": {
+            "ci95": [
+              0.1069,
+              0.236
+            ],
+            "k": 20,
+            "n": 124,
+            "rate": 0.1613
+          },
+          "stopped_before_injection_by_flag": {
+            "ci95": [
+              0.1069,
+              0.236
+            ],
+            "k": 20,
+            "n": 124,
+            "rate": 0.1613
           },
           "stopped_by_failure_or_lag": {
             "ci95": [
@@ -12423,6 +14727,15 @@
             "n": 124,
             "rate": 0.5484
           },
+          "caught_excluding_stopped_before": {
+            "ci95": [
+              0.5584,
+              0.7383
+            ],
+            "k": 68,
+            "n": 104,
+            "rate": 0.6538
+          },
           "caught_zero_leak": {
             "ci95": [
               0.2614,
@@ -12431,6 +14744,15 @@
             "k": 42,
             "n": 124,
             "rate": 0.3387
+          },
+          "caught_zero_leak_excluding_stopped_before": {
+            "ci95": [
+              0.3146,
+              0.4999
+            ],
+            "k": 42,
+            "n": 104,
+            "rate": 0.4038
           },
           "delay_tokens_caught": {
             "max": 68,
@@ -12451,6 +14773,24 @@
           "leaked_tokens_mean_caught": 5.88,
           "stop_reasons": {
             "flag": 88
+          },
+          "stopped_before_injection": {
+            "ci95": [
+              0.1069,
+              0.236
+            ],
+            "k": 20,
+            "n": 124,
+            "rate": 0.1613
+          },
+          "stopped_before_injection_by_flag": {
+            "ci95": [
+              0.1069,
+              0.236
+            ],
+            "k": 20,
+            "n": 124,
+            "rate": 0.1613
           },
           "stopped_by_failure_or_lag": {
             "ci95": [
@@ -12614,6 +14954,15 @@
             "n": 124,
             "rate": 0.5484
           },
+          "caught_excluding_stopped_before": {
+            "ci95": [
+              0.5584,
+              0.7383
+            ],
+            "k": 68,
+            "n": 104,
+            "rate": 0.6538
+          },
           "caught_zero_leak": {
             "ci95": [
               0.3977,
@@ -12622,6 +14971,15 @@
             "k": 60,
             "n": 124,
             "rate": 0.4839
+          },
+          "caught_zero_leak_excluding_stopped_before": {
+            "ci95": [
+              0.4809,
+              0.6675
+            ],
+            "k": 60,
+            "n": 104,
+            "rate": 0.5769
           },
           "delay_tokens_caught": {
             "max": 68,
@@ -12642,6 +15000,24 @@
           "leaked_tokens_mean_caught": 2.82,
           "stop_reasons": {
             "flag": 88
+          },
+          "stopped_before_injection": {
+            "ci95": [
+              0.1069,
+              0.236
+            ],
+            "k": 20,
+            "n": 124,
+            "rate": 0.1613
+          },
+          "stopped_before_injection_by_flag": {
+            "ci95": [
+              0.1069,
+              0.236
+            ],
+            "k": 20,
+            "n": 124,
+            "rate": 0.1613
           },
           "stopped_by_failure_or_lag": {
             "ci95": [
@@ -12805,6 +15181,15 @@
             "n": 124,
             "rate": 0.5484
           },
+          "caught_excluding_stopped_before": {
+            "ci95": [
+              0.5584,
+              0.7383
+            ],
+            "k": 68,
+            "n": 104,
+            "rate": 0.6538
+          },
           "caught_zero_leak": {
             "ci95": [
               0.429,
@@ -12813,6 +15198,15 @@
             "k": 64,
             "n": 124,
             "rate": 0.5161
+          },
+          "caught_zero_leak_excluding_stopped_before": {
+            "ci95": [
+              0.5194,
+              0.7032
+            ],
+            "k": 64,
+            "n": 104,
+            "rate": 0.6154
           },
           "delay_tokens_caught": {
             "max": 68,
@@ -12833,6 +15227,24 @@
           "leaked_tokens_mean_caught": 0.94,
           "stop_reasons": {
             "flag": 88
+          },
+          "stopped_before_injection": {
+            "ci95": [
+              0.1069,
+              0.236
+            ],
+            "k": 20,
+            "n": 124,
+            "rate": 0.1613
+          },
+          "stopped_before_injection_by_flag": {
+            "ci95": [
+              0.1069,
+              0.236
+            ],
+            "k": 20,
+            "n": 124,
+            "rate": 0.1613
           },
           "stopped_by_failure_or_lag": {
             "ci95": [
@@ -12996,6 +15408,15 @@
             "n": 124,
             "rate": 0.5484
           },
+          "caught_excluding_stopped_before": {
+            "ci95": [
+              0.5584,
+              0.7383
+            ],
+            "k": 68,
+            "n": 104,
+            "rate": 0.6538
+          },
           "caught_zero_leak": {
             "ci95": [
               0.4607,
@@ -13004,6 +15425,15 @@
             "k": 68,
             "n": 124,
             "rate": 0.5484
+          },
+          "caught_zero_leak_excluding_stopped_before": {
+            "ci95": [
+              0.5584,
+              0.7383
+            ],
+            "k": 68,
+            "n": 104,
+            "rate": 0.6538
           },
           "delay_tokens_caught": {
             "max": 68,
@@ -13024,6 +15454,24 @@
           "leaked_tokens_mean_caught": 0.0,
           "stop_reasons": {
             "flag": 88
+          },
+          "stopped_before_injection": {
+            "ci95": [
+              0.1069,
+              0.236
+            ],
+            "k": 20,
+            "n": 124,
+            "rate": 0.1613
+          },
+          "stopped_before_injection_by_flag": {
+            "ci95": [
+              0.1069,
+              0.236
+            ],
+            "k": 20,
+            "n": 124,
+            "rate": 0.1613
           },
           "stopped_by_failure_or_lag": {
             "ci95": [
@@ -13187,6 +15635,15 @@
             "n": 124,
             "rate": 0.5645
           },
+          "caught_excluding_stopped_before": {
+            "ci95": [
+              0.566,
+              0.7435
+            ],
+            "k": 70,
+            "n": 106,
+            "rate": 0.6604
+          },
           "caught_zero_leak": {
             "ci95": [
               0.3977,
@@ -13195,6 +15652,15 @@
             "k": 60,
             "n": 124,
             "rate": 0.4839
+          },
+          "caught_zero_leak_excluding_stopped_before": {
+            "ci95": [
+              0.471,
+              0.6564
+            ],
+            "k": 60,
+            "n": 106,
+            "rate": 0.566
           },
           "delay_tokens_caught": {
             "max": 132,
@@ -13215,6 +15681,24 @@
           "leaked_tokens_mean_caught": 4.94,
           "stop_reasons": {
             "flag": 88
+          },
+          "stopped_before_injection": {
+            "ci95": [
+              0.0938,
+              0.2178
+            ],
+            "k": 18,
+            "n": 124,
+            "rate": 0.1452
+          },
+          "stopped_before_injection_by_flag": {
+            "ci95": [
+              0.0938,
+              0.2178
+            ],
+            "k": 18,
+            "n": 124,
+            "rate": 0.1452
           },
           "stopped_by_failure_or_lag": {
             "ci95": [
@@ -13378,6 +15862,15 @@
             "n": 124,
             "rate": 0.5645
           },
+          "caught_excluding_stopped_before": {
+            "ci95": [
+              0.566,
+              0.7435
+            ],
+            "k": 70,
+            "n": 106,
+            "rate": 0.6604
+          },
           "caught_zero_leak": {
             "ci95": [
               0.3977,
@@ -13386,6 +15879,15 @@
             "k": 60,
             "n": 124,
             "rate": 0.4839
+          },
+          "caught_zero_leak_excluding_stopped_before": {
+            "ci95": [
+              0.471,
+              0.6564
+            ],
+            "k": 60,
+            "n": 106,
+            "rate": 0.566
           },
           "delay_tokens_caught": {
             "max": 132,
@@ -13406,6 +15908,24 @@
           "leaked_tokens_mean_caught": 4.03,
           "stop_reasons": {
             "flag": 88
+          },
+          "stopped_before_injection": {
+            "ci95": [
+              0.0938,
+              0.2178
+            ],
+            "k": 18,
+            "n": 124,
+            "rate": 0.1452
+          },
+          "stopped_before_injection_by_flag": {
+            "ci95": [
+              0.0938,
+              0.2178
+            ],
+            "k": 18,
+            "n": 124,
+            "rate": 0.1452
           },
           "stopped_by_failure_or_lag": {
             "ci95": [
@@ -13569,6 +16089,15 @@
             "n": 124,
             "rate": 0.5645
           },
+          "caught_excluding_stopped_before": {
+            "ci95": [
+              0.566,
+              0.7435
+            ],
+            "k": 70,
+            "n": 106,
+            "rate": 0.6604
+          },
           "caught_zero_leak": {
             "ci95": [
               0.3977,
@@ -13577,6 +16106,15 @@
             "k": 60,
             "n": 124,
             "rate": 0.4839
+          },
+          "caught_zero_leak_excluding_stopped_before": {
+            "ci95": [
+              0.471,
+              0.6564
+            ],
+            "k": 60,
+            "n": 106,
+            "rate": 0.566
           },
           "delay_tokens_caught": {
             "max": 132,
@@ -13597,6 +16135,24 @@
           "leaked_tokens_mean_caught": 3.11,
           "stop_reasons": {
             "flag": 88
+          },
+          "stopped_before_injection": {
+            "ci95": [
+              0.0938,
+              0.2178
+            ],
+            "k": 18,
+            "n": 124,
+            "rate": 0.1452
+          },
+          "stopped_before_injection_by_flag": {
+            "ci95": [
+              0.0938,
+              0.2178
+            ],
+            "k": 18,
+            "n": 124,
+            "rate": 0.1452
           },
           "stopped_by_failure_or_lag": {
             "ci95": [
@@ -13760,6 +16316,15 @@
             "n": 124,
             "rate": 0.5645
           },
+          "caught_excluding_stopped_before": {
+            "ci95": [
+              0.566,
+              0.7435
+            ],
+            "k": 70,
+            "n": 106,
+            "rate": 0.6604
+          },
           "caught_zero_leak": {
             "ci95": [
               0.4686,
@@ -13768,6 +16333,15 @@
             "k": 69,
             "n": 124,
             "rate": 0.5565
+          },
+          "caught_zero_leak_excluding_stopped_before": {
+            "ci95": [
+              0.5564,
+              0.735
+            ],
+            "k": 69,
+            "n": 106,
+            "rate": 0.6509
           },
           "delay_tokens_caught": {
             "max": 132,
@@ -13788,6 +16362,24 @@
           "leaked_tokens_mean_caught": 0.91,
           "stop_reasons": {
             "flag": 88
+          },
+          "stopped_before_injection": {
+            "ci95": [
+              0.0938,
+              0.2178
+            ],
+            "k": 18,
+            "n": 124,
+            "rate": 0.1452
+          },
+          "stopped_before_injection_by_flag": {
+            "ci95": [
+              0.0938,
+              0.2178
+            ],
+            "k": 18,
+            "n": 124,
+            "rate": 0.1452
           },
           "stopped_by_failure_or_lag": {
             "ci95": [
@@ -13951,6 +16543,15 @@
             "n": 124,
             "rate": 0.5645
           },
+          "caught_excluding_stopped_before": {
+            "ci95": [
+              0.566,
+              0.7435
+            ],
+            "k": 70,
+            "n": 106,
+            "rate": 0.6604
+          },
           "caught_zero_leak": {
             "ci95": [
               0.4686,
@@ -13959,6 +16560,15 @@
             "k": 69,
             "n": 124,
             "rate": 0.5565
+          },
+          "caught_zero_leak_excluding_stopped_before": {
+            "ci95": [
+              0.5564,
+              0.735
+            ],
+            "k": 69,
+            "n": 106,
+            "rate": 0.6509
           },
           "delay_tokens_caught": {
             "max": 132,
@@ -13979,6 +16589,24 @@
           "leaked_tokens_mean_caught": 0.46,
           "stop_reasons": {
             "flag": 88
+          },
+          "stopped_before_injection": {
+            "ci95": [
+              0.0938,
+              0.2178
+            ],
+            "k": 18,
+            "n": 124,
+            "rate": 0.1452
+          },
+          "stopped_before_injection_by_flag": {
+            "ci95": [
+              0.0938,
+              0.2178
+            ],
+            "k": 18,
+            "n": 124,
+            "rate": 0.1452
           },
           "stopped_by_failure_or_lag": {
             "ci95": [
@@ -14142,6 +16770,15 @@
             "n": 124,
             "rate": 0.5645
           },
+          "caught_excluding_stopped_before": {
+            "ci95": [
+              0.5544,
+              0.7317
+            ],
+            "k": 70,
+            "n": 108,
+            "rate": 0.6481
+          },
           "caught_zero_leak": {
             "ci95": [
               0.4686,
@@ -14150,6 +16787,15 @@
             "k": 69,
             "n": 124,
             "rate": 0.5565
+          },
+          "caught_zero_leak_excluding_stopped_before": {
+            "ci95": [
+              0.545,
+              0.7233
+            ],
+            "k": 69,
+            "n": 108,
+            "rate": 0.6389
           },
           "delay_tokens_caught": {
             "max": 132,
@@ -14170,6 +16816,24 @@
           "leaked_tokens_mean_caught": 0.91,
           "stop_reasons": {
             "flag": 86
+          },
+          "stopped_before_injection": {
+            "ci95": [
+              0.081,
+              0.1994
+            ],
+            "k": 16,
+            "n": 124,
+            "rate": 0.129
+          },
+          "stopped_before_injection_by_flag": {
+            "ci95": [
+              0.081,
+              0.1994
+            ],
+            "k": 16,
+            "n": 124,
+            "rate": 0.129
           },
           "stopped_by_failure_or_lag": {
             "ci95": [
@@ -14333,6 +16997,15 @@
             "n": 124,
             "rate": 0.5645
           },
+          "caught_excluding_stopped_before": {
+            "ci95": [
+              0.5544,
+              0.7317
+            ],
+            "k": 70,
+            "n": 108,
+            "rate": 0.6481
+          },
           "caught_zero_leak": {
             "ci95": [
               0.4686,
@@ -14341,6 +17014,15 @@
             "k": 69,
             "n": 124,
             "rate": 0.5565
+          },
+          "caught_zero_leak_excluding_stopped_before": {
+            "ci95": [
+              0.545,
+              0.7233
+            ],
+            "k": 69,
+            "n": 108,
+            "rate": 0.6389
           },
           "delay_tokens_caught": {
             "max": 132,
@@ -14361,6 +17043,24 @@
           "leaked_tokens_mean_caught": 0.8,
           "stop_reasons": {
             "flag": 86
+          },
+          "stopped_before_injection": {
+            "ci95": [
+              0.081,
+              0.1994
+            ],
+            "k": 16,
+            "n": 124,
+            "rate": 0.129
+          },
+          "stopped_before_injection_by_flag": {
+            "ci95": [
+              0.081,
+              0.1994
+            ],
+            "k": 16,
+            "n": 124,
+            "rate": 0.129
           },
           "stopped_by_failure_or_lag": {
             "ci95": [
@@ -14524,6 +17224,15 @@
             "n": 124,
             "rate": 0.5645
           },
+          "caught_excluding_stopped_before": {
+            "ci95": [
+              0.5544,
+              0.7317
+            ],
+            "k": 70,
+            "n": 108,
+            "rate": 0.6481
+          },
           "caught_zero_leak": {
             "ci95": [
               0.4686,
@@ -14532,6 +17241,15 @@
             "k": 69,
             "n": 124,
             "rate": 0.5565
+          },
+          "caught_zero_leak_excluding_stopped_before": {
+            "ci95": [
+              0.545,
+              0.7233
+            ],
+            "k": 69,
+            "n": 108,
+            "rate": 0.6389
           },
           "delay_tokens_caught": {
             "max": 132,
@@ -14552,6 +17270,24 @@
           "leaked_tokens_mean_caught": 0.69,
           "stop_reasons": {
             "flag": 86
+          },
+          "stopped_before_injection": {
+            "ci95": [
+              0.081,
+              0.1994
+            ],
+            "k": 16,
+            "n": 124,
+            "rate": 0.129
+          },
+          "stopped_before_injection_by_flag": {
+            "ci95": [
+              0.081,
+              0.1994
+            ],
+            "k": 16,
+            "n": 124,
+            "rate": 0.129
           },
           "stopped_by_failure_or_lag": {
             "ci95": [
@@ -14715,6 +17451,15 @@
             "n": 124,
             "rate": 0.5645
           },
+          "caught_excluding_stopped_before": {
+            "ci95": [
+              0.5544,
+              0.7317
+            ],
+            "k": 70,
+            "n": 108,
+            "rate": 0.6481
+          },
           "caught_zero_leak": {
             "ci95": [
               0.4686,
@@ -14723,6 +17468,15 @@
             "k": 69,
             "n": 124,
             "rate": 0.5565
+          },
+          "caught_zero_leak_excluding_stopped_before": {
+            "ci95": [
+              0.545,
+              0.7233
+            ],
+            "k": 69,
+            "n": 108,
+            "rate": 0.6389
           },
           "delay_tokens_caught": {
             "max": 132,
@@ -14743,6 +17497,24 @@
           "leaked_tokens_mean_caught": 0.46,
           "stop_reasons": {
             "flag": 86
+          },
+          "stopped_before_injection": {
+            "ci95": [
+              0.081,
+              0.1994
+            ],
+            "k": 16,
+            "n": 124,
+            "rate": 0.129
+          },
+          "stopped_before_injection_by_flag": {
+            "ci95": [
+              0.081,
+              0.1994
+            ],
+            "k": 16,
+            "n": 124,
+            "rate": 0.129
           },
           "stopped_by_failure_or_lag": {
             "ci95": [
@@ -14906,6 +17678,15 @@
             "n": 124,
             "rate": 0.5645
           },
+          "caught_excluding_stopped_before": {
+            "ci95": [
+              0.5544,
+              0.7317
+            ],
+            "k": 70,
+            "n": 108,
+            "rate": 0.6481
+          },
           "caught_zero_leak": {
             "ci95": [
               0.4766,
@@ -14914,6 +17695,15 @@
             "k": 70,
             "n": 124,
             "rate": 0.5645
+          },
+          "caught_zero_leak_excluding_stopped_before": {
+            "ci95": [
+              0.5544,
+              0.7317
+            ],
+            "k": 70,
+            "n": 108,
+            "rate": 0.6481
           },
           "delay_tokens_caught": {
             "max": 132,
@@ -14934,6 +17724,24 @@
           "leaked_tokens_mean_caught": 0.0,
           "stop_reasons": {
             "flag": 86
+          },
+          "stopped_before_injection": {
+            "ci95": [
+              0.081,
+              0.1994
+            ],
+            "k": 16,
+            "n": 124,
+            "rate": 0.129
+          },
+          "stopped_before_injection_by_flag": {
+            "ci95": [
+              0.081,
+              0.1994
+            ],
+            "k": 16,
+            "n": 124,
+            "rate": 0.129
           },
           "stopped_by_failure_or_lag": {
             "ci95": [
@@ -14971,9 +17779,9 @@
       }
     }
   ],
-  "uptime_after": "15:28:59 up 42 min,  0 user,  load average: 1.44, 1.57, 1.72",
-  "uptime_before": "15:26:42 up 40 min,  0 user,  load average: 0.49, 1.63, 1.77",
-  "wall_s": 137.0,
+  "uptime_after": "16:06:20 up  1:20,  0 user,  load average: 1.15, 0.79, 0.83",
+  "uptime_before": "16:04:28 up  1:18,  0 user,  load average: 0.23, 0.55, 0.76",
+  "wall_s": 111.1,
   "whole_response_once": [
     {
       "config": {
@@ -15102,7 +17910,25 @@
             "n": 124,
             "rate": 0.4194
           },
+          "caught_excluding_stopped_before": {
+            "ci95": [
+              0.3362,
+              0.5074
+            ],
+            "k": 52,
+            "n": 124,
+            "rate": 0.4194
+          },
           "caught_zero_leak": {
+            "ci95": [
+              0.3362,
+              0.5074
+            ],
+            "k": 52,
+            "n": 124,
+            "rate": 0.4194
+          },
+          "caught_zero_leak_excluding_stopped_before": {
             "ci95": [
               0.3362,
               0.5074
@@ -15130,6 +17956,24 @@
           "leaked_tokens_mean_caught": 0.0,
           "stop_reasons": {
             "flag": 52
+          },
+          "stopped_before_injection": {
+            "ci95": [
+              0.0,
+              0.03
+            ],
+            "k": 0,
+            "n": 124,
+            "rate": 0.0
+          },
+          "stopped_before_injection_by_flag": {
+            "ci95": [
+              0.0,
+              0.03
+            ],
+            "k": 0,
+            "n": 124,
+            "rate": 0.0
           },
           "stopped_by_failure_or_lag": {
             "ci95": [

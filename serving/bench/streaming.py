@@ -3,6 +3,8 @@
     flock /home/claude/measure.lock -c 'python -m serving.bench.streaming run'      # scores cache misses
     python -m serving.bench.streaming run --cache-only                               # no model: re-derive the JSON
     flock /home/claude/measure.lock -c 'python -m serving.bench.streaming live'     # real-time cross-check
+    flock /home/claude/measure.lock -c 'python -m serving.bench.streaming offset'   # injection start 120/128/136
+    python -m serving.bench.streaming paired                                         # McNemar counts, no model
 
 **Streams (248).** Built with training/dilution_curve.py `build_inputs()` (val split and the probe generator; the
 frozen test is never read): its 62 short injections (2 redteam probes + 60 val injections, <= 80 DeBERTa tokens)
@@ -25,7 +27,8 @@ B in {0, 8, 16, 32, 64}, k in {8, 16, 32, 64}, W in {full prefix, 128, 64}. (2) 
 B = k = 16. (3) Backpressure at 100 tok/s, B = k = 16: slowdown 1 and 4 for stall, FAIL_CLOSED and FAIL_OPEN with
 a 64-token lag budget.
 
-**Metrics.** Injection streams: stopped (Wilson 95%), stopped before the injection started (a benign-prefix flag),
+**Metrics.** Injection streams: stopped (Wilson 95%), stopped before the injection started (a benign-prefix flag;
+also caught with those streams left out of the denominator),
 detection delay = tokens generated after the injection start when the stream stopped, leak = injection tokens
 released before the stop (any leak: Wilson; mean leaked tokens), prevented = stopped with zero injection tokens
 released. Benign streams: false stops (Wilson). All streams: first-visible-token time and its extra over an
@@ -67,8 +70,11 @@ def prop(k: int, n: int) -> dict:
 
 # ---------------------------------------------------------------------- streams
 
-def build_streams() -> tuple[list[dict], dict]:
+def build_streams(pre: int | None = None) -> tuple[list[dict], dict]:
+    """`pre`: tokens of benign context before the injection (default PRE = 128, a multiple of every k swept)."""
     from training.dilution_curve import _tok, build_inputs
+
+    pre = PRE if pre is None else pre
 
     injections, contexts, prov = build_inputs()
     tok = _tok()
@@ -80,14 +86,14 @@ def build_streams() -> tuple[list[dict], dict]:
     for inj in injections:
         for pool in ("newsletter", "val_benign"):
             ctx = contexts[(inj["id"], pool)]
-            ids = ctx[:PRE] + inj["ids"] + ctx[PRE:PRE + POST]
+            ids = ctx[:pre] + inj["ids"] + ctx[pre:pre + POST]
             streams.append({"id": f"inj|{inj['id']}|{pool}", "kind": "injection", "pool": pool, "group": inj["group"],
-                            "tokens": pieces(ids), "span": [PRE, PRE + len(inj["ids"])]})
+                            "tokens": pieces(ids), "span": [pre, pre + len(inj["ids"])]})
             streams.append({"id": f"ben|{inj['id']}|{pool}", "kind": "benign", "pool": pool, "group": inj["group"],
                             "tokens": pieces(ctx[:BENIGN_LEN]), "span": None})
     meta = {"n_injection_streams": sum(s["kind"] == "injection" for s in streams),
             "n_benign_streams": sum(s["kind"] == "benign" for s in streams),
-            "injection_start": PRE, "post_tokens": POST, "benign_len": BENIGN_LEN,
+            "injection_start": pre, "post_tokens": POST, "benign_len": BENIGN_LEN,
             "dilution_inputs": {k: prov[k] for k in ("n_injections", "by_group", "val_benign_pool_size")},
             "injection_tokens": {"min": min(prov["injection_tokens"].values()),
                                  "median": statistics.median(prov["injection_tokens"].values()),
@@ -221,10 +227,21 @@ def _caught(r) -> bool:
             and r["stop_check_start"] < r["inj_end"] and r["stop_check_end"] > r["inj_start"])
 
 
+def _stopped_before_injection(r) -> bool:
+    """Stopped by a check (or the lag rule) that saw only benign text before the injection: the injection was never
+    generated past its start, so this stream could not be caught (review streaming-r1 m4)."""
+    if not r["stopped"]:
+        return False
+    if r["stop_check_end"] is not None:
+        return r["stop_check_end"] <= r["inj_start"]
+    return r["generated"] <= r["inj_start"]
+
+
 def aggregate(recs: list[dict], rate: float) -> dict:
     inj = [r for r in recs if r["kind"] == "injection"]
     ben = [r for r in recs if r["kind"] == "benign"]
     caught = [r for r in inj if _caught(r)]
+    before = [r for r in inj if _stopped_before_injection(r)]
     flag_other = [r for r in inj if r["stop_reason"] == "flag" and not _caught(r)]
     failed = [r for r in inj if r["stop_reason"] in ("lag", "classifier_failure")]
     dtok = [r["delay_tokens"] for r in caught]
@@ -239,6 +256,11 @@ def aggregate(recs: list[dict], rate: float) -> dict:
             "caught": prop(len(caught), len(inj)),
             "caught_zero_leak": prop(sum(r["leaked"] == 0 for r in caught), len(inj)),
             "stopped_by_flag_outside_injection": prop(len(flag_other), len(inj)),
+            "stopped_before_injection": prop(len(before), len(inj)),
+            "stopped_before_injection_by_flag": prop(sum(r["stop_reason"] == "flag" for r in before), len(inj)),
+            "caught_excluding_stopped_before": prop(len(caught), len(inj) - len(before)),
+            "caught_zero_leak_excluding_stopped_before": prop(sum(r["leaked"] == 0 for r in caught),
+                                                              len(inj) - len(before)),
             "stopped_by_failure_or_lag": prop(len(failed), len(inj)),
             "injection_never_shown": prop(sum(r["leaked"] == 0 for r in inj), len(inj)),
             "any_leak": prop(sum(r["leaked"] > 0 for r in inj), len(inj)),
@@ -361,6 +383,150 @@ def _lat_by_chars(rows):
     return {b: {"n": len(v), "p50": _q(v, 0.5), "p95": _q(v, 0.95)} for b, v in buckets.items()}
 
 
+# ---------------------------------------------------------------------- injection position (review streaming-r1 m2)
+
+OFFSET_PRES = (128, 120, 136)  # 128: on a boundary of every k (the sweep); 120, 136: 8 tokens into a k = 16 window
+OFFSET_KS = (16, 64)
+OFFSET_BS = (0, 8, 16, 32)
+
+
+def cmd_offset(a) -> int:
+    """Injection streams only (benign streams do not depend on the injection position), at three injection starts.
+
+    128 is the sweep's position, a multiple of every k. 120 and 136 start the injection 8 tokens into a k = 16 check
+    window (offset 56 and 8 into a k = 64 window); 120 has 8 fewer benign tokens before the injection and 136 has 8
+    more, so the pair brackets the effect of the benign prefix length. Same contexts, same injections, B in
+    {0, 8, 16, 32}, k in {16, 64}, W in {full, 64}, 50 tok/s, stall mode."""
+    sweep_path = OUT_DIR / "streaming_sweep.json"
+    sweep = json.loads(sweep_path.read_text())["sweep"] if sweep_path.is_file() else []
+    scorer = CachedScorer(CACHE, a.cache_only, a.no_lock_check)
+    t0, host_before = time.perf_counter(), uptime()
+    configs, per = [], {}
+    try:
+        for pre in OFFSET_PRES:
+            inj = [s for s in build_streams(pre)[0] if s["kind"] == "injection"]
+            assert all(s["span"][0] == pre for s in inj)
+            for W in (None, 64):
+                for k in OFFSET_KS:
+                    for B in OFFSET_BS:
+                        cfg = StreamGuardConfig(holdback_tokens=B, check_every=k, window_tokens=W)
+                        recs = [simulate(s, cfg, 50.0, scorer) for s in inj]
+                        m = aggregate(recs, 50.0)["injection"]
+                        caught = [r for r in recs if _caught(r)]
+                        m["leaked_tokens_max_caught"] = max((r["leaked"] for r in caught), default=None)
+                        key = (W, k, B)
+                        per.setdefault(key, {})[pre] = {r["id"]: (_caught(r), _caught(r) and r["leaked"] == 0)
+                                                        for r in recs}
+                        configs.append({"config": {"injection_start": pre, "offset_in_window": pre % k,
+                                                   "W": "full" if W is None else W, "k": k, "B": B,
+                                                   "rate_tok_s": 50.0, "mode": "stall"}, "injection": m})
+                        print(f"offset pre={pre} W={W} k={k} B={B} misses={scorer.misses} "
+                              f"{time.perf_counter() - t0:.0f}s", flush=True)
+    finally:
+        scorer.close()
+    # the aligned rows must reproduce the sweep's injection metrics (same streams, same cache)
+    agree = []
+    for c in configs:
+        cc = c["config"]
+        if cc["injection_start"] != PRE:
+            continue
+        ref = [x for x in sweep if x["config"]["B"] == cc["B"] and x["config"]["k"] == cc["k"]
+               and x["config"]["W"] == cc["W"]]
+        if ref:
+            agree.append(all(ref[0]["metrics"]["injection"].get(f) == c["injection"][f] for f in
+                             ("caught", "caught_zero_leak", "leaked_tokens_mean_caught", "delay_tokens_caught",
+                              "stopped_by_flag_outside_injection")))
+    # paired per stream, aligned (128) vs each shifted start: how many streams change
+    paired = []
+    for (W, k, B), by_pre in per.items():
+        for pre in OFFSET_PRES[1:]:
+            a_, b_ = by_pre[PRE], by_pre[pre]
+            assert set(a_) == set(b_)  # stream ids do not carry the position: same injection, same context
+            row = {"W": "full" if W is None else W, "k": k, "B": B, "shifted_start": pre}
+            for j, name in ((0, "caught"), (1, "caught_zero_leak")):
+                both = sum(a_[i][j] and b_[i][j] for i in a_)
+                row[name] = {"both": both, "aligned_only": sum(a_[i][j] and not b_[i][j] for i in a_),
+                             "shifted_only": sum(b_[i][j] and not a_[i][j] for i in a_)}
+            paired.append(row)
+    result = {"generated_at": now(), "host": host_info(), "uptime_before": host_before, "uptime_after": uptime(),
+              "injection_starts": list(OFFSET_PRES), "n_injection_streams": 124,
+              "cache": {"rows": len(scorer.rows), "misses_this_run": scorer.misses,
+                        "bundle_sha256_prefixes": sorted({r["bundle"] for r in scorer.rows.values()})},
+              "aligned_rows_match_sweep": {"compared": len(agree), "all_equal": all(agree) if agree else None},
+              "configs": configs, "paired": paired, "wall_s": round(time.perf_counter() - t0, 1)}
+    write_result(a.out_offset, result)
+    if scorer.misses:
+        with (OUT_DIR / "scoring_runs.jsonl").open("a", encoding="utf-8") as fh:
+            fh.write(json.dumps({"generated_at": result["generated_at"], "command": "offset", "misses": scorer.misses,
+                                 "rows_after": len(scorer.rows), "wall_s": result["wall_s"],
+                                 "uptime_before": host_before, "uptime_after": result["uptime_after"],
+                                 "host": result["host"]}, sort_keys=True) + "\n")
+    print(json.dumps({"rows": len(scorer.rows), "misses": scorer.misses, "wall_s": result["wall_s"],
+                      "aligned_rows_match_sweep": result["aligned_rows_match_sweep"]}))
+    return 0
+
+
+# ---------------------------------------------------------------------- paired comparisons (review streaming-r1 n3)
+
+def _mcnemar_p(b: int, c: int) -> float | None:
+    """Exact two-sided McNemar p-value from the discordant counts (binomial, p = 0.5)."""
+    from math import comb
+    n = b + c
+    if n == 0:
+        return None
+    tail = sum(comb(n, i) for i in range(0, min(b, c) + 1)) / 2 ** n
+    return round(min(1.0, 2 * tail), 4)
+
+
+PAIRED = (  # (name, sweep group, config A, config B, pool or None) as the design note compares them
+    ("full_k16_B16_vs_whole_once_newsletter", ("sweep", {"W": "full", "k": 16, "B": 16}),
+     ("whole_response_once", {}), "newsletter"),
+    ("full_B16_k8_vs_k64", ("sweep", {"W": "full", "k": 8, "B": 16}), ("sweep", {"W": "full", "k": 64, "B": 16}), None),
+    ("full_B16_k16_vs_k64", ("sweep", {"W": "full", "k": 16, "B": 16}), ("sweep", {"W": "full", "k": 64, "B": 16}),
+     None),
+    ("B16_k16_full_vs_W64", ("sweep", {"W": "full", "k": 16, "B": 16}), ("sweep", {"W": 64, "k": 16, "B": 16}), None),
+    ("B16_k16_full_vs_W64_newsletter", ("sweep", {"W": "full", "k": 16, "B": 16}),
+     ("sweep", {"W": 64, "k": 16, "B": 16}), "newsletter"),
+)
+
+
+def cmd_paired(a) -> int:
+    """McNemar counts for the paired comparisons the design note states (same streams under two configurations),
+    from the committed per-stream file; no model."""
+    per = json.loads((OUT_DIR / "streaming_sweep_per_stream.json").read_text())
+    fields = per["fields"]
+    streams = {s["id"]: s for s in build_streams()[0]}
+
+    def caught_by_id(group, want):
+        rows = [x for x in per["configs"][group] if all(x["config"].get(k) == v for k, v in want.items())]
+        assert len(rows) == 1, (group, want, len(rows))
+        out = {}
+        for row in rows[0]["rows"]:
+            r = dict(zip(fields, row))
+            s = streams[r["id"]]
+            if s["kind"] != "injection":
+                continue
+            r.update(inj_start=s["span"][0], inj_end=s["span"][1], pool=s["pool"])
+            out[r["id"]] = (r["pool"], _caught(r))
+        return out
+
+    res = []
+    for name, (ga, ca), (gb, cb), pool in PAIRED:
+        xa, xb = caught_by_id(ga, ca), caught_by_id(gb, cb)
+        ids = [i for i in xa if pool is None or xa[i][0] == pool]
+        both = sum(xa[i][1] and xb[i][1] for i in ids)
+        a_only = sum(xa[i][1] and not xb[i][1] for i in ids)
+        b_only = sum(xb[i][1] and not xa[i][1] for i in ids)
+        res.append({"name": name, "a": {"group": ga, **ca}, "b": {"group": gb, **cb}, "pool": pool, "n": len(ids),
+                    "caught_a": both + a_only, "caught_b": both + b_only, "both": both, "a_only": a_only,
+                    "b_only": b_only, "mcnemar_exact_p": _mcnemar_p(a_only, b_only)})
+    write_result(a.out_paired, {"generated_at": now(), "source": "streaming_sweep_per_stream.json",
+                                "metric": "caught (injection streams)", "comparisons": res})
+    for r in res:
+        print(r["name"], r["caught_a"], r["caught_b"], r["a_only"], r["b_only"], r["mcnemar_exact_p"])
+    return 0
+
+
 # ---------------------------------------------------------------------- real-time cross-check
 
 def cmd_live(a) -> int:
@@ -374,7 +540,7 @@ def cmd_live(a) -> int:
     streams, _ = build_streams()
     pick = [s for s in streams if s["kind"] == "injection"][: a.n // 2] + \
         [s for s in streams if s["kind"] == "benign"][: a.n // 2]
-    cfg = StreamGuardConfig(holdback_tokens=16, check_every=16, window_tokens=a.window)
+    cfg = StreamGuardConfig(holdback_tokens=16, check_every=16, window_tokens=a.window or None)  # 0: full prefix
     bundle, config = load_bundle(ROOT / "artifacts" / "registry.json")
 
     async def main():
@@ -405,12 +571,17 @@ def cmd_live(a) -> int:
               "same_stop_check_end": sum(r["live"]["stop_check_end"] == r["sim"]["stop_check_end"] for r in rows),
               "same_released_tokens": sum(r["live"]["released"] == r["sim"]["released"] for r in rows),
               "same_check_count": sum(r["live"]["checks"] == r["sim"]["checks"] for r in rows),
+              "checks_live_minus_sim": _spread([r["live"]["checks"] - r["sim"]["checks"] for r in rows]),
+              "checks_total": {"live": sum(r["live"]["checks"] for r in rows),
+                               "sim": sum(r["sim"]["checks"] for r in rows)},
+              "pick": "the first n/2 injection and first n/2 benign streams in build order (not a random sample)",
               "first_visible_live_minus_sim_s": _spread([r["live"]["first_visible_s"] - r["sim"]["first_visible_s"]
                                                          for r in rows if r["live"]["first_visible_s"] is not None
                                                          and r["sim"]["first_visible_s"] is not None]),
               "rows": rows, "wall_s": round(time.perf_counter() - t0, 1)}
     write_result(a.out_live, result)
     print(json.dumps({k: result[k] for k in ("same_outcome", "same_stop_check_end", "same_released_tokens",
+                                             "same_check_count", "checks_live_minus_sim", "checks_total",
                                              "first_visible_live_minus_sim_s", "wall_s")}))
     return 0
 
@@ -426,11 +597,17 @@ def main(argv=None) -> int:
     lv = sub.add_parser("live")
     lv.add_argument("--n", type=int, default=12)
     lv.add_argument("--rate", type=float, default=50.0)
-    lv.add_argument("--window", type=int, default=64)
+    lv.add_argument("--window", type=int, default=64, help="0: full prefix")
     lv.add_argument("--out-live", type=Path, default=OUT_DIR / "live_check.json")
     lv.add_argument("--no-lock-check", action="store_true")
+    of = sub.add_parser("offset")
+    of.add_argument("--cache-only", action="store_true")
+    of.add_argument("--out-offset", type=Path, default=OUT_DIR / "streaming_offset.json")
+    of.add_argument("--no-lock-check", action="store_true")
+    pa = sub.add_parser("paired")
+    pa.add_argument("--out-paired", type=Path, default=OUT_DIR / "streaming_paired.json")
     a = ap.parse_args(argv)
-    return cmd_run(a) if a.cmd == "run" else cmd_live(a)
+    return {"run": cmd_run, "live": cmd_live, "offset": cmd_offset, "paired": cmd_paired}[a.cmd](a)
 
 
 if __name__ == "__main__":
